@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Logger output</title>
+    <style>
+        html, body {
+            background-color: #f0f0f0;
+            font-family: monospace;
+            font-size: 11pt;
+        }
+        blockquote, code, div, p, pre, span, h1, h2, h3, h4, h5 {
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            margin: .5em 0;
+            padding-left: .4em;
+        }
+        /* Tabstrip */
+        div.tabs-header {
+            position: relative;
+            z-index: 2;
+        }
+        div.tabs-header > span {
+            background-color: #e0e0e0;
+            cursor: pointer;
+            display: inline-block;
+            font-size: 1.2rem;
+            /*font-weight: bold;*/
+            height: 2.2rem;
+            line-height: 2.2rem;
+            padding: 0 1em 0 1em;
+            text-align: center;
+            transition: background-color .4s;
+            user-select: none;
+            white-space: nowrap;
+        }
+        div.tabs-header > span:hover {
+            background-color: #ccc;
+        }
+        div.tabs-header > span.active {
+            background-color: #fff;
+            box-shadow: 1px 1px 3px #333;
+            cursor: default;
+            height: 2.4rem;
+            transition: background-color .2s;
+        }
+        div.tabs-header::after {
+            background-color: #fff;
+            bottom: -5px;
+            content: "";
+            display: block;
+            height: 5px;
+            position: absolute;
+            width: 100%;
+        }
+        div.tabs-body {
+            background-color: #fff;
+            box-shadow: 1px 1px 3px #333;
+            padding: .5em;
+            position: relative;
+            z-index: 1;
+        }
+        div.tabs-body p {
+            background-color: transparent;
+            margin: .1em 0;
+            padding-left: 1.2em;
+            position: relative;
+            transition: background-color .4s;
+        }
+        div.tabs-body p:hover {
+            background-color: rgba(50, 50, 50, 0.2);
+        }
+        div.tabs-body p::before {
+            background-color: transparent;
+            border-radius: 3px;
+            content: "";
+            display: inline-block;
+            height: 6px;
+            left: .2em;
+            position: absolute;
+            top: .4em;
+            width: 6px;
+        }
+        div.tabs-body .msg {
+            color: #aaa;
+        }
+        div.tabs-body .warn {
+            color: #ca0;
+        }
+        div.tabs-body .err {
+            color: #a00;
+        }
+        div.tabs-body p.warn::before {
+            background-color: #ca0;
+        }
+        div.tabs-body p.err::before {
+            background-color: #a00;
+        }
+        div.tabs-body.hide-errors .err,
+        div.tabs-body.hide-warnings .warn,
+        div.tabs-body.hide-messages .msg {
+            display: none;
+        }
+
+    </style>
+</head>
+
+<body>
+<h1>&gt; script logs</h1>
+<div class="tabs">
+    <div class="tabs-header">
+        <span id="tab-err-warn" class="active">errors and warnings</span>
+        <span id="tab-err">errors only</span>
+        <span id="tab-warn">warnings only</span>
+        <span id="tab-all">all logs</span>
+    </div>
+    <div id="tabstrip-body" class="tabs-body hide-messages">
+        {LOG_CONTENT}
+    </div>
+    <script type="text/javascript">
+        var tabBody = document.getElementById('tabstrip-body');
+        var tabErrWarnBtn = document.getElementById('tab-err-warn');
+        var tabErrBtn = document.getElementById('tab-err');
+        var tabWarnBtn = document.getElementById('tab-warn');
+        var tabAllBtn = document.getElementById('tab-all');
+
+        var tabClicked = function (e) {
+            tabErrWarnBtn.setAttribute('class', '');
+            tabErrBtn.setAttribute('class', '');
+            tabWarnBtn.setAttribute('class', '');
+            tabAllBtn.setAttribute('class', '');
+
+            switch(this) {
+                case tabErrWarnBtn:
+                    tabBody.setAttribute('class', 'tabs-body hide-messages');
+                    tabErrWarnBtn.setAttribute('class', 'active');
+                    break;
+                case tabErrBtn:
+                    tabBody.setAttribute('class', 'tabs-body hide-warnings hide-messages');
+                    tabErrBtn.setAttribute('class', 'active');
+                    break;
+                case tabWarnBtn:
+                    tabBody.setAttribute('class', 'tabs-body hide-errors hide-messages');
+                    tabWarnBtn.setAttribute('class', 'active');
+                    break;
+                case tabAllBtn:
+                    tabBody.setAttribute('class', 'tabs-body');
+                    tabAllBtn.setAttribute('class', 'active');
+            }
+
+        };
+
+        tabErrWarnBtn.addEventListener('click', tabClicked.bind(tabErrWarnBtn));
+        tabErrBtn.addEventListener('click', tabClicked.bind(tabErrBtn));
+        tabWarnBtn.addEventListener('click', tabClicked.bind(tabWarnBtn));
+        tabAllBtn.addEventListener('click', tabClicked.bind(tabAllBtn));
+    </script>
+</div>
+</body>
+
+</html>
