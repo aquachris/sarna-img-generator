@@ -30,8 +30,17 @@ module.exports = (function () {
         // TODO make file name configurable
         var workbook = xlsx.parse(__dirname + '/../data/Systems By Era.xlsx');
 
-        var systemsSheet = workbook[2];
+		var systemsSheet = workbook[1];
+        var factionsSheet = workbook[2];
         var nebulaeSheet = workbook[3];
+		
+		console.log(systemsSheet.name, systemsSheet.data.length);
+		console.log(systemsSheet.data[0]); // era descriptions
+		console.log(systemsSheet.data[1]); // ?
+		console.log(systemsSheet.data[2]); // years
+		console.log(systemsSheet.data[3]); // first planetary system
+		console.log(systemsSheet.data[4]);
+		console.log(systemsSheet.data[5]);
     };
 
     /**

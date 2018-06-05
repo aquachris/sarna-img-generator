@@ -44,7 +44,7 @@ module.exports = (function () {
             if(err) {
                 return console.log(err);
             }
-            console.log('log file "'+this.outputPath+'" was saved');
+            console.log('log file "'+this.outputPath+'" written');
         }.bind(this));
         this.logger.flush();
     };

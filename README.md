@@ -1,6 +1,7 @@
 # sarna-img-generator
 A collection of scripts that generate planetary systems images used on sarna.net
-_WIP!_
+
+__WIP!__
 
 ## installation
 - install nodejs
