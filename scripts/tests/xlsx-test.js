@@ -4,7 +4,7 @@ var xlsx = require('node-xlsx');
 // Parse a buffer
 //var objFromBuffer = xlsx.parse(fs.readFileSync(__dirname + '/../data/Systems By Era.xlsx'));
 // Parse a file
-var objFromFile = xlsx.parse(__dirname + '/../data/Systems By Era.xlsx');
+var objFromFile = xlsx.parse(__dirname + '/../../data/Systems By Era.xlsx');
 
 var nebulaeTab = objFromFile[3];
 var nebulae = [];

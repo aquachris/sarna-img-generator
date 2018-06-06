@@ -2,15 +2,23 @@ var fs = require('fs');
 var Logger = require('./Logger.js');
 var LogRenderer = require('./LogRenderer.js');
 var SystemsReader = require('./SystemsReader.js');
+var SvgWriter = require('./SvgWriter.js');
 
 var main = function () {
     // initialize objects
     var logger = new Logger();
     var logRenderer = new LogRenderer(logger, '../data/script_log.html', '../data/log.tpl.html');
     var reader = new SystemsReader(logger);
+	var writer = new SvgWriter(logger);
 
     // read planetary systems from the xlsx
-    reader.readSystems();
+    var systems = reader.readSystems();
+	
+	// create a single svg with all systems
+	//writer.writeSvgAllSystems(systems);
+	for(var i = 0, len = systems.length; i < len; i++) {
+		writer.writeSvg(systems, i, '3025');
+	}
 
     // finish by rendering out the logs
     logRenderer.render();

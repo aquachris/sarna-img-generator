@@ -2,6 +2,7 @@ module.exports = (function () {
     'use strict';
 
     var xlsx = require('node-xlsx');
+	var fs = require('fs');
     var Observable = require('./Observable.js');
 
     /**
@@ -21,7 +22,9 @@ module.exports = (function () {
     SystemsReader.prototype.parent = Observable;
 
     /**
-     * Initiates the data loading
+     * Reads the planetary systems from the SUCK master list excel file.
+	 *
+	 * @returns {Array} The systems list
      */
     SystemsReader.prototype.readSystems = function () {
         this.logger.log('Systems reader started');
@@ -34,13 +37,68 @@ module.exports = (function () {
         var factionsSheet = workbook[2];
         var nebulaeSheet = workbook[3];
 		
+		var curRow, curSystem;
+		var systems = [];
+		
+		// sort out headers
+		var headerRowIdx = 2; // TODO magic number
+		var colIdxMap = {}; // map of column titles (lowercase) to column indices
+		
+		curRow = systemsSheet.data[headerRowIdx];
+		//console.log(curRow);
+		
+		for(var i = 0, len = curRow.length; i < len; i++) {
+			colIdxMap[(''+curRow[i]).toLowerCase()] = i;
+		}
+		
+		//console.log(colIdxMap);
+		
+		for(var rowIdx = headerRowIdx + 1, endIdx = systemsSheet.data.length; rowIdx < endIdx; rowIdx++) {
+			curRow = systemsSheet.data[rowIdx];
+			
+			// skip systems without coordinates
+			if(curRow[colIdxMap['x']] === undefined || curRow[colIdxMap['y']] === undefined) {
+				continue;
+			}
+			
+			// skip apocryphal systems for now (TODO)
+			if(curRow[colIdxMap['status']].toLowerCase() === 'apocryphal') {
+				continue;
+			}
+			
+			// skip systems without a 3025 affiliation for now (TODO)
+			if(curRow[colIdxMap['3025']] === undefined) {
+				continue;
+			}
+			
+			// read system 
+			curSystem = {};
+			// name and status
+			curSystem.name = curRow[colIdxMap['system']];
+			curSystem.status = curRow[colIdxMap['status']];
+			// coordinates
+			curSystem.x = curRow[colIdxMap['x']];
+			curSystem.y = curRow[colIdxMap['y']];
+			
+			// 3025 affiliation
+			curSystem['3025'] = curRow[colIdxMap['3025']];
+			
+			systems.push(curSystem);
+		}
+		
+		fs.writeFileSync('./output/systems.json', JSON.stringify(systems), { encoding: 'utf8' });
+		/*
 		console.log(systemsSheet.name, systemsSheet.data.length);
 		console.log(systemsSheet.data[0]); // era descriptions
 		console.log(systemsSheet.data[1]); // ?
-		console.log(systemsSheet.data[2]); // years
+		console.log(systemsSheet.data[2]); // table headers and actual years
 		console.log(systemsSheet.data[3]); // first planetary system
 		console.log(systemsSheet.data[4]);
 		console.log(systemsSheet.data[5]);
+		*/
+		this.logger.log('systems file written');
+		
+		return systems;
     };
 
     /**
