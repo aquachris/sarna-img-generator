@@ -14,12 +14,87 @@ module.exports = (function () {
     var SystemsReader = function (logger) {
         this.parent.call(this);
         this.logger = logger || console;
+		this.workbook = undefined;
+		this.factions = undefined;
+		this.systems = undefined;
+		this.nebulae = undefined;
         this.addEventTopics('systemsRead');
     };
 
     SystemsReader.prototype = Object.create(Observable.prototype);
     SystemsReader.prototype.constructor = SystemsReader;
     SystemsReader.prototype.parent = Observable;
+	
+	/**
+	 * Reads the SUCK master list excel file and reference it in a variable.
+	 * This function only reads the file if no workbook reference has been 
+	 * read yet, or if the forceReread parameter is a truthy value.
+	 * 
+	 * @param forceReread {boolean} Read the file, even if there is already a valid reference
+	 * @private
+	 */
+	SystemsReader.prototype.readWorkbook = function (forceReread) {
+		if(!forceReread && !!this.workbook) {
+			this.logger.log('No need to read SUCK file again - reference already exists');
+			return;
+		}
+		this.logger.log('Now reading SUCK file');
+		
+		// Read xlsx file
+        // TODO make file name configurable
+		this.workbook = xlsx.parse(__dirname + '/../data/Systems By Era.xlsx');
+	};
+	
+	/**
+	 * Reads the faction list from the SUCK master list excel file.
+	 */
+	SystemsReader.prototype.readFactions = function () {
+		this.readWorkbook();
+		
+		this.logger.log('Faction reader started');
+		this.factions = {};
+		
+		var factionsSheet = this.workbook[2]; // TODO magic number
+		var curRow, curFaction, curR, curG, curB, curColor;
+		
+		// headers
+		var headerRowIdx = 0; // TODO magic number
+		var colIdxMap = {}; // map of column titles (lowercase) to column indices
+		curRow = factionsSheet.data[headerRowIdx];
+		
+		// sort out column title -> column index mapping
+		for(var i = 0, len = curRow.length; i < len; i++) {
+			colIdxMap[(''+curRow[i]).toLowerCase()] = i;
+		}
+		
+		// read faction data
+		for(var rowIdx = headerRowIdx + 1, endIdx = factionsSheet.data.length; rowIdx < endIdx; rowIdx++) {
+			curRow = factionsSheet.data[rowIdx];
+			
+			// skip factions without a short character sequence
+			if(!curRow[colIdxMap['short']]) {
+				continue;
+			}
+			
+			// read faction 
+			curColor = '#';
+			curR = curRow[colIdxMap['r']] || 0;
+			curG = curRow[colIdxMap['g']] || 0;
+			curB = curRow[colIdxMap['b']] || 0;
+			curColor += ('0' + curR.toString(16)).slice(-2);
+			curColor += ('0' + curG.toString(16)).slice(-2);
+			curColor += ('0' + curB.toString(16)).slice(-2);
+			curFaction = {
+				shortName: curRow[colIdxMap['short']],
+				longName: curRow[colIdxMap['long']],
+				category: curRow[colIdxMap['#class']],
+				color: curColor,
+				founding: curRow[colIdxMap['founding']] || '',
+				dissolution: curRow[colIdxMap['dissolution']] || ''
+			};
+			this.factions[curFaction.shortName] = curFaction;
+		}
+	};
 
     /**
      * Reads the planetary systems from the SUCK master list excel file.
@@ -27,18 +102,16 @@ module.exports = (function () {
 	 * @returns {Array} The systems list
      */
     SystemsReader.prototype.readSystems = function () {
+		this.readWorkbook();
+		
         this.logger.log('Systems reader started');
 
-        // Read xlsx file
-        // TODO make file name configurable
-        var workbook = xlsx.parse(__dirname + '/../data/Systems By Era.xlsx');
-
-		var systemsSheet = workbook[1];
-        var factionsSheet = workbook[2];
-        var nebulaeSheet = workbook[3];
+		var systemsSheet = this.workbook[1];
+        
+        //var nebulaeSheet = this.workbook[3];
 		
-		var curRow, curSystem;
-		var systems = [];
+		var curRow, curSystem, curAffiliation;
+		this.systems = [];
 		
 		// sort out headers
 		var headerRowIdx = 2; // TODO magic number
@@ -81,12 +154,14 @@ module.exports = (function () {
 			curSystem.y = curRow[colIdxMap['y']];
 			
 			// 3025 affiliation
-			curSystem['3025'] = curRow[colIdxMap['3025']];
+			curAffiliation = curRow[colIdxMap['3025']] || '';
+			curSystem['3025'] = curAffiliation.split(/\s*\,\s*/gi)[0];
+			curSystem['3025_all'] = curAffiliation;
 			
-			systems.push(curSystem);
+			this.systems.push(curSystem);
 		}
 		
-		fs.writeFileSync('./output/systems.json', JSON.stringify(systems), { encoding: 'utf8' });
+		fs.writeFileSync('./output/systems.json', JSON.stringify(this.systems), { encoding: 'utf8' });
 		/*
 		console.log(systemsSheet.name, systemsSheet.data.length);
 		console.log(systemsSheet.data[0]); // era descriptions
@@ -97,8 +172,6 @@ module.exports = (function () {
 		console.log(systemsSheet.data[5]);
 		*/
 		this.logger.log('systems file written');
-		
-		return systems;
     };
 
     /**

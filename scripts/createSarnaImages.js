@@ -11,13 +11,18 @@ var main = function () {
     var reader = new SystemsReader(logger);
 	var writer = new SvgWriter(logger);
 
+	// read factions from the xlsx
+	reader.readFactions();
+	
     // read planetary systems from the xlsx
-    var systems = reader.readSystems();
+    reader.readSystems();
 	
 	// create a single svg with all systems
 	//writer.writeSvgAllSystems(systems);
-	for(var i = 0, len = systems.length; i < len; i++) {
-		writer.writeSvg(systems, i, '3025');
+	
+	// write svg files for all systems
+	for(var i = 0, len = reader.systems.length; i < len; i++) {
+		writer.writeSvg(reader.systems, reader.factions, i, '3025');
 	}
 
     // finish by rendering out the logs

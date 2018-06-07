@@ -14,7 +14,7 @@
 	
 	<style>
 		text { fill: #000; font-family: Verdana, Arial, sans-serif; }
-		circle.system { fill: #000 } /* default color */
+		circle.system { fill: #000; stroke: #000; stroke-width: .25 } /* default color */
 		circle.jump-radius { fill: transparent; stroke: #888; stroke-width: .25 }
 		text.system-name { font-size: 3px; }
 	</style>

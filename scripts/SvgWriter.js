@@ -24,10 +24,11 @@ module.exports = (function () {
 	 * @param systems {Array} The array containing all systems
 	 * @param focusedSystemIdx {int} Focused system's index in the systems array
 	 */
-	SvgWriter.prototype.writeSvg = function (systems, focusedSystemIdx, displayedYear) {
+	SvgWriter.prototype.writeSvg = function (systems, factions, focusedSystemIdx, displayedYear) {
 		var focusedSystem = systems[focusedSystemIdx];
 		var filename = this.baseDir + '/output/' + focusedSystem.name + '_' + displayedYear + '.svg';
 		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
+		var faction, factionColor;
 		var svgMarkup = '';
 		
 		// jump radius circles
@@ -40,8 +41,14 @@ module.exports = (function () {
 			if(!this.systemIsVisible(systems[i], focusedSystem.x - 70, -focusedSystem.y - 70, 140, 140)) {
 				continue;
 			}
-			svgMarkup += '<circle class="system" cx="'+systems[i].x+'" cy="'+(-systems[i].y)+'" r=".75" />\n';
-			svgMarkup += '<text class="system-name" x="'+systems[i].x+'" y="'+(-systems[i].y)+'" dx="1.5" dy="1">'+systems[i].name+'</text>';
+			faction = factions[systems[i]['3025']];
+			if(faction) {
+				factionColor = factions[systems[i]['3025']].color;
+			} else {
+				factionColor = '#fff';
+			}
+			svgMarkup += '<circle class="system '+systems[i]['3025'].toLowerCase()+'" cx="'+systems[i].x+'" cy="'+(-systems[i].y)+'" r=".75" style="fill:'+factionColor+'" />\n';
+			svgMarkup += '<text class="system-name '+systems[i]['3025']+'" x="'+systems[i].x+'" y="'+(-systems[i].y)+'" dx="1.5" dy="1">'+systems[i].name+'</text>';
 		}
 		
 		tpl = tpl.replace('{VIEWBOX}', (focusedSystem.x - 70) + ',' + (-focusedSystem.y - 70) + ', 140, 140');
@@ -53,6 +60,8 @@ module.exports = (function () {
 		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + filename + '" written');
 	};
+	
+	
 	
 	SvgWriter.prototype.writeSvgAllSystems = function (systems) {
 		var name = 'all';
