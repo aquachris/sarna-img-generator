@@ -24,12 +24,12 @@ module.exports = (function () {
     SystemsReader.prototype = Object.create(Observable.prototype);
     SystemsReader.prototype.constructor = SystemsReader;
     SystemsReader.prototype.parent = Observable;
-	
+
 	/**
 	 * Reads the SUCK master list excel file and reference it in a variable.
-	 * This function only reads the file if no workbook reference has been 
+	 * This function only reads the file if no workbook reference has been
 	 * read yet, or if the forceReread parameter is a truthy value.
-	 * 
+	 *
 	 * @param forceReread {boolean} Read the file, even if there is already a valid reference
 	 * @private
 	 */
@@ -39,44 +39,44 @@ module.exports = (function () {
 			return;
 		}
 		this.logger.log('Now reading SUCK file');
-		
+
 		// Read xlsx file
         // TODO make file name configurable
 		this.workbook = xlsx.parse(__dirname + '/../data/Systems By Era.xlsx');
 	};
-	
+
 	/**
 	 * Reads the faction list from the SUCK master list excel file.
 	 */
 	SystemsReader.prototype.readFactions = function () {
 		this.readWorkbook();
-		
+
 		this.logger.log('Faction reader started');
 		this.factions = {};
-		
+
 		var factionsSheet = this.workbook[2]; // TODO magic number
 		var curRow, curFaction, curR, curG, curB, curColor;
-		
+
 		// headers
 		var headerRowIdx = 0; // TODO magic number
 		var colIdxMap = {}; // map of column titles (lowercase) to column indices
 		curRow = factionsSheet.data[headerRowIdx];
-		
+
 		// sort out column title -> column index mapping
 		for(var i = 0, len = curRow.length; i < len; i++) {
 			colIdxMap[(''+curRow[i]).toLowerCase()] = i;
 		}
-		
+
 		// read faction data
 		for(var rowIdx = headerRowIdx + 1, endIdx = factionsSheet.data.length; rowIdx < endIdx; rowIdx++) {
 			curRow = factionsSheet.data[rowIdx];
-			
+
 			// skip factions without a short character sequence
 			if(!curRow[colIdxMap['short']]) {
 				continue;
 			}
-			
-			// read faction 
+
+			// read faction
 			curColor = '#';
 			curR = curRow[colIdxMap['r']] || 0;
 			curG = curRow[colIdxMap['g']] || 0;
@@ -103,48 +103,48 @@ module.exports = (function () {
      */
     SystemsReader.prototype.readSystems = function () {
 		this.readWorkbook();
-		
+
         this.logger.log('Systems reader started');
 
 		var systemsSheet = this.workbook[1];
-        
+
         //var nebulaeSheet = this.workbook[3];
-		
+
 		var curRow, curSystem, curAffiliation;
 		this.systems = [];
-		
+
 		// sort out headers
 		var headerRowIdx = 2; // TODO magic number
 		var colIdxMap = {}; // map of column titles (lowercase) to column indices
-		
+
 		curRow = systemsSheet.data[headerRowIdx];
 		//console.log(curRow);
-		
+
 		for(var i = 0, len = curRow.length; i < len; i++) {
 			colIdxMap[(''+curRow[i]).toLowerCase()] = i;
 		}
-		
+
 		//console.log(colIdxMap);
-		
+
 		for(var rowIdx = headerRowIdx + 1, endIdx = systemsSheet.data.length; rowIdx < endIdx; rowIdx++) {
 			curRow = systemsSheet.data[rowIdx];
-			
+
 			// skip systems without coordinates
 			if(curRow[colIdxMap['x']] === undefined || curRow[colIdxMap['y']] === undefined) {
 				continue;
 			}
-			
+
 			// skip apocryphal systems for now (TODO)
 			if(curRow[colIdxMap['status']].toLowerCase() === 'apocryphal') {
 				continue;
 			}
-			
+
 			// skip systems without a 3025 affiliation for now (TODO)
 			if(curRow[colIdxMap['3025']] === undefined) {
 				continue;
 			}
-			
-			// read system 
+
+			// read system
 			curSystem = {};
 			// name and status
 			curSystem.name = curRow[colIdxMap['system']];
@@ -152,15 +152,17 @@ module.exports = (function () {
 			// coordinates
 			curSystem.x = curRow[colIdxMap['x']];
 			curSystem.y = curRow[colIdxMap['y']];
-			
+
 			// 3025 affiliation
 			curAffiliation = curRow[colIdxMap['3025']] || '';
 			curSystem['3025'] = curAffiliation.split(/\s*\,\s*/gi)[0];
 			curSystem['3025_all'] = curAffiliation;
-			
+
 			this.systems.push(curSystem);
 		}
-		
+
+        this.findNeighbors([30, 60]);
+
 		fs.writeFileSync('./output/systems.json', JSON.stringify(this.systems), { encoding: 'utf8' });
 		/*
 		console.log(systemsSheet.name, systemsSheet.data.length);
@@ -184,16 +186,28 @@ module.exports = (function () {
 
     /**
      * Find all planetary systems' neighbor systems.
+     * Neighbors with search dist != 30 will be saved in arrays named
+     * neighbors_<search_dist>, e.g. neighbors_60.
+     *
      * @private
+     * @param radii {Array} An array of different radii to generate neighbor arrays for. Default: [30]
      */
-    SystemsReader.prototype.findNeighbors = function () {
+    SystemsReader.prototype.findNeighbors = function (radii) {
         var p;
     	var neighbors;
+        var neighborArrs = {};
         var dist;
+
+        if(!radii) {
+            radii = [30];
+        }
 
         for(var idx = 0, len = this.systems.length; idx < len; idx++) {
             p = this.systems[idx];
             neighbors = [];
+            for(var rI = 0, rLen = radii.length; rI < rLen; rI++) {
+                neighborArrs[rI] = [];
+            }
         	for(var nIdx = 0, nLen = this.systems.length; nIdx < nLen; nIdx++) {
         		if(nIdx === idx) {
         			continue;
@@ -204,11 +218,23 @@ module.exports = (function () {
                 } else if(dist <= 1 && p.name < this.systems[nIdx].name) {
                     this.logger.warn('Very similar coordinates for ' + p.name + ' and ' + this.systems[nIdx].name + ': Distance is ' + dist +' LY.');
                 }
-        		if(dist <= 30) {
+                for(var rI = 0, rLen = radii.length; rI < rLen; rI++) {
+                    if(dist <= radii[rI]) {
+                        neighborArrs[rI].push(nIdx);
+                    }
+                }
+        		/*if(dist <= 30) {
         			neighbors.push(nIdx);
-        		}
+        		}*/
         	}
-            p.neighbors = neighbors;
+            for(var rI = 0, rLen = radii.length; rI < rLen; rI++) {
+                if(radii[rI] === 30) {
+                    p.neighbors = neighborArrs[rI];
+                } else {
+                    p['neighbors_'+radii[rI]] = neighborArrs[rI];
+                }
+            }
+            //p.neighbors = neighbors;
             //this.logger.log(p.name + ' has ' + neighbors.length + ' neighbors');
         }
     };
