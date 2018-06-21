@@ -3,6 +3,7 @@ module.exports = (function () {
 
 	var fs = require('fs');
 	var Observable = require('./Observable.js');
+	var InfluenceMap = require('./InfluenceMap.js');
 
 	/**
 	 * An instance of this class writes SVG files on demand, using the given
@@ -113,6 +114,50 @@ module.exports = (function () {
 		tpl = tpl.replace('{HEIGHT}', '700');
 		tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
 		tpl = tpl.replace('{ELEMENTS}', systemCircles);
+		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
+		this.logger.log('file "' + filename + '" written');
+	};
+	
+	SvgWriter.prototype.writeSvgBorders = function (systems) {
+		var infMap = new InfluenceMap(this.logger).init(-700, -700, 1400, 1400, 20);
+		
+		var name = 'borders';
+		var filename = this.baseDir + '/output/' + name + '.svg';
+		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
+		var cellOrigin, red, blue, green, fill;
+		var curSystem;
+		var curAffiliation;
+		var systemsString = '';
+		var cellString = '';
+		
+		for(var i = 0, len = systems.length; i < len; i++) {
+			curSystem = systems[i];
+			curAffiliation = curSystem['3025'].trim() || '';
+			curAffiliation = curAffiliation.split(',')[0];
+			fill = '#aaa';
+			if(curAffiliation === 'DC') {
+				infMap.addInfluencer(curSystem.name, curSystem.x, -curSystem.y, 1);
+				fill = '#000';
+			}
+			systemsString += '<circle data-name="'+curSystem.name+'" cx="'+curSystem.x+'" cy="'+(-curSystem.y)+'" r="3" style="stroke-width: 0; fill: '+fill+';" />\n';
+		}
+		
+		for(var idx = 0, len = infMap.cells.length; idx < len; idx++) {
+			red = 255;
+			blue = Math.min(255, Math.max(0, Math.floor(255 - infMap.cells[idx] * 255)));
+			green = blue;
+			fill = 'rgba('+red+', '+green+', '+blue+')';
+			cellOrigin = infMap.getCellOrigin(idx);
+			if(blue === 255) {
+				continue;
+			}
+			cellString += '<rect data-idx="'+idx+'" x="'+cellOrigin.x+'" y="'+cellOrigin.y+'" width="'+infMap.cellSize+'" height="'+infMap.cellSize+'" style="fill:'+fill+'; stroke: #000000; stroke-width: 0;" />\n';
+		}
+		
+		tpl = tpl.replace('{WIDTH}', '700');
+		tpl = tpl.replace('{HEIGHT}', '700');
+		tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
+		tpl = tpl.replace('{ELEMENTS}', cellString + systemsString);
 		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + filename + '" written');
 	};
