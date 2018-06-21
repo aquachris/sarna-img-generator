@@ -2,6 +2,7 @@ module.exports = (function () {
 	'use strict';
 
 	var fs = require('fs');
+	var Delaunator = require('Delaunator');
 	var Observable = require('./Observable.js');
 	var InfluenceMap = require('./InfluenceMap.js');
 
@@ -117,10 +118,10 @@ module.exports = (function () {
 		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + filename + '" written');
 	};
-	
+
 	SvgWriter.prototype.writeSvgBorders = function (systems) {
 		var infMap = new InfluenceMap(this.logger).init(-700, -700, 1400, 1400, 20);
-		
+
 		var name = 'borders';
 		var filename = this.baseDir + '/output/' + name + '.svg';
 		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
@@ -129,7 +130,7 @@ module.exports = (function () {
 		var curAffiliation;
 		var systemsString = '';
 		var cellString = '';
-		
+
 		for(var i = 0, len = systems.length; i < len; i++) {
 			curSystem = systems[i];
 			curAffiliation = curSystem['3025'].trim() || '';
@@ -141,7 +142,7 @@ module.exports = (function () {
 			}
 			systemsString += '<circle data-name="'+curSystem.name+'" cx="'+curSystem.x+'" cy="'+(-curSystem.y)+'" r="3" style="stroke-width: 0; fill: '+fill+';" />\n';
 		}
-		
+
 		for(var idx = 0, len = infMap.cells.length; idx < len; idx++) {
 			red = 255;
 			blue = Math.min(255, Math.max(0, Math.floor(255 - infMap.cells[idx] * 255)));
@@ -153,11 +154,130 @@ module.exports = (function () {
 			}
 			cellString += '<rect data-idx="'+idx+'" x="'+cellOrigin.x+'" y="'+cellOrigin.y+'" width="'+infMap.cellSize+'" height="'+infMap.cellSize+'" style="fill:'+fill+'; stroke: #000000; stroke-width: 0;" />\n';
 		}
-		
+
 		tpl = tpl.replace('{WIDTH}', '700');
 		tpl = tpl.replace('{HEIGHT}', '700');
 		tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
 		tpl = tpl.replace('{ELEMENTS}', cellString + systemsString);
+		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
+		this.logger.log('file "' + filename + '" written');
+	};
+
+	SvgWriter.prototype.writeSvgDelaunay = function (systems) {
+		var name = 'delaunay';
+		var filename = this.baseDir + '/output/' + name + '.svg';
+		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
+		var curSystem, curAff, curTri, curPoint, curCentroid, curD;
+		var systemsString = '';
+		var trianglesString = '';
+		var voronoiString = '';
+		var points = [];
+		var adjacentTriIndices = []; // array of the same size as points
+		var centroids = [];
+
+		for(var i = 0, len = systems.length; i < len; i++) {
+			curAff = systems[i]['3025'].trim();
+			curAff = curAff.split(',')[0];
+			if(curAff === '' || curAff === 'U' || curAff === 'I' || curAff === 'A') {
+				continue;
+			}
+			points.push([
+				systems[i].x,
+				systems[i].y
+			]);
+			adjacentTriIndices.push([]);
+			systemsString += '<circle cx="'+systems[i].x+'" cy="'+(-systems[i].y)+'" r="3" style="fill: #000; stroke-width: 0;" />\n';
+		}
+
+		var delaunay = Delaunator.from(points);
+		var voronoiNodes = [];
+
+		for(var i = 0, len = delaunay.triangles.length; i < len; i += 3) {
+			curCentroid = {
+				x: 0,
+				y: 0,
+				p1: delaunay.triangles[i],
+				p2: delaunay.triangles[i+1],
+				p3: delaunay.triangles[i+2]
+			};
+			curPoint = points[delaunay.triangles[i]];
+			adjacentTriIndices[delaunay.triangles[i]].push(i);
+			curD = 'M' + curPoint[0] + ',' + (-curPoint[1]);
+			curCentroid.x += curPoint[0];
+			curCentroid.y += curPoint[1];
+			curPoint = points[delaunay.triangles[i+1]];
+			adjacentTriIndices[delaunay.triangles[i+1]].push(i);
+			curD += ' L' + curPoint[0] + ',' + (-curPoint[1]);
+			curCentroid.x += curPoint[0];
+			curCentroid.y += curPoint[1];
+			curPoint = points[delaunay.triangles[i+2]];
+			adjacentTriIndices[delaunay.triangles[i+2]].push(i);
+			curD += ' L' + curPoint[0] + ',' + (-curPoint[1]);
+			curCentroid.x += curPoint[0];
+			curCentroid.y += curPoint[1];
+			trianglesString += '<path d="'+curD+'" style="fill: none; stroke: #f00; stroke-width: 1px;" />';
+			curCentroid.x /= 3;
+			curCentroid.y /= 3;
+			centroids.push(curCentroid);
+		}
+
+		var triIdx, neighborCentroids;
+		for(var i = 0, len = centroids.length; i < len; i++) {
+			curCentroid = centroids[i];
+			voronoiString += '<circle cx="'+curCentroid.x+'" cy="'+(-curCentroid.y)+'" r="1" style="fill: #00c; stroke-width: 0;" />\n';
+			// for the given centroid / triangle, find all (three) adjacent triangles:
+			triIdx = i*3;
+			//adjacentTriIndices[triIdx];
+			//adjacentTriIndices[triIdx+1];
+			//adjacentTriIndices[triIdx+2];
+			neighborCentroids = [];
+			for(var t1p = 0; t1p < adjacentTriIndices[curCentroid.p1].length; t1p++) {
+				if(adjacentTriIndices[curCentroid.p1][t1p] === triIdx) {
+					continue;
+				}
+				for(var t2p = 0; t2p < adjacentTriIndices[curCentroid.p2].length; t2p++) {
+					if(adjacentTriIndices[curCentroid.p2][t2p] === triIdx) {
+						continue;
+					}
+					if(adjacentTriIndices[curCentroid.p1][t1p] === adjacentTriIndices[curCentroid.p2][t2p]) {
+						neighborCentroids.push(adjacentTriIndices[curCentroid.p1][t1p] / 3);
+					}
+				}
+				for(var t3p = 0; t3p < adjacentTriIndices[curCentroid.p3].length; t3p++) {
+					if(adjacentTriIndices[curCentroid.p3][t3p] === triIdx) {
+						continue;
+					}
+					if(adjacentTriIndices[curCentroid.p1][t1p] === adjacentTriIndices[curCentroid.p3][t3p]) {
+						neighborCentroids.push(adjacentTriIndices[curCentroid.p1][t1p] / 3);
+					}
+				}
+			}
+			for(var t2p = 0; t2p < adjacentTriIndices[curCentroid.p2].length; t2p++) {
+				if(adjacentTriIndices[curCentroid.p2][t2p] === triIdx) {
+					continue;
+				}
+				for(var t3p = 0; t3p < adjacentTriIndices[curCentroid.p3].length; t3p++) {
+					if(adjacentTriIndices[curCentroid.p3][t3p] === triIdx) {
+						continue;
+					}
+					if(adjacentTriIndices[curCentroid.p2][t2p] === adjacentTriIndices[curCentroid.p3][t3p]) {
+						neighborCentroids.push(adjacentTriIndices[curCentroid.p2][t2p] / 3);
+					}
+				}
+			}
+
+			// paint lines to neighboring centroids
+			for(var j = 0; j < neighborCentroids.length; j++) {
+				curD = 'M' + curCentroid.x + ',' + (-curCentroid.y) + ' L';
+				curD += centroids[neighborCentroids[j]].x + ',' + (-centroids[neighborCentroids[j]].y);
+				voronoiString += '<path d="'+curD+'" style="stroke: #0c0; stroke-width: 1px;" />\n';
+			}
+		}
+
+		tpl = tpl.replace('{WIDTH}', '700');
+		tpl = tpl.replace('{HEIGHT}', '700');
+		tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
+		tpl = tpl.replace('{ELEMENTS}', trianglesString + voronoiString + systemsString);
 		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + filename + '" written');
 	};
