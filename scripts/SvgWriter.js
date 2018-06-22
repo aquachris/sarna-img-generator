@@ -5,6 +5,7 @@ module.exports = (function () {
 	var Delaunator = require('Delaunator');
 	var Observable = require('./Observable.js');
 	var InfluenceMap = require('./InfluenceMap.js');
+	var VoronoiBorder = require('./VoronoiBorder.js');
 
 	/**
 	 * An instance of this class writes SVG files on demand, using the given
@@ -109,7 +110,7 @@ module.exports = (function () {
 			// mirror y coordinates
 		for(var i = 0, len = borderSystems.length; i < len; i++) {
 			fill = '#000000';
-			systemCircles += '<circle cx="' + borderSystems[i].x + '" cy="' + (-borderSystems[i].y) + '" r="2" fill="'+fill+'" />\n';
+			systemCircles += '<circle data-name="'+borderSystems[i].name+'" cx="' + borderSystems[i].x + '" cy="' + (-borderSystems[i].y) + '" r="2" fill="'+fill+'" />\n';
 		}
 		tpl = tpl.replace('{WIDTH}', '700');
 		tpl = tpl.replace('{HEIGHT}', '700');
@@ -224,7 +225,7 @@ module.exports = (function () {
 		var triIdx, neighborCentroids;
 		for(var i = 0, len = centroids.length; i < len; i++) {
 			curCentroid = centroids[i];
-			voronoiString += '<circle cx="'+curCentroid.x+'" cy="'+(-curCentroid.y)+'" r="1" style="fill: #00c; stroke-width: 0;" />\n';
+			voronoiString += '<circle cx="'+curCentroid.x+'" cy="'+(-curCentroid.y)+'" r="2" style="fill: #00c; stroke-width: 0;" />\n';
 			// for the given centroid / triangle, find all (three) adjacent triangles:
 			triIdx = i*3;
 			//adjacentTriIndices[triIdx];
@@ -278,6 +279,107 @@ module.exports = (function () {
 		tpl = tpl.replace('{HEIGHT}', '700');
 		tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
 		tpl = tpl.replace('{ELEMENTS}', trianglesString + voronoiString + systemsString);
+		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
+		this.logger.log('file "' + filename + '" written');
+	};
+
+	SvgWriter.prototype.writeSvgVoronoi = function (systems) {
+		var name = 'voronoi';
+		var filename = this.baseDir + '/output/' + name + '.svg';
+		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
+		var curSys, curAff;
+		var parsedSystems = [];
+		var vBorder;
+		var borderNodes;
+		var curD;
+		var voronoiString = '';
+
+		for(var i = 0, len = systems.length; i < len; i++) {
+			curSys = systems[i];
+			curAff = (curSys['3025'] || '').trim().split(',')[0];
+			if(curAff === '' || curAff === 'U' || curAff === 'I' || curAff === 'A') {
+				continue;
+			}
+			parsedSystems.push({
+				x : curSys.x,
+				y : curSys.y,
+				col : curAff
+			});
+		}
+		parsedSystems.sort(function (a, b) {
+			if(a.x < b.x) {
+				return -1;
+			} else if(a.x > b.x) {
+				return 1;
+			} else if(a.y < b.y) {
+				return -1;
+			} else if(a.y > b.y) {
+				return 1;
+			} else {
+				return 0;
+			}
+		});
+
+		vBorder = new VoronoiBorder(this.logger).init(parsedSystems);
+		borderNodes = vBorder.getBorderPointsForColor('DC');
+		console.log(borderNodes.length, borderNodes[0]);
+
+		curD = '';
+		var curNN;
+		for(var i = 0, len = vBorder.nodes.length; i < len; i++) {
+			curD = 'M' + vBorder.nodes[i].x.toFixed(2) + ',' + (-vBorder.nodes[i].y).toFixed(2);
+			for(var ni = 0; ni < vBorder.nodes[i].neighborNodes.length; ni++) {
+				curNN = vBorder.nodes[vBorder.nodes[i].neighborNodes[ni]];
+				voronoiString += '<path d="'+curD+' L'+curNN.x.toFixed(2)+','+(-curNN.y).toFixed(2)+'" style="stroke:#aaf;stroke-width:2px;fill:none;" />\n';
+			}
+		}
+
+		curD = '';
+		for(var i = 0, len = borderNodes[0].length; i < len; i++) {
+			if(i === 0) {
+				curD += 'M';
+			} else {
+				curD += 'L';
+			}
+			curD += borderNodes[0][i].x.toFixed(2) + ',' + (-borderNodes[0][i].y).toFixed(2) + ' ';
+		}
+		voronoiString += '<path d="' + curD + '" style="stroke:#f00;stroke-width:2px;fill:none;" />\n';
+
+		curD = '';
+		for(var i = 0, len = borderNodes[1].length; i < len; i++) {
+			if(i === 0) {
+				curD += 'M';
+			} else {
+				curD += 'L';
+			}
+			curD += borderNodes[1][i].x.toFixed(2) + ',' + (-borderNodes[1][i].y).toFixed(2) + ' ';
+		}
+		voronoiString += '<path d="' + curD + '" style="stroke:#fa0;stroke-width:2px;fill:none;" />\n';
+
+		curD = '';
+		for(var i = 0, len = borderNodes[2].length; i < len; i++) {
+			if(i === 0) {
+				curD += 'M';
+			} else {
+				curD += 'L';
+			}
+			curD += borderNodes[2][i].x.toFixed(2) + ',' + (-borderNodes[2][i].y).toFixed(2) + ' ';
+		}
+		voronoiString += '<path d="' + curD + '" style="stroke:#0c0;stroke-width:2px;fill:none;" />\n';
+
+		var fill = '';
+		for(var i = 0, len = parsedSystems.length; i < len; i++) {
+			fill = '#aaa';
+			if(parsedSystems[i].col === 'DC') {
+				fill = '#a00';
+			}
+			voronoiString += '<circle cx="' + parsedSystems[i].x + '" cy="' + (-parsedSystems[i].y) + '" r="2" style="stroke-width: 0; fill: '+fill+'" />\n';
+		}
+
+		tpl = tpl.replace('{WIDTH}', '700');
+		tpl = tpl.replace('{HEIGHT}', '700');
+		tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
+		tpl = tpl.replace('{ELEMENTS}', voronoiString);
 		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + filename + '" written');
 	};
