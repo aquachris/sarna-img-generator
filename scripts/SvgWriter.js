@@ -321,8 +321,8 @@ module.exports = (function () {
 		});
 
 		vBorder = new VoronoiBorder(this.logger).init(parsedSystems);
-		borderNodes = vBorder.getBorderPointsForColor('DC');
-		console.log(borderNodes.length, borderNodes[0]);
+		/*borderNodes = vBorder.getBorderPointsForColor('DC');
+		console.log(borderNodes.length, borderNodes[0]);*/
 
 		curD = '';
 		var curNN;
@@ -334,6 +334,14 @@ module.exports = (function () {
 			}
 		}
 
+		var borderEdges = vBorder.borderEdges['DC'];
+		console.log(borderEdges);
+		for(var i = 0, len = borderEdges.length; i < len; i++) {
+			curD = 'M'+borderEdges[i].x1+','+(-borderEdges[i].y1)+' L'+borderEdges[i].x2+','+(-borderEdges[i].y2);
+			voronoiString += '<path d="'+curD+'" style="stroke:#c00;stroke-width:2px;fill:none;" />\n';
+		}
+
+		/*
 		curD = '';
 		for(var i = 0, len = borderNodes[0].length; i < len; i++) {
 			if(i === 0) {
@@ -365,7 +373,7 @@ module.exports = (function () {
 			}
 			curD += borderNodes[2][i].x.toFixed(2) + ',' + (-borderNodes[2][i].y).toFixed(2) + ' ';
 		}
-		voronoiString += '<path d="' + curD + '" style="stroke:#0c0;stroke-width:2px;fill:none;" />\n';
+		voronoiString += '<path d="' + curD + '" style="stroke:#0c0;stroke-width:2px;fill:none;" />\n';*/
 
 		var fill = '';
 		for(var i = 0, len = parsedSystems.length; i < len; i++) {

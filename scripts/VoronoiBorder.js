@@ -19,6 +19,8 @@ module.exports = (function () {
         this.points = null;
         // array of voronoi nodes
         this.nodes = null;
+        // map of border edges for each color
+        this.borderEdges = null;
         // map of border node indices
         this.borderNodeIndices = null;
     };
@@ -41,12 +43,16 @@ module.exports = (function () {
      * Performs the various voronoi calculations.
      */
     VoronoiBorder.prototype.calculate = function () {
-        var curNode, curObj;
+        var curNode, curNeighbor, curObj;
         var triIdx, neighborNodes, borderColors;
+        var commonObj;
         var o1, o2, o3;
+        var col1, col2;
+        var borderEdge;
 
         this.points = [];
         this.nodes = [];
+        this.borderEdges = {};
         this.borderNodeIndices = {};
 
         // Step 1: Iterate over all objects and generate a point array
@@ -102,9 +108,9 @@ module.exports = (function () {
             o1 = this.objects[curNode.p1];
             o2 = this.objects[curNode.p2];
             o3 = this.objects[curNode.p3];
-            // iterate over triangle point A's adjacent triangles and compare
-            // them to point B's and C's. If two of those points are part of the same
-            // triangle, they are a neighbor of the current triangle
+            // iterate over the current triangle's point A's adjacent triangles and
+            // compare them to point B's and C's. If two of those points are part of the
+            // same triangle, they are a neighbor of the current triangle
             for(var t1p = 0; t1p < o1.adjacentTriIndices.length; t1p++) {
                 if(o1.adjacentTriIndices[t1p] === triIdx) {
                     continue;
@@ -142,7 +148,48 @@ module.exports = (function () {
             }
             curNode.neighborNodes = neighborNodes;
 
-            // Step 4: Go over this node's objects and mark it as a border node if at least
+            // Step 4: Iterate over this node's neighbors and create border edges,
+            // if the connection between the two neighbors is a border and it hasn't
+            // been added to the border edges array yet.
+            for(var ni = 0; ni < neighborNodes.length; ni++) {
+                curNeighbor = this.nodes[neighborNodes[ni]];
+                commonObj = [];
+                for(var n1i = 1; n1i <= 3; n1i++) {
+                    if(curNode['p'+n1i] === curNeighbor.p1) {
+                        commonObj.push(curNeighbor.p1);
+                    } else if(curNode['p'+n1i] === curNeighbor.p2) {
+                        commonObj.push(curNeighbor.p2);
+                    } else if(curNode['p'+n1i] === curNeighbor.p3) {
+                        commonObj.push(curNeighbor.p3);
+                    }
+                }
+                if(commonObj.length >= 2) {
+                    col1 = this.objects[commonObj[0]].col;
+                    col2 = this.objects[commonObj[1]].col;
+                    if(col1 !== col2) {
+                        // precondition for a border edge has been met
+                        // make sure to only add the border edge once
+                        if(i < neighborNodes[ni]) {
+                            borderEdge = {
+                                x1: curNode.x,
+                                y1: curNode.y,
+                                x2: curNeighbor.x,
+                                y2: curNeighbor.y,
+                                o1: commonObj[0],
+                                o2: commonObj[1],
+                                col1: col1,
+                                col2: col2
+                            };
+                            this.borderEdges[col1] = this.borderEdges[col1] || [];
+                            this.borderEdges[col2] = this.borderEdges[col2] || [];
+                            this.borderEdges[col1].push(borderEdge);
+                            this.borderEdges[col2].push(borderEdge);
+                        }
+                    }
+                }
+            }
+
+            // Step 5: Go over this node's objects and mark it as a border node if at least
             // one of the objects has a different color value than the other two
             this.borderNodeIndices[o1.col] = this.borderNodeIndices[o1.col] || [];
             this.borderNodeIndices[o2.col] = this.borderNodeIndices[o2.col] || [];
