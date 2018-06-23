@@ -293,6 +293,7 @@ module.exports = (function () {
 		var borderNodes;
 		var curD;
 		var voronoiString = '';
+		var stroke;
 
 		for(var i = 0, len = systems.length; i < len; i++) {
 			curSys = systems[i];
@@ -303,7 +304,8 @@ module.exports = (function () {
 			parsedSystems.push({
 				x : curSys.x,
 				y : curSys.y,
-				col : curAff
+				col : curAff,
+				name : curSys.name
 			});
 		}
 		parsedSystems.sort(function (a, b) {
@@ -326,19 +328,48 @@ module.exports = (function () {
 
 		curD = '';
 		var curNN;
-		for(var i = 0, len = vBorder.nodes.length; i < len; i++) {
+		// paint voronoi cells
+		/*for(var i = 0, len = vBorder.nodes.length; i < len; i++) {
 			curD = 'M' + vBorder.nodes[i].x.toFixed(2) + ',' + (-vBorder.nodes[i].y).toFixed(2);
 			for(var ni = 0; ni < vBorder.nodes[i].neighborNodes.length; ni++) {
 				curNN = vBorder.nodes[vBorder.nodes[i].neighborNodes[ni]];
 				voronoiString += '<path d="'+curD+' L'+curNN.x.toFixed(2)+','+(-curNN.y).toFixed(2)+'" style="stroke:#aaf;stroke-width:2px;fill:none;" />\n';
 			}
-		}
+		}*/
 
-		var borderEdges = vBorder.borderEdges['DC'];
-		console.log(borderEdges);
-		for(var i = 0, len = borderEdges.length; i < len; i++) {
-			curD = 'M'+borderEdges[i].x1+','+(-borderEdges[i].y1)+' L'+borderEdges[i].x2+','+(-borderEdges[i].y2);
-			voronoiString += '<path d="'+curD+'" style="stroke:#c00;stroke-width:2px;fill:none;" />\n';
+
+		/*for(var i = 0, len = borderEdges.length; i < len; i++) {
+			stroke = '#0c0';
+			if(borderEdges[i].isFirstInLoop) {
+				stroke = '#fc0';
+			}
+			curD = 'M'+(borderEdges[i].x1+3)+','+(-borderEdges[i].y1)+' L'+(borderEdges[i].x2+3)+','+(-borderEdges[i].y2);
+			voronoiString += '<path data-id="'+borderEdges[i].id+'" d="'+curD+'" style="stroke:'+stroke+';stroke-width:2px;fill:none;" />\n';
+		}*/
+		//console.log(borderEdges);
+
+		//curD = 'M'+borderEdges[0].x1.toFixed(2)+','+(-borderEdges[0].y1).toFixed(2);
+		var factionColors = {
+			'DC': { stroke: '#a00', fill: 'rgba(255,20,20,.3)' },
+			'LC': { stroke: '#00a', fill: 'rgba(20, 20, 220, .3)' },
+			'CC': { stroke: '#0a0', fill: 'rgba(20, 220, 20, .3)' },
+			'FS': { stroke: '#fc0', fill: 'rgba(255, 200, 20, .3)' },
+			'FWL': { stroke: '#c3f', fill: 'rgba(220, 50, 255, .3)' },
+			'D': { stroke: '#f00', fill: 'rgba(255, 0, 0, .5)' }
+		};
+
+		for(var faction in factionColors) {
+			var borderEdges = vBorder.borderEdges[faction];
+			curD = '';
+			for(var i = 0, len = borderEdges.length; i < len; i++) {
+				if(borderEdges[i].isFirstInLoop) {
+					curD += ' M'+borderEdges[i].x1.toFixed(2)+','+(-borderEdges[i].y1).toFixed(2);
+				}
+				curD += ' L' + borderEdges[i].x2.toFixed(2)+','+(-borderEdges[i].y2).toFixed(2);
+			}
+			voronoiString += '<path fill-rule="evenodd" d="'+curD+'" ';
+			voronoiString += 'style="stroke:'+factionColors[faction].stroke + ';stroke-width:2px;';
+			voronoiString += 'fill:'+factionColors[faction].fill+';" />\n';
 		}
 
 		/*
@@ -376,18 +407,83 @@ module.exports = (function () {
 		voronoiString += '<path d="' + curD + '" style="stroke:#0c0;stroke-width:2px;fill:none;" />\n';*/
 
 		var fill = '';
+		// paint system dots
 		for(var i = 0, len = parsedSystems.length; i < len; i++) {
 			fill = '#aaa';
-			if(parsedSystems[i].col === 'DC') {
-				fill = '#a00';
+			if(factionColors.hasOwnProperty(parsedSystems[i].col)) {
+				fill = factionColors[parsedSystems[i].col].stroke;
 			}
-			voronoiString += '<circle cx="' + parsedSystems[i].x + '" cy="' + (-parsedSystems[i].y) + '" r="2" style="stroke-width: 0; fill: '+fill+'" />\n';
+			voronoiString += '<circle data-name="'+parsedSystems[i].name+'" data-aff="'+parsedSystems[i].col+'" cx="' + parsedSystems[i].x + '" cy="' + (-parsedSystems[i].y) + '" r="2" style="stroke-width: 0; fill: '+fill+'" />\n';
 		}
 
 		tpl = tpl.replace('{WIDTH}', '700');
 		tpl = tpl.replace('{HEIGHT}', '700');
 		tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
 		tpl = tpl.replace('{ELEMENTS}', voronoiString);
+		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
+		this.logger.log('file "' + filename + '" written');
+	};
+
+	SvgWriter.prototype.writeSvgPoisson = function (pDisc, vBorder) {
+		var xmlString = '';
+		var name = 'poisson';
+		var filename = this.baseDir + '/output/' + name + '.svg';
+		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
+		var curP;
+		var curD;
+		var fill;
+		var parsedSystems;
+
+		/*for(var i = 0, len = pDisc.existingPoints.length; i < len; i++) {
+			curP = pDisc.existingPoints[i];
+			poissonString += '<circle cx="'+curP[0]+'" cy="'+(-curP[1])+'" r="2" style="stroke-width: 0; fill: #000;" />\n';
+		}
+		for(var i = 0, len = pDisc.generatedPoints.length; i < len; i++) {
+			curP = pDisc.generatedPoints[i];
+			poissonString += '<circle cx="'+curP[0]+'" cy="'+(-curP[1])+'" r="2" style="stroke-width: 0; fill: #888;" />\n';
+		}*/
+
+		var factionColors = {
+			'DC': { stroke: '#a00', fill: 'rgba(255,20,20,.3)' },
+			'LC': { stroke: '#00a', fill: 'rgba(20, 20, 220, .3)' },
+			'CC': { stroke: '#0a0', fill: 'rgba(20, 220, 20, .3)' },
+			'FS': { stroke: '#fc0', fill: 'rgba(255, 200, 20, .3)' },
+			'FWL': { stroke: '#c3f', fill: 'rgba(220, 50, 255, .3)' },
+			'D': { stroke: '#f00', fill: 'rgba(255, 0, 0, .5)' }
+			//'DUMMY': { stroke: '#f00', fill: 'rgba(255, 0, 0, .5)' }
+		};
+
+		for(var faction in factionColors) {
+			var borderEdges = vBorder.borderEdges[faction];
+			curD = '';
+			for(var i = 0, len = borderEdges.length; i < len; i++) {
+				if(borderEdges[i].isFirstInLoop) {
+					curD += ' M'+borderEdges[i].x1.toFixed(2)+','+(-borderEdges[i].y1).toFixed(2);
+				}
+				curD += ' L' + borderEdges[i].x2.toFixed(2)+','+(-borderEdges[i].y2).toFixed(2);
+			}
+			xmlString += '<path fill-rule="evenodd" d="'+curD+'" ';
+			xmlString += 'style="stroke:'+factionColors[faction].stroke + ';stroke-width:2px;';
+			xmlString += 'fill:'+factionColors[faction].fill+';" />\n';
+		}
+
+		// paint system dots
+		parsedSystems = vBorder.objects;
+		for(var i = 0, len = parsedSystems.length; i < len; i++) {
+			if(parsedSystems[i].col === 'DUMMY') {
+				continue;
+			}
+			fill = '#aaa';
+			if(factionColors.hasOwnProperty(parsedSystems[i].col)) {
+				fill = factionColors[parsedSystems[i].col].stroke;
+			}
+			xmlString += '<circle data-name="'+parsedSystems[i].name+'" data-aff="'+parsedSystems[i].col+'" cx="' + parsedSystems[i].x + '" cy="' + (-parsedSystems[i].y) + '" r="2" style="stroke-width: 0; fill: '+fill+'" />\n';
+		}
+
+		tpl = tpl.replace('{WIDTH}', '700');
+		tpl = tpl.replace('{HEIGHT}', '700');
+		tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
+		tpl = tpl.replace('{ELEMENTS}', xmlString);
 		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + filename + '" written');
 	};

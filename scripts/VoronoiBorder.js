@@ -2,6 +2,7 @@ module.exports = (function () {
     'use strict';
 
 	var Delaunator = require('Delaunator');
+    var Utils = require('./Utils.js');
 
     /**
      * An instance of this class calculates a Voronoi diagram for a given set of
@@ -43,6 +44,7 @@ module.exports = (function () {
      * Performs the various voronoi calculations.
      */
     VoronoiBorder.prototype.calculate = function () {
+        var circumcenter;
         var curNode, curNeighbor, curObj;
         var triIdx, neighborNodes, borderColors;
         var commonObj;
@@ -76,16 +78,19 @@ module.exports = (function () {
             };
             // first point of the triangle
             curObj = this.objects[this.delaunay.triangles[i]];
+            o1 = curObj;
             curObj.adjacentTriIndices.push(i);
             curNode.x += curObj.x;
             curNode.y += curObj.y;
             // second point of the triangle
             curObj = this.objects[this.delaunay.triangles[i+1]];
+            o2 = curObj;
             curObj.adjacentTriIndices.push(i);
             curNode.x += curObj.x;
             curNode.y += curObj.y;
             // third point of the triangle
             curObj = this.objects[this.delaunay.triangles[i+2]];
+            o3 = curObj;
             curObj.adjacentTriIndices.push(i);
             curNode.x += curObj.x;
             curNode.y += curObj.y;
@@ -93,6 +98,12 @@ module.exports = (function () {
             // finalize voronoi node
             curNode.x /= 3;
             curNode.y /= 3;
+
+            // CHECK FOR CORRECTNESS:
+            // Use circumcenters instead of centroid
+            circumcenter = Utils.circumcenter([o1.x, o1.y], [o2.x, o2.y], [o3.x, o3.y]);
+            curNode.x = circumcenter[0];
+            curNode.y = circumcenter[1];
 
             this.nodes.push(curNode);
         }
@@ -148,7 +159,7 @@ module.exports = (function () {
             }
             curNode.neighborNodes = neighborNodes;
 
-            // Step 4: Iterate over this node's neighbors and create border edges,
+            // Step 3.1: Iterate over this node's neighbors and create border edges,
             // if the connection between the two neighbors is a border and it hasn't
             // been added to the border edges array yet.
             for(var ni = 0; ni < neighborNodes.length; ni++) {
@@ -168,9 +179,10 @@ module.exports = (function () {
                     col2 = this.objects[commonObj[1]].col;
                     if(col1 !== col2) {
                         // precondition for a border edge has been met
-                        // make sure to only add the border edge once
+                        // make sure to only add the edge once
                         if(i < neighborNodes[ni]) {
                             borderEdge = {
+                                id: i+'-'+neighborNodes[ni],
                                 x1: curNode.x,
                                 y1: curNode.y,
                                 x2: curNeighbor.x,
@@ -189,7 +201,7 @@ module.exports = (function () {
                 }
             }
 
-            // Step 5: Go over this node's objects and mark it as a border node if at least
+            // Step 3.2: Go over this node's objects and mark it as a border node if at least
             // one of the objects has a different color value than the other two
             this.borderNodeIndices[o1.col] = this.borderNodeIndices[o1.col] || [];
             this.borderNodeIndices[o2.col] = this.borderNodeIndices[o2.col] || [];
@@ -227,6 +239,90 @@ module.exports = (function () {
             }
             curNode.borderColors = borderColors;
         }
+
+        this.sortBorderEdges();
+    };
+
+    /**
+     * Sort the borderEdge arrays such that each edge is either followed
+     * by its next neighbor (direction is undefined), or - if no such neighbor can be
+     * found - by another edge loop's random starting edge. It should be possible
+     * to iterate over the edges via e1.p2 = e2.p1, e2.p2 = e3.p1 etc.
+     */
+    VoronoiBorder.prototype.sortBorderEdges = function () {
+        var oriColArr, newColArr;
+        var curEdge, prevEdge, cmpEdge, adjacent;
+
+        for(var col in this.borderEdges) {
+            if(!this.borderEdges.hasOwnProperty(col)) {
+                continue;
+            }
+            oriColArr = JSON.parse(JSON.stringify(this.borderEdges[col]));
+            newColArr = [];
+            curEdge = null;
+            prevEdge = null;
+            while(oriColArr.length > 0) {
+                if(!curEdge) {
+                    curEdge = oriColArr.splice(0, 1)[0];
+                    curEdge.isFirstInLoop = true;
+                } else {
+                    prevEdge = curEdge;
+                    curEdge = null;
+                    for(var i = 0, len = oriColArr.length; i < len; i++) {
+                        cmpEdge = oriColArr[i];
+                        adjacent = false;
+                        if(prevEdge.x1 === cmpEdge.x1 && prevEdge.y1 === cmpEdge.y1) {
+                            // this case should only occur for the first edge in an edge loop, if at all
+                            // --> switch points for e1
+                            this.switchEdgePoints(prevEdge);
+                            adjacent = true;
+                            //this.logger.log('col '+col+': switched edge points for edge ' + prevEdge.id);
+                        } else if(prevEdge.x1 === cmpEdge.x2 && prevEdge.y1 === cmpEdge.y2) {
+                            // this case should only occur for the first edge in an edge loop, if at all
+                            // --> switch points for e1, e2
+                            this.switchEdgePoints(prevEdge);
+                            this.switchEdgePoints(cmpEdge);
+                            adjacent = true;
+                            //this.logger.log('col '+col+': switched edge points for edge ' + prevEdge.id + ' AND ' + cmpEdge.id);
+                        } else if(prevEdge.x2 === cmpEdge.x1 && prevEdge.y2 === cmpEdge.y1) {
+                            // perfect case - no actions necessary
+                            adjacent = true;
+                        } else if(prevEdge.x2 === cmpEdge.x2 && prevEdge.y2 === cmpEdge.y2) {
+                            // switch points for e2
+                            this.switchEdgePoints(cmpEdge);
+                            adjacent = true;
+                        }
+                        if(adjacent) {
+                            curEdge = cmpEdge;
+                            oriColArr.splice(i, 1);
+                            break;
+                        }
+                    }
+                    if(!curEdge) {
+                        // no neighbor found -  start a new loop
+                        curEdge = oriColArr.splice(0, 1)[0];
+                        curEdge.isFirstInLoop = true;
+                    }
+                }
+                newColArr.push(curEdge);
+            }
+            this.borderEdges[col] = newColArr;
+        }
+    };
+
+    /**
+     * Switches the two points of a single edge.
+     * @param e {Object} the edge object
+     * @private
+     */
+    VoronoiBorder.prototype.switchEdgePoints = function (e) {
+        var tmp = e.x1;
+        e.x1 = e.x2;
+        e.x2 = tmp;
+        tmp = e.y1;
+        e.y1 = e.y2;
+        e.y2 = tmp;
+        e.id = e.id.split('-').reverse().join('-');
     };
 
     /**
