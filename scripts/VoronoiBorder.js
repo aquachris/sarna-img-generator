@@ -13,6 +13,8 @@ module.exports = (function () {
         this.logger = logger || console;
         // Delaunator object
         this.delaunay = null;
+        // cell mode (how to calculate the voronoi nodes' coordinates from delaunay triangles)
+        this.cellMode = VoronoiBorder.CELL_MODES.CIRCUMCENTERS;
         // array of the actual objects (e.g. systems) in the form {x: 0, y:0, col: 'fac1'}
         this.objects = null;
         // array of points in the form [x, y]
@@ -30,12 +32,18 @@ module.exports = (function () {
     VoronoiBorder.prototype.constructor = VoronoiBorder;
     //VoronoiBorder.prototype.parent = Observable;
 
+    VoronoiBorder.CELL_MODES = {
+        CIRCUMCENTERS: 'circumcenters',
+        CENTROIDS: 'centroids'
+    };
+
     /**
      * Initializes this object.
      * @returns {VoronoiBorder} A reference to this object, initialized
      */
-    VoronoiBorder.prototype.init = function (objects) {
+    VoronoiBorder.prototype.init = function (objects, cellMode) {
         this.objects = objects;
+        this.cellMode = cellMode || VoronoiBorder.CELL_MODES.CIRCUMCENTERS;
         this.calculate();
         return this;
     };
@@ -80,30 +88,24 @@ module.exports = (function () {
             curObj = this.objects[this.delaunay.triangles[i]];
             o1 = curObj;
             curObj.adjacentTriIndices.push(i);
-            curNode.x += curObj.x;
-            curNode.y += curObj.y;
             // second point of the triangle
             curObj = this.objects[this.delaunay.triangles[i+1]];
             o2 = curObj;
             curObj.adjacentTriIndices.push(i);
-            curNode.x += curObj.x;
-            curNode.y += curObj.y;
             // third point of the triangle
             curObj = this.objects[this.delaunay.triangles[i+2]];
             o3 = curObj;
             curObj.adjacentTriIndices.push(i);
-            curNode.x += curObj.x;
-            curNode.y += curObj.y;
 
-            // finalize voronoi node
-            curNode.x /= 3;
-            curNode.y /= 3;
-
-            // CHECK FOR CORRECTNESS:
-            // Use circumcenters instead of centroid
-            circumcenter = Utils.circumcenter([o1.x, o1.y], [o2.x, o2.y], [o3.x, o3.y]);
-            curNode.x = circumcenter[0];
-            curNode.y = circumcenter[1];
+            // Calculate voronoi node coordinates
+            if(this.cellMode === VoronoiBorder.CELL_MODES.CIRCUMCENTERS) {
+                circumcenter = Utils.circumcenter([o1.x, o1.y], [o2.x, o2.y], [o3.x, o3.y]);
+                curNode.x = circumcenter[0];
+                curNode.y = circumcenter[1];
+            } else {
+                curNode.x = (o1.x + o2.x + o3.x) / 3;
+                curNode.y = (o1.y + o2.y + o3.y) / 3;
+            }
 
             this.nodes.push(curNode);
         }
@@ -159,49 +161,7 @@ module.exports = (function () {
             }
             curNode.neighborNodes = neighborNodes;
 
-            // Step 3.1: Iterate over this node's neighbors and create border edges,
-            // if the connection between the two neighbors is a border and it hasn't
-            // been added to the border edges array yet.
-            for(var ni = 0; ni < neighborNodes.length; ni++) {
-                curNeighbor = this.nodes[neighborNodes[ni]];
-                commonObj = [];
-                for(var n1i = 1; n1i <= 3; n1i++) {
-                    if(curNode['p'+n1i] === curNeighbor.p1) {
-                        commonObj.push(curNeighbor.p1);
-                    } else if(curNode['p'+n1i] === curNeighbor.p2) {
-                        commonObj.push(curNeighbor.p2);
-                    } else if(curNode['p'+n1i] === curNeighbor.p3) {
-                        commonObj.push(curNeighbor.p3);
-                    }
-                }
-                if(commonObj.length >= 2) {
-                    col1 = this.objects[commonObj[0]].col;
-                    col2 = this.objects[commonObj[1]].col;
-                    if(col1 !== col2) {
-                        // precondition for a border edge has been met
-                        // make sure to only add the edge once
-                        if(i < neighborNodes[ni]) {
-                            borderEdge = {
-                                id: i+'-'+neighborNodes[ni],
-                                x1: curNode.x,
-                                y1: curNode.y,
-                                x2: curNeighbor.x,
-                                y2: curNeighbor.y,
-                                o1: commonObj[0],
-                                o2: commonObj[1],
-                                col1: col1,
-                                col2: col2
-                            };
-                            this.borderEdges[col1] = this.borderEdges[col1] || [];
-                            this.borderEdges[col2] = this.borderEdges[col2] || [];
-                            this.borderEdges[col1].push(borderEdge);
-                            this.borderEdges[col2].push(borderEdge);
-                        }
-                    }
-                }
-            }
-
-            // Step 3.2: Go over this node's objects and mark it as a border node if at least
+            // Step 3.1: Iterate over this node's objects and mark it as a border node if at least
             // one of the objects has a different color value than the other two
             this.borderNodeIndices[o1.col] = this.borderNodeIndices[o1.col] || [];
             this.borderNodeIndices[o2.col] = this.borderNodeIndices[o2.col] || [];
@@ -238,9 +198,54 @@ module.exports = (function () {
                 borderColors[o3.col] = true;
             }
             curNode.borderColors = borderColors;
+
+            // Step 3.2: Iterate over this node's neighbors and create border edges,
+            // if the connection between the two neighbors is a border and it hasn't
+            // been added to the border edges array yet.
+            for(var ni = 0; ni < neighborNodes.length; ni++) {
+                curNeighbor = this.nodes[neighborNodes[ni]];
+                commonObj = [];
+                for(var n1i = 1; n1i <= 3; n1i++) {
+                    if(curNode['p'+n1i] === curNeighbor.p1) {
+                        commonObj.push(curNeighbor.p1);
+                    } else if(curNode['p'+n1i] === curNeighbor.p2) {
+                        commonObj.push(curNeighbor.p2);
+                    } else if(curNode['p'+n1i] === curNeighbor.p3) {
+                        commonObj.push(curNeighbor.p3);
+                    }
+                }
+                if(commonObj.length >= 2) {
+                    col1 = this.objects[commonObj[0]].col;
+                    col2 = this.objects[commonObj[1]].col;
+                    if(col1 !== col2) {
+                        // precondition for a border edge has been met
+                        // make sure to only add the edge once
+                        if(i < neighborNodes[ni]) {
+                            borderEdge = {
+                                id: i+'-'+neighborNodes[ni],
+                                x1: curNode.x,
+                                y1: curNode.y,
+                                x2: curNeighbor.x,
+                                y2: curNeighbor.y,
+                                o1: commonObj[0],
+                                o2: commonObj[1],
+                                col1: col1,
+                                col2: col2,
+                                p1: curNode,
+                                p2: curNeighbor
+                            };
+                            this.borderEdges[col1] = this.borderEdges[col1] || [];
+                            this.borderEdges[col2] = this.borderEdges[col2] || [];
+                            this.borderEdges[col1].push(borderEdge);
+                            this.borderEdges[col2].push(borderEdge);
+                        }
+                    }
+                }
+            }
         }
 
         this.sortBorderEdges();
+        this.generateEdgeControlPoints();
     };
 
     /**
@@ -274,22 +279,22 @@ module.exports = (function () {
                         if(prevEdge.x1 === cmpEdge.x1 && prevEdge.y1 === cmpEdge.y1) {
                             // this case should only occur for the first edge in an edge loop, if at all
                             // --> switch points for e1
-                            this.switchEdgePoints(prevEdge);
+                            this.swapEdgePoints(prevEdge);
                             adjacent = true;
                             //this.logger.log('col '+col+': switched edge points for edge ' + prevEdge.id);
                         } else if(prevEdge.x1 === cmpEdge.x2 && prevEdge.y1 === cmpEdge.y2) {
                             // this case should only occur for the first edge in an edge loop, if at all
                             // --> switch points for e1, e2
-                            this.switchEdgePoints(prevEdge);
-                            this.switchEdgePoints(cmpEdge);
+                            this.swapEdgePoints(prevEdge);
+                            this.swapEdgePoints(cmpEdge);
                             adjacent = true;
                             //this.logger.log('col '+col+': switched edge points for edge ' + prevEdge.id + ' AND ' + cmpEdge.id);
                         } else if(prevEdge.x2 === cmpEdge.x1 && prevEdge.y2 === cmpEdge.y1) {
                             // perfect case - no actions necessary
                             adjacent = true;
                         } else if(prevEdge.x2 === cmpEdge.x2 && prevEdge.y2 === cmpEdge.y2) {
-                            // switch points for e2
-                            this.switchEdgePoints(cmpEdge);
+                            // swap points for e2
+                            this.swapEdgePoints(cmpEdge);
                             adjacent = true;
                         }
                         if(adjacent) {
@@ -315,56 +320,91 @@ module.exports = (function () {
      * @param e {Object} the edge object
      * @private
      */
-    VoronoiBorder.prototype.switchEdgePoints = function (e) {
+    VoronoiBorder.prototype.swapEdgePoints = function (e) {
         var tmp = e.x1;
         e.x1 = e.x2;
         e.x2 = tmp;
         tmp = e.y1;
         e.y1 = e.y2;
         e.y2 = tmp;
+        tmp = e.p1;
+        e.p1 = e.p2;
+        e.p2 = tmp;
         e.id = e.id.split('-').reverse().join('-');
     };
 
     /**
-     * TODO this *really* isn't an efficient way to do it
-     * @returns Array of arrays, where each array is a sequence of nodes wrapped around a contiguous area
+     * For each point of each color's border edges, generate two bezier control
+     * points. The goal is to have rounded edges.
+     *
+     * Requires sorted edges and loop start markings as provided by this.sortBorderEdges.
      */
-    VoronoiBorder.prototype.getBorderPointsForColor = function (col) {
-        var bNodeCoords = [];
-        var bnis = (this.borderNodeIndices[col] || []).slice(); // slice copies the array
-        var curIdx, curNode, nextNode, curIdx;
-        var curPath = [];
-        var borders = [];
+    VoronoiBorder.prototype.generateEdgeControlPoints = function () {
+        var curEdge, nextEdge;
+        var p1, p2, p3, dist12, dist23, w, h;
+        var curLoopStartIdx;
+        var fa, fb;
+        var tension = .5;
 
-        while(bnis.length > 0) {
-            if(!curNode) {
-                if(curPath.length > 0) {
-                    borders.push(curPath);
-                    curPath = [];
-                }
-                curIdx = bnis.shift();
-                curNode = this.nodes[curIdx];
+        // each color edge is treated separately
+        for(var col in this.borderEdges) {
+            if(!this.borderEdges.hasOwnProperty(col)) {
+                continue;
             }
-            curPath.push(curNode);
-            // look for next node in this node's neighbors
-            nextNode = null;
-            for(var i = 0; i < 3; i++) {
-                if(this.nodes[curNode.neighborNodes[i]].borderColors[col] === true) {
-                    // search neighbor node in bnis array and remove it from there
-                    for(var j = 0, len = bnis.length; j < len; j++) {
-                        if(bnis[j] === curNode.neighborNodes[i]) {
-                            nextNode = this.nodes[bnis.splice(j, 1)[0]];
-                            break;
-                        }
-                    }
-                    if(nextNode) {
-                        break;
-                    }
+
+            curLoopStartIdx = -1;
+            for(var i = 0, len = this.borderEdges[col].length; i < len; i++) {
+                curEdge = this.borderEdges[col][i];
+                if(curEdge.isFirstInLoop) {
+                    curLoopStartIdx = i;
+                }
+                nextEdge = this.borderEdges[col][i+1];
+                if(!nextEdge || nextEdge.isFirstInLoop) {
+                    nextEdge = this.borderEdges[col][curLoopStartIdx];
+                }
+                p1 = [curEdge.x1, curEdge.y1];
+                p2 = [nextEdge.x1, nextEdge.y1]; // curEdge.p2 = nextEdge.p1
+                p3 = [nextEdge.x2, nextEdge.y2];
+
+                // for border edge points that border on 3 different colors
+                if(Object.keys(nextEdge.p1.borderColors).length > 2) {
+                    curEdge.p1c2x = p1[0]; //curEdge.x1;
+                    curEdge.p1c2y = p1[1]; //curEdge.y1;
+                    curEdge.p2c1x = curEdge.p2c2x = nextEdge.p1c1x = nextEdge.p1c2x = p2[0]; //nextEdge.x1;
+                    curEdge.p2c1y = curEdge.p2c2y = nextEdge.p1c1y = nextEdge.p1c2y = p2[1]; //nextEdge.y1;
+                    nextEdge.p2c1x = p3[0]; //nextEdge.x1;
+                    nextEdge.p2c1y = p3[1]; //nextEdge.y1;
+                }
+
+                dist12 = Utils.distance(p1[0], p1[1], p2[0], p2[1]);
+                dist23 = Utils.distance(p2[0], p2[1], p3[0], p3[1]);
+
+                // generate two control points for the looked at point (p2)
+                // see http://walter.bislins.ch/blog/index.asp?page=JavaScript%3A+Bezier%2DSegmente+f%FCr+Spline+berechnen
+                fa = tension * dist12 / (dist12 + dist23);
+                fb = tension * dist23 / (dist12 + dist23);
+
+                w = p3[0] - p1[0];
+                h = p3[1] - p1[1];
+
+                //if(curEdge.p1c1x !== curEdge.x1 || curEdge.p1c1y !== curEdge.y1) {
+                //}
+                if(curEdge.p2c1x === undefined && nextEdge.p1c1x === undefined) {
+                    curEdge.p2c1x = nextEdge.p1c1x = p2[0] - fa * w;
+                    curEdge.p2c1y = nextEdge.p1c1y = p2[1] - fa * h;
+                } else {
+                    curEdge.p2c1x = nextEdge.p1c1x = (curEdge.p2c1x || nextEdge.p1c1x);
+                    curEdge.p2c1y = nextEdge.p1c1y = (curEdge.p2c1y || nextEdge.p1c1y);
+                }
+                if(curEdge.p2c2x === undefined && nextEdge.p1c2x === undefined) {
+                    curEdge.p2c2x = nextEdge.p1c2x = p2[0] + fb * w;
+                    curEdge.p2c2y = nextEdge.p1c2y = p2[1] + fb * h;
+                } else {
+                    curEdge.p2c2x = nextEdge.p1c2x = (curEdge.p2c2x || nextEdge.p1c2x);
+                    curEdge.p2c2y = nextEdge.p1c2y = (curEdge.p2c2y || nextEdge.p1c2y);
                 }
             }
-            curNode = nextNode;
-        };
-        return borders;
+        }
     };
 
     return VoronoiBorder;

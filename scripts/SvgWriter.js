@@ -372,40 +372,6 @@ module.exports = (function () {
 			voronoiString += 'fill:'+factionColors[faction].fill+';" />\n';
 		}
 
-		/*
-		curD = '';
-		for(var i = 0, len = borderNodes[0].length; i < len; i++) {
-			if(i === 0) {
-				curD += 'M';
-			} else {
-				curD += 'L';
-			}
-			curD += borderNodes[0][i].x.toFixed(2) + ',' + (-borderNodes[0][i].y).toFixed(2) + ' ';
-		}
-		voronoiString += '<path d="' + curD + '" style="stroke:#f00;stroke-width:2px;fill:none;" />\n';
-
-		curD = '';
-		for(var i = 0, len = borderNodes[1].length; i < len; i++) {
-			if(i === 0) {
-				curD += 'M';
-			} else {
-				curD += 'L';
-			}
-			curD += borderNodes[1][i].x.toFixed(2) + ',' + (-borderNodes[1][i].y).toFixed(2) + ' ';
-		}
-		voronoiString += '<path d="' + curD + '" style="stroke:#fa0;stroke-width:2px;fill:none;" />\n';
-
-		curD = '';
-		for(var i = 0, len = borderNodes[2].length; i < len; i++) {
-			if(i === 0) {
-				curD += 'M';
-			} else {
-				curD += 'L';
-			}
-			curD += borderNodes[2][i].x.toFixed(2) + ',' + (-borderNodes[2][i].y).toFixed(2) + ' ';
-		}
-		voronoiString += '<path d="' + curD + '" style="stroke:#0c0;stroke-width:2px;fill:none;" />\n';*/
-
 		var fill = '';
 		// paint system dots
 		for(var i = 0, len = parsedSystems.length; i < len; i++) {
@@ -429,8 +395,7 @@ module.exports = (function () {
 		var name = 'poisson';
 		var filename = this.baseDir + '/output/' + name + '.svg';
 		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
-		var curP;
-		var curD;
+		var curP, curD, curE;
 		var fill;
 		var parsedSystems;
 
@@ -457,10 +422,21 @@ module.exports = (function () {
 			var borderEdges = vBorder.borderEdges[faction];
 			curD = '';
 			for(var i = 0, len = borderEdges.length; i < len; i++) {
-				if(borderEdges[i].isFirstInLoop) {
-					curD += ' M'+borderEdges[i].x1.toFixed(2)+','+(-borderEdges[i].y1).toFixed(2);
+				curE = borderEdges[i];
+				if(curE.isFirstInLoop) {
+					/*if(i > 0) {
+						curD += 'z';
+					}*/
+					curD += ' M'+curE.x1.toFixed(2)+','+(-curE.y1).toFixed(2);
 				}
-				curD += ' L' + borderEdges[i].x2.toFixed(2)+','+(-borderEdges[i].y2).toFixed(2);
+				if(curE.p1c2x === null || curE.p1c2x === undefined ||
+					curE.p2c1x === null || curE.p2c1x === undefined) {
+					curD += ' L' + borderEdges[i].x2.toFixed(2)+','+(-borderEdges[i].y2).toFixed(2);
+				} else {
+					curD += ' C' + borderEdges[i].p1c2x.toFixed(2)+','+(-borderEdges[i].p1c2y).toFixed(2);
+					curD += ' ' + borderEdges[i].p2c1x.toFixed(2)+','+(-borderEdges[i].p2c1y).toFixed(2);
+					curD += ' ' + borderEdges[i].x2.toFixed(2)+','+(-borderEdges[i].y2).toFixed(2);
+				}
 			}
 			xmlString += '<path fill-rule="evenodd" d="'+curD+'" ';
 			xmlString += 'style="stroke:'+factionColors[faction].stroke + ';stroke-width:2px;';
@@ -480,9 +456,102 @@ module.exports = (function () {
 			xmlString += '<circle data-name="'+parsedSystems[i].name+'" data-aff="'+parsedSystems[i].col+'" cx="' + parsedSystems[i].x + '" cy="' + (-parsedSystems[i].y) + '" r="2" style="stroke-width: 0; fill: '+fill+'" />\n';
 		}
 
+		// paint 3-way voronoi nodes
+		/*for(var i = 0, len = vBorder.nodes.length; i < len; i++) {
+			if(vBorder.nodes[i].borderColors.length > 2) {
+				xmlString += '<circle cx="'+vBorder.nodes[i].x+'" cy="'+(-vBorder.nodes[i].y)+'" r="2" style="stroke-width:0;fill:#ff0" />\n';
+			}
+		}*/
+
 		tpl = tpl.replace('{WIDTH}', '700');
 		tpl = tpl.replace('{HEIGHT}', '700');
-		tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
+		//tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
+		tpl = tpl.replace('{VIEWBOX}', '-2000 -2000 4000 4000');
+		tpl = tpl.replace('{ELEMENTS}', xmlString);
+		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
+		this.logger.log('file "' + filename + '" written');
+	};
+
+	SvgWriter.prototype.writeUniverseImage = function (vBorder, systems, factions) {
+		var xmlString = '';
+		var name = 'universe_3025';
+		var filename = this.baseDir + '/output/' + name + '.svg';
+		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
+		var rgb;
+		var curP, curD, curE;
+		var fill;
+		var parsedSystems;
+
+
+		/*var factionColors = {
+			'DC': { stroke: '#a00', fill: 'rgba(255,20,20,.3)' },
+			'LC': { stroke: '#00a', fill: 'rgba(20, 20, 220, .3)' },
+			'CC': { stroke: '#0a0', fill: 'rgba(20, 220, 20, .3)' },
+			'FS': { stroke: '#fc0', fill: 'rgba(255, 200, 20, .3)' },
+			'FWL': { stroke: '#c3f', fill: 'rgba(220, 50, 255, .3)' },
+			'D': { stroke: '#f00', fill: 'rgba(255, 0, 0, .5)' }
+			//'DUMMY': { stroke: '#f00', fill: 'rgba(255, 0, 0, .5)' }
+		};*/
+		factions['D'] = {
+			shortName : 'D',
+			longName : 'Disputed',
+			category : '',
+			color: '#ff0000',
+			founding: 0,
+			dissolution: ''
+		};
+		factions['I'].color = '#000000';
+
+		for(var faction in factions) {
+			var borderEdges = vBorder.borderEdges[faction];
+			if(!borderEdges || borderEdges.length === 0) {
+				continue;
+			}
+			rgb = this.hexToRgb(factions[faction].color) || {r: 0, g:0, b:0};
+			factions[faction].fill = 'rgba('+rgb.r+','+rgb.g+','+rgb.b+', .3)';
+			curD = '';
+			if(factions[faction].color === '#ffffff') {
+				console.log('WHITE: ',factions[faction]);
+			}
+			for(var i = 0, len = borderEdges.length; i < len; i++) {
+				curE = borderEdges[i];
+				if(curE.isFirstInLoop) {
+					/*if(i > 0) {
+						curD += 'z';
+					}*/
+					curD += ' M'+curE.x1.toFixed(2)+','+(-curE.y1).toFixed(2);
+				}
+				if(curE.p1c2x === null || curE.p1c2x === undefined ||
+					curE.p2c1x === null || curE.p2c1x === undefined) {
+					curD += ' L' + borderEdges[i].x2.toFixed(2)+','+(-borderEdges[i].y2).toFixed(2);
+				} else {
+					curD += ' C' + borderEdges[i].p1c2x.toFixed(2)+','+(-borderEdges[i].p1c2y).toFixed(2);
+					curD += ' ' + borderEdges[i].p2c1x.toFixed(2)+','+(-borderEdges[i].p2c1y).toFixed(2);
+					curD += ' ' + borderEdges[i].x2.toFixed(2)+','+(-borderEdges[i].y2).toFixed(2);
+				}
+			}
+			xmlString += '<path fill-rule="evenodd" d="'+curD+'" ';
+			xmlString += 'style="stroke:'+factions[faction].color + ';stroke-width:2px;';
+			xmlString += 'fill:'+factions[faction].fill+';" />\n';
+		}
+
+		// paint system dots
+		parsedSystems = vBorder.objects;
+		for(var i = 0, len = parsedSystems.length; i < len; i++) {
+			if(parsedSystems[i].col === 'DUMMY') {
+				continue;
+			}
+			fill = '#aaa';
+			if(factions.hasOwnProperty(parsedSystems[i].col)) {
+				fill = factions[parsedSystems[i].col].fill;
+			}
+			xmlString += '<circle data-name="'+parsedSystems[i].name+'" data-aff="'+parsedSystems[i].col+'" cx="' + parsedSystems[i].x + '" cy="' + (-parsedSystems[i].y) + '" r="2" style="stroke-width: 0; fill: '+fill+'" />\n';
+		}
+
+		tpl = tpl.replace('{WIDTH}', '700');
+		tpl = tpl.replace('{HEIGHT}', '700');
+		//tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
+		tpl = tpl.replace('{VIEWBOX}', '-2000 -2000 4000 4000');
 		tpl = tpl.replace('{ELEMENTS}', xmlString);
 		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + filename + '" written');
@@ -498,6 +567,38 @@ module.exports = (function () {
 				&& -system.y >= y
 				&& -system.y <= y + h;
 	};
+
+	/**
+	 * @see https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+	 * @private
+	 */
+	SvgWriter.prototype.componentToHex = function (c) {
+	    var hex = c.toString(16);
+	    return hex.length == 1 ? "0" + hex : hex;
+	};
+
+	/**
+	 * @see https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+	 * @private
+	 */
+	SvgWriter.prototype.rgbToHex = function (r, g, b) {
+    	return "#" + this.componentToHex(r) + this.componentToHex(g) + this.componentToHex(b);
+	};
+
+	/**
+	 * @see https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+	 * @private
+	 */
+	SvgWriter.prototype.hexToRgb = function (hex) {
+	    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+	    return result ? {
+	        r: parseInt(result[1], 16),
+	        g: parseInt(result[2], 16),
+	        b: parseInt(result[3], 16)
+	    } : null;
+	};
+
+
 
 	return SvgWriter;
 

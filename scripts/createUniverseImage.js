@@ -38,7 +38,7 @@ var main = function () {
     }
 
     // generate additional points randomly
-    var pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 25, existingPoints, 30);
+    var pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 33, existingPoints, 30);
 
     for(var i = 0; i < pDisc.generatedPoints.length; i++) {
         curP = pDisc.generatedPoints[i];
@@ -54,8 +54,8 @@ var main = function () {
     // generate the voronoi diagram to find borders
     vBorder = new VoronoiBorder(this.logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS);
 
-	// create an svg with a poisson disc blue noise distribution
-	writer.writeSvgPoisson(pDisc, vBorder);
+	// create an svg with a universe picture
+    writer.writeUniverseImage(vBorder, reader.systems, reader.factions);
 
     // finish by rendering out the logs
     logRenderer.render();

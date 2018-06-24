@@ -84,5 +84,15 @@ module.exports = (function () {
         return ret;
     };
 
+
+    /**
+     * Calculates the euclidean distance between two points (euclidean distance in LY)
+     *
+     * @returns {Number} The euclidean distance
+     */
+    Utils.distance = function(x1, y1, x2, y2) {
+    	return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+    };
+
     return Utils;
 })();
