@@ -157,6 +157,16 @@ module.exports = (function () {
 			curAffiliation = curRow[colIdxMap['3025']] || '';
 			curSystem['3025'] = curAffiliation.split(/\s*\,\s*/gi)[0];
 			curSystem['3025_all'] = curAffiliation;
+			
+			// 3030 affiliation
+			curAffiliation = curRow[colIdxMap['3030']] || '';
+			curSystem['3030'] = curAffiliation.split(/\s*\,\s*/gi)[0];
+			curSystem['3030_all'] = curAffiliation;
+			
+			// 3052 affiliation
+			curAffiliation = curRow[colIdxMap['3052']] || '';
+			curSystem['3052'] = curAffiliation.split(/\s*\,\s*/gi)[0];
+			curSystem['3052_all'] = curAffiliation;
 
 			this.systems.push(curSystem);
 		}

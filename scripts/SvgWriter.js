@@ -472,9 +472,9 @@ module.exports = (function () {
 		this.logger.log('file "' + filename + '" written');
 	};
 
-	SvgWriter.prototype.writeUniverseImage = function (vBorder, systems, factions) {
+	SvgWriter.prototype.writeUniverseImage = function (year, vBorder, systems, factions) {
 		var xmlString = '';
-		var name = 'universe_3025';
+		var name = 'universe_'+year;
 		var filename = this.baseDir + '/output/' + name + '.svg';
 		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
 		var rgb;
@@ -505,6 +505,10 @@ module.exports = (function () {
 		for(var faction in factions) {
 			var borderEdges = vBorder.borderEdges[faction];
 			if(!borderEdges || borderEdges.length === 0) {
+				continue;
+			}
+			// don't paint borders for independent planets
+			if(faction === 'I') {
 				continue;
 			}
 			rgb = this.hexToRgb(factions[faction].color) || {r: 0, g:0, b:0};

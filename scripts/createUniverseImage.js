@@ -19,43 +19,52 @@ var main = function () {
     // read planetary systems from the xlsx
     reader.readSystems();
 
-    var existingPoints = [];
-    var voronoiSystems = [];
+	var years = ['3025', '3030', '3052'];
+    var existingPoints;
+    var voronoiSystems;
+	var curYear;
     var curSys, curAff, curP;
-    for(var i = 0; i < reader.systems.length; i++) {
-        curSys = reader.systems[i];
-        curAff = curSys['3025'].split(',')[0].trim();
-        if(curAff === '' || curAff === 'U' || curAff === 'A') {
-            continue;
-        }
-        existingPoints.push([curSys.x, curSys.y]);
-        voronoiSystems.push({
-            x: curSys.x,
-            y: curSys.y,
-            col : curAff,
-            name : curSys.name
-        });
-    }
+	
+	for(var yi = 0; yi < years.length; yi++) {
+		curYear = years[yi];
+		existingPoints = [];
+		voronoiSystems = [];
+		
+		for(var i = 0; i < reader.systems.length; i++) {
+			curSys = reader.systems[i];
+			curAff = curSys[curYear].split(',')[0].trim();
+			if(curAff === '' || curAff === 'U' || curAff === 'A') {
+				continue;
+			}
+			existingPoints.push([curSys.x, curSys.y]);
+			voronoiSystems.push({
+				x: curSys.x,
+				y: curSys.y,
+				col : curAff,
+				name : curSys.name
+			});
+		}
 
-    // generate additional points randomly
-    var pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 33, existingPoints, 30);
+		// generate additional points randomly
+		var pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 33, existingPoints, 30);
 
-    for(var i = 0; i < pDisc.generatedPoints.length; i++) {
-        curP = pDisc.generatedPoints[i];
+		for(var i = 0; i < pDisc.generatedPoints.length; i++) {
+			curP = pDisc.generatedPoints[i];
 
-        voronoiSystems.push({
-            x: curP[0],
-            y: curP[1],
-            col: 'DUMMY',
-            name: 'Dummy'
-        })
-    }
+			voronoiSystems.push({
+				x: curP[0],
+				y: curP[1],
+				col: 'DUMMY',
+				name: 'Dummy'
+			})
+		}
 
-    // generate the voronoi diagram to find borders
-    vBorder = new VoronoiBorder(this.logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS);
+		// generate the voronoi diagram to find borders
+		vBorder = new VoronoiBorder(this.logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS);
 
-	// create an svg with a universe picture
-    writer.writeUniverseImage(vBorder, reader.systems, reader.factions);
+		// create an svg with a universe picture
+		writer.writeUniverseImage(curYear, vBorder, reader.systems, reader.factions);
+	}
 
     // finish by rendering out the logs
     logRenderer.render();

@@ -344,7 +344,7 @@ module.exports = (function () {
         var p1, p2, p3, dist12, dist23, w, h;
         var curLoopStartIdx;
         var fa, fb;
-        var tension = .5;
+        var tension = .65;
 
         // each color edge is treated separately
         for(var col in this.borderEdges) {
@@ -367,7 +367,7 @@ module.exports = (function () {
                 p3 = [nextEdge.x2, nextEdge.y2];
 
                 // for border edge points that border on 3 different colors
-                if(Object.keys(nextEdge.p1.borderColors).length > 2) {
+                if(Object.keys(nextEdge.p1.borderColors).length > 2) {// && !nextEdge.p1.borderColors['I']) {
                     curEdge.p1c2x = p1[0]; //curEdge.x1;
                     curEdge.p1c2y = p1[1]; //curEdge.y1;
                     curEdge.p2c1x = curEdge.p2c2x = nextEdge.p1c1x = nextEdge.p1c2x = p2[0]; //nextEdge.x1;

@@ -1,5 +1,7 @@
 {
   "dependencies": {
-    "node-xlsx": "^0.12.0"
+    "delaunator": "^2.0.0",
+    "node-xlsx": "^0.12.0",
+    "npm": "^6.1.0"
   }
 }
