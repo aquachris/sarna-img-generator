@@ -26,6 +26,8 @@ module.exports = (function () {
         this.borderEdges = null;
         // map of border node indices
         this.borderNodeIndices = null;
+        // distance between border lines
+        this.borderSeparation = 0;
     };
 
     //VoronoiBorder.prototype = Object.create(Observable.prototype);
@@ -41,9 +43,10 @@ module.exports = (function () {
      * Initializes this object.
      * @returns {VoronoiBorder} A reference to this object, initialized
      */
-    VoronoiBorder.prototype.init = function (objects, cellMode) {
+    VoronoiBorder.prototype.init = function (objects, cellMode, borderSeparation) {
         this.objects = objects;
         this.cellMode = cellMode || VoronoiBorder.CELL_MODES.CIRCUMCENTERS;
+        this.borderSeparation = borderSeparation || 1;
         this.calculate();
         return this;
     };
@@ -245,6 +248,7 @@ module.exports = (function () {
         }
 
         this.sortBorderEdges();
+        this.separateEdges(this.borderSeparation);
         this.generateEdgeControlPoints();
     };
 
@@ -334,6 +338,74 @@ module.exports = (function () {
     };
 
     /**
+     * Pulls each border edge slightly closer to its same-color object.
+     *
+     * This is optional - works well when border strokes are shown.
+     * @param dist {Number} By how much the borders will be pulled apart.
+     */
+    VoronoiBorder.prototype.separateEdges = function (pullDist) {
+        var curLoopStartIdx;
+        var curEdge, nextEdge;
+        var curO, nextO;
+        var centerPoint;
+        var adjVector;
+        var curEdgeVec, nextEdgeVec;
+        var dotProduct;
+        for(var col in this.borderEdges) {
+            if(!this.borderEdges.hasOwnProperty(col)) {
+                continue;
+            }
+            curLoopStartIdx = -1;
+            for(var i = 0, len = this.borderEdges[col].length; i < len; i++) {
+                curEdge = this.borderEdges[col][i];
+                if(curEdge.isFirstInLoop) {
+                    curLoopStartIdx = i;
+                }
+                nextEdge = this.borderEdges[col][i+1];
+                if(!nextEdge || nextEdge.isFirstInLoop) {
+                    nextEdge = this.borderEdges[col][curLoopStartIdx];
+                }
+                curO = curEdge.col1 === col ? this.objects[curEdge.o1] : this.objects[curEdge.o2];
+                nextO = nextEdge.col2 === col ? this.objects[nextEdge.o1] : this.objects[nextEdge.o2];
+
+                /*centerPoint = {
+                    x: (curO.x + nextO.x) / 2,
+                    y: (curO.y + nextO.y) / 2
+                };*/
+                centerPoint = {
+                    x: (curEdge.x1 + curEdge.x2) / 2,
+                    y: (curEdge.y1 + curEdge.y2) / 2
+                }
+                // pull current Edge's second point / next edge's first point towards center point
+                adjVector = [curO.x - centerPoint.x, curO.y - centerPoint.y];
+
+                //adjVector = [centerPoint.x - curEdge.x2, centerPoint.y - curEdge.y2];
+                //adjVector = [curO.x - curEdge.x2, curO.y - curEdge.y2];
+                Utils.scaleVector2d(adjVector, pullDist);
+
+                /*if(col === 'OA') {
+                    console.log('a: ', curEdge.x2, curEdge.y2);
+                    console.log('b: ', adjVector);
+                }*/
+                // calculate the angle between this edge and the next one
+                curEdgeVec = [curEdge.x2 - curEdge.x1, curEdge.y2 - curEdge.y1];
+                Utils.normalizeVector2d(curEdgeVec);
+                nextEdgeVec = [nextEdge.x2 - nextEdge.x1, curEdge.y2 - curEdge.y1];
+                Utils.normalizeVector2d(nextEdgeVec);
+                dotProduct = Utils.dotProduct2d([curEdge.x2 - curEdge.x1]);
+
+
+                curEdge.x2 = nextEdge.x1 = curEdge.x2 + adjVector[0];
+                curEdge.y2 = nextEdge.y1 = curEdge.y2 + adjVector[1];
+                /*if(col === 'OA') {
+                    console.log('c: ', curEdge.x2, curEdge.y2);
+                }*/
+
+            }
+        }
+    };
+
+    /**
      * For each point of each color's border edges, generate two bezier control
      * points. The goal is to have rounded edges.
      *
@@ -345,6 +417,7 @@ module.exports = (function () {
         var curLoopStartIdx;
         var fa, fb;
         var tension = .65;
+        tension = .35;
 
         // each color edge is treated separately
         for(var col in this.borderEdges) {

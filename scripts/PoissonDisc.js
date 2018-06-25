@@ -1,6 +1,8 @@
 module.exports = (function () {
     'use strict';
 
+    var seedrandom = require('seedrandom');
+
     /**
      * An instance of this class generates blue noise using Bridson's Poisson Disc algorithm
      */
@@ -13,7 +15,7 @@ module.exports = (function () {
     PoissonDisc.prototype.constructor = PoissonDisc;
     //VoronoiBorder.prototype.parent = Observable;
 
-    PoissonDisc.prototype.init = function (x, y, w, h, radius, existingPoints, maxSamples) {
+    PoissonDisc.prototype.init = function (x, y, w, h, radius, maxSamples) {
         this.x = x;
         this.y = y;
         this.w = w;
@@ -29,8 +31,8 @@ module.exports = (function () {
         this.queue = [];
         this.queueSize = 0;
         this.sampleSize = 0;
+        this.rng = seedrandom('sarna');
 
-        this.existingPoints = existingPoints || [];
         this.generatedPoints = [];
         this.runUntilDone();
         return this;
@@ -39,12 +41,12 @@ module.exports = (function () {
     PoissonDisc.prototype.runUntilDone = function () {
         var s;
         // generate samples
-        for(var i = 0, len = this.existingPoints.length; i < len; i++) {
+        /*for(var i = 0, len = this.existingPoints.length; i < len; i++) {
             this.placeSample(this.existingPoints[i][0], this.existingPoints[i][1], true);
-        }
+        }*/
         this.generatedPoints = [];
         // start with a sample at a fixed x,y
-        this.generatedPoints.push(this.placeSample(this.x, this.y));
+        this.generatedPoints.push(this.placeSample({x: this.x, y: this.y}));
         while(s = this.generateSample()) {
             this.generatedPoints.push(s);
         }
@@ -55,20 +57,20 @@ module.exports = (function () {
     PoissonDisc.prototype.generateSample = function () {
         // Pick a random existing sample and remove it from the queue.
         while (this.queueSize) {
-          var i = Math.random() * this.queueSize | 0,
+          var i = this.rng() * this.queueSize | 0,
               s = this.queue[i];
 
           // Make a new candidate between [radius, 2 * radius] from the existing sample.
           for (var j = 0; j < this.maxSamples; ++j) {
-            var a = 2 * Math.PI * Math.random(),
-                r = Math.sqrt(Math.random() * this.radius2x3 + this.radius2),
-                x = s[0] + r * Math.cos(a),
-                y = s[1] + r * Math.sin(a);
+            var a = 2 * Math.PI * this.rng(),
+                r = Math.sqrt(this.rng() * this.radius2x3 + this.radius2),
+                x = s.x + r * Math.cos(a),
+                y = s.y + r * Math.sin(a);
 
             // Reject candidates that are outside the allowed extent,
             // or closer than 2 * radius to any existing sample.
             if(x >= this.x && x <= this.x + this.w && y >= this.y && y <= this.y + this.h && this.positionValid(x,y)) {
-                return this.placeSample(x, y);
+                return this.placeSample({x:x, y:y});
             }
           }
 
@@ -78,39 +80,66 @@ module.exports = (function () {
         return null;
     };
 
-    PoissonDisc.prototype.placeSample = function(x, y, noEnqueue) {
-      var s = [x, y];
-      if(!noEnqueue) {
-          this.queue.push(s);
-          this.queueSize++;
-      }
-      this.grid[this.gridWidth * ((y - this.y) / this.cellSize | 0) + ((x - this.x) / this.cellSize | 0)] = s;
-      this.sampleSize++;
-      //this.logger.log('sample placed: ' + (x - this.x) + ', ' + (y - this.y));
-      return s;
+    PoissonDisc.prototype.placeSample = function(s, grid, noEnqueue) {
+        grid = grid || this.grid;
+        if(!noEnqueue) {
+            this.queue.push(s);
+            this.queueSize++;
+        }
+        grid[this.gridWidth * ((s.y - this.y) / this.cellSize | 0) + ((s.x - this.x) / this.cellSize | 0)] = s;
+        this.sampleSize++;
+        //this.logger.log('sample placed: ' + (x - this.x) + ', ' + (y - this.y));
+        return s;
     };
 
-    PoissonDisc.prototype.positionValid = function (x, y) {
-        var i = (x - this.x) / this.cellSize | 0,
-            j = (y - this.y) / this.cellSize | 0,
-            i0 = Math.max(i - 2, 0),
-            j0 = Math.max(j - 2, 0),
-            i1 = Math.min(i + 3, this.gridWidth),
-            j1 = Math.min(j + 3, this.gridHeight);
+    PoissonDisc.prototype.positionValid = function (x, y, grid) {
+        var i, j, i0, j0, i1, j1;
+        grid = grid || this.grid;
+        i = (x - this.x) / this.cellSize | 0,
+        j = (y - this.y) / this.cellSize | 0,
+        i0 = Math.max(i - 2, 0),
+        j0 = Math.max(j - 2, 0),
+        i1 = Math.min(i + 3, this.gridWidth),
+        j1 = Math.min(j + 3, this.gridHeight);
 
         for (j = j0; j < j1; ++j) {
           var o = j * this.gridWidth;
           for (i = i0; i < i1; ++i) {
-            if (s = this.grid[o + i]) {
+            if (s = grid[o + i]) {
               var s,
-                  dx = s[0] - x,
-                  dy = s[1] - y;
+                  dx = s.x - x,
+                  dy = s.y - y;
               if (dx * dx + dy * dy < this.radius2) return false;
             }
           }
         }
 
         return true;
+    };
+
+    PoissonDisc.prototype.replaceReservedPoints = function (reservedPoints) {
+        var poissonPoint, reservedPoint, pointsRejected = 0;
+        this.reservedPoints = reservedPoints;
+        this.aggregatedGrid = new Array(this.gridWidth * this.gridHeight);
+        this.aggregatedPoints = [];
+
+        // reserved points
+        for(var i = 0, len = reservedPoints.length; i < len; i++) {
+            this.aggregatedPoints.push(
+                this.placeSample(reservedPoints[i], this.aggregatedGrid, true)
+            );
+        }
+
+        // fill up with poisson points
+        for(var i = 0, len = this.generatedPoints.length; i < len; i++) {
+            if(this.positionValid(this.generatedPoints[i].x, this.generatedPoints[i].y, this.aggregatedGrid)) {
+                this.aggregatedPoints.push(
+                    this.placeSample(this.generatedPoints[i], this.aggregatedGrid, true)
+                );
+            } else {
+                pointsRejected++;
+            }
+        }
     };
 
     return PoissonDisc;

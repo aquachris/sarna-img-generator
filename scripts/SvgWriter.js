@@ -555,7 +555,8 @@ module.exports = (function () {
 		tpl = tpl.replace('{WIDTH}', '700');
 		tpl = tpl.replace('{HEIGHT}', '700');
 		//tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
-		tpl = tpl.replace('{VIEWBOX}', '-2000 -2000 4000 4000');
+		//tpl = tpl.replace('{VIEWBOX}', '-2000 -2000 4000 4000');
+		tpl = tpl.replace('{VIEWBOX}', '-200 -400 400 600');
 		tpl = tpl.replace('{ELEMENTS}', xmlString);
 		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + filename + '" written');

@@ -94,5 +94,49 @@ module.exports = (function () {
     	return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
     };
 
+    /**
+     * Calculates vector length.
+     *
+     * @param v {Array} 2-piece array representing the vector
+     * @returns {Number}
+     */
+    Utils.vectorLength2d = function (v) {
+        return Math.sqrt(Math.pow(v[0],2) + Math.pow(v[1],2));
+    };
+
+    /**
+     * Scales vector to desired length. Note that the passed vector will be changed.
+     *
+     * @param v {Array} 2-piece array representing the vector
+     * @param scaleTo {Number} Desired length
+     */
+    Utils.scaleVector2d = function (v, scaleTo) {
+        var mag = this.vectorLength2d(v);
+        v[0] = v[0] * scaleTo / mag;
+        v[1] = v[1] * scaleTo / mag;
+    };
+
+    /**
+     * Scales vector to 1. Note that the passed vector will be changed.
+     *
+     * @param v {Array} 2-piece array representing the vector
+     */
+    Utils.normalizeVector2d = function (v) {
+        this.scaleVector2d(v, 1);
+    };
+
+    /**
+     * Dot product betweent two 2d vectors.
+     *
+     * If vectors are normalized and the angle between them is theta, the
+     * returned value is cos(theta).
+     * @param v1 {Array} 2-piece array representing the first vector
+     * @param v2 {Array} 2-piece array representing the second vector
+     * @returns {Number} dot product of v1 and v2
+     */
+    Utils.dotProduct2d = function (v1, v2) {
+        return v1[0] * v2[0] + v1[1] * v2[1];
+    };
+
     return Utils;
 })();

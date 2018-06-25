@@ -20,23 +20,26 @@ var main = function () {
     reader.readSystems();
 
 	var years = ['3025', '3030', '3052'];
-    var existingPoints;
+    var reservedPoints;
     var voronoiSystems;
 	var curYear;
     var curSys, curAff, curP;
-	
+
+    // generate additional points randomly
+    var pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
+
 	for(var yi = 0; yi < years.length; yi++) {
 		curYear = years[yi];
-		existingPoints = [];
+		reservedPoints = [];
 		voronoiSystems = [];
-		
+
 		for(var i = 0; i < reader.systems.length; i++) {
 			curSys = reader.systems[i];
 			curAff = curSys[curYear].split(',')[0].trim();
 			if(curAff === '' || curAff === 'U' || curAff === 'A') {
 				continue;
 			}
-			existingPoints.push([curSys.x, curSys.y]);
+			reservedPoints.push({x: curSys.x, y: curSys.y, col: curAff});
 			voronoiSystems.push({
 				x: curSys.x,
 				y: curSys.y,
@@ -45,18 +48,21 @@ var main = function () {
 			});
 		}
 
-		// generate additional points randomly
-		var pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 33, existingPoints, 30);
+        pDisc.replaceReservedPoints(reservedPoints);
 
-		for(var i = 0; i < pDisc.generatedPoints.length; i++) {
-			curP = pDisc.generatedPoints[i];
+		for(var i = 0; i < pDisc.aggregatedPoints.length; i++) {
+			curP = pDisc.aggregatedPoints[i];
 
-			voronoiSystems.push({
-				x: curP[0],
-				y: curP[1],
-				col: 'DUMMY',
-				name: 'Dummy'
-			})
+            if(curP.col) {
+                //voronoiSystems.push(curP);
+            } else {
+                voronoiSystems.push({
+    				x: curP.x,
+    				y: curP.y,
+    				col: 'DUMMY',
+    				name: 'Dummy'
+    			});
+            }
 		}
 
 		// generate the voronoi diagram to find borders
