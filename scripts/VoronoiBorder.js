@@ -59,7 +59,7 @@ module.exports = (function () {
         var curNode, curNeighbor, curObj;
         var triIdx, neighborNodes, borderColors;
         var commonObj;
-        var o1, o2, o3;
+        var obj1, obj2, obj3;
         var col1, col2;
         var borderEdge;
 
@@ -89,25 +89,25 @@ module.exports = (function () {
             };
             // first point of the triangle
             curObj = this.objects[this.delaunay.triangles[i]];
-            o1 = curObj;
+            obj1 = curObj;
             curObj.adjacentTriIndices.push(i);
             // second point of the triangle
             curObj = this.objects[this.delaunay.triangles[i+1]];
-            o2 = curObj;
+            obj2 = curObj;
             curObj.adjacentTriIndices.push(i);
             // third point of the triangle
             curObj = this.objects[this.delaunay.triangles[i+2]];
-            o3 = curObj;
+            obj3 = curObj;
             curObj.adjacentTriIndices.push(i);
 
             // Calculate voronoi node coordinates
             if(this.cellMode === VoronoiBorder.CELL_MODES.CIRCUMCENTERS) {
-                circumcenter = Utils.circumcenter([o1.x, o1.y], [o2.x, o2.y], [o3.x, o3.y]);
+                circumcenter = Utils.circumcenter([obj1.x, obj1.y], [obj2.x, obj2.y], [obj3.x, obj3.y]);
                 curNode.x = circumcenter[0];
                 curNode.y = circumcenter[1];
             } else {
-                curNode.x = (o1.x + o2.x + o3.x) / 3;
-                curNode.y = (o1.y + o2.y + o3.y) / 3;
+                curNode.x = (obj1.x + obj2.x + obj3.x) / 3;
+                curNode.y = (obj1.y + obj2.y + obj3.y) / 3;
             }
 
             this.nodes.push(curNode);
@@ -121,44 +121,44 @@ module.exports = (function () {
 			// for the given voronoi node / delaunay triangle, find all (three) adjacent delaunay triangles:
 			triIdx = i*3;
 			neighborNodes = [];
-            o1 = this.objects[curNode.p1];
-            o2 = this.objects[curNode.p2];
-            o3 = this.objects[curNode.p3];
+            obj1 = this.objects[curNode.p1];
+            obj2 = this.objects[curNode.p2];
+            obj3 = this.objects[curNode.p3];
             // iterate over the current triangle's point A's adjacent triangles and
             // compare them to point B's and C's. If two of those points are part of the
             // same triangle, they are a neighbor of the current triangle
-            for(var t1p = 0; t1p < o1.adjacentTriIndices.length; t1p++) {
-                if(o1.adjacentTriIndices[t1p] === triIdx) {
+            for(var t1p = 0; t1p < obj1.adjacentTriIndices.length; t1p++) {
+                if(obj1.adjacentTriIndices[t1p] === triIdx) {
                     continue;
                 }
-                for(var t2p = 0; t2p < o2.adjacentTriIndices.length; t2p++) {
-                    if(o2.adjacentTriIndices[t2p] === triIdx) {
+                for(var t2p = 0; t2p < obj2.adjacentTriIndices.length; t2p++) {
+                    if(obj2.adjacentTriIndices[t2p] === triIdx) {
                         continue;
                     }
-                    if(o1.adjacentTriIndices[t1p] === o2.adjacentTriIndices[t2p]) {
-                        neighborNodes.push(o1.adjacentTriIndices[t1p] / 3);
+                    if(obj1.adjacentTriIndices[t1p] === obj2.adjacentTriIndices[t2p]) {
+                        neighborNodes.push(obj1.adjacentTriIndices[t1p] / 3);
                     }
                 }
-                for(var t3p = 0; t3p < o3.adjacentTriIndices.length; t3p++) {
-                    if(o3.adjacentTriIndices[t3p] === triIdx) {
+                for(var t3p = 0; t3p < obj3.adjacentTriIndices.length; t3p++) {
+                    if(obj3.adjacentTriIndices[t3p] === triIdx) {
                         continue;
                     }
-                    if(o1.adjacentTriIndices[t1p] === o3.adjacentTriIndices[t3p]) {
-                        neighborNodes.push(o1.adjacentTriIndices[t1p] / 3);
+                    if(obj1.adjacentTriIndices[t1p] === obj3.adjacentTriIndices[t3p]) {
+                        neighborNodes.push(obj1.adjacentTriIndices[t1p] / 3);
                     }
                 }
             }
             // compare point B's and point C's adjacent triangles (same as above)
-            for(var t2p = 0; t2p < o2.adjacentTriIndices.length; t2p++) {
-                if(o2.adjacentTriIndices[t2p] === triIdx) {
+            for(var t2p = 0; t2p < obj2.adjacentTriIndices.length; t2p++) {
+                if(obj2.adjacentTriIndices[t2p] === triIdx) {
                     continue;
                 }
-                for(var t3p = 0; t3p < o3.adjacentTriIndices.length; t3p++) {
-                    if(o3.adjacentTriIndices[t3p] === triIdx) {
+                for(var t3p = 0; t3p < obj3.adjacentTriIndices.length; t3p++) {
+                    if(obj3.adjacentTriIndices[t3p] === triIdx) {
                         continue;
                     }
-                    if(o2.adjacentTriIndices[t2p] === o3.adjacentTriIndices[t3p]) {
-                        neighborNodes.push(o2.adjacentTriIndices[t2p] / 3);
+                    if(obj2.adjacentTriIndices[t2p] === obj3.adjacentTriIndices[t3p]) {
+                        neighborNodes.push(obj2.adjacentTriIndices[t2p] / 3);
                     }
                 }
             }
@@ -166,39 +166,39 @@ module.exports = (function () {
 
             // Step 3.1: Iterate over this node's objects and mark it as a border node if at least
             // one of the objects has a different color value than the other two
-            this.borderNodeIndices[o1.col] = this.borderNodeIndices[o1.col] || [];
-            this.borderNodeIndices[o2.col] = this.borderNodeIndices[o2.col] || [];
-            this.borderNodeIndices[o3.col] = this.borderNodeIndices[o3.col] || [];
+            this.borderNodeIndices[obj1.col] = this.borderNodeIndices[obj1.col] || [];
+            this.borderNodeIndices[obj2.col] = this.borderNodeIndices[obj2.col] || [];
+            this.borderNodeIndices[obj3.col] = this.borderNodeIndices[obj3.col] || [];
             borderColors = {};
             // case 1: all objects share the same color (no border)
-            if(o1.col === o2.col && o2.col === o3.col) {
+            if(obj1.col === obj2.col && obj2.col === obj3.col) {
                 // do nothing
             // case 2: object 1 and 2 share color C1, object 3 has color C2
-            } else if(o1.col === o2.col && o1.col !== o3.col) {
-                this.borderNodeIndices[o1.col].push(i);
-                borderColors[o1.col] = true;
-                this.borderNodeIndices[o3.col].push(i);
-                borderColors[o3.col] = true;
+            } else if(obj1.col === obj2.col && obj1.col !== obj3.col) {
+                this.borderNodeIndices[obj1.col].push(i);
+                borderColors[obj1.col] = true;
+                this.borderNodeIndices[obj3.col].push(i);
+                borderColors[obj3.col] = true;
             // case 2: object 1 and 3 share color C1, object 2 has color C2
-            } else if(o1.col === o3.col && o1.col !== o2.col) {
-                this.borderNodeIndices[o1.col].push(i);
-                borderColors[o1.col] = true;
-                this.borderNodeIndices[o2.col].push(i);
-                borderColors[o2.col] = true;
+            } else if(obj1.col === obj3.col && obj1.col !== obj2.col) {
+                this.borderNodeIndices[obj1.col].push(i);
+                borderColors[obj1.col] = true;
+                this.borderNodeIndices[obj2.col].push(i);
+                borderColors[obj2.col] = true;
             // case 3: object 2 and 3 share color C1, object 1 has color C2
-            } else if(o2.col === o3.col && o2.col !== o1.col) {
-                this.borderNodeIndices[o1.col].push(i);
-                borderColors[o1.col] = true;
-                this.borderNodeIndices[o2.col].push(i);
-                borderColors[o2.col] = true;
+            } else if(obj2.col === obj3.col && obj2.col !== obj1.col) {
+                this.borderNodeIndices[obj1.col].push(i);
+                borderColors[obj1.col] = true;
+                this.borderNodeIndices[obj2.col].push(i);
+                borderColors[obj2.col] = true;
             // case 5: each object has a different color
             } else {
-                this.borderNodeIndices[o1.col].push(i);
-                borderColors[o1.col] = true;
-                this.borderNodeIndices[o2.col].push(i);
-                borderColors[o2.col] = true;
-                this.borderNodeIndices[o3.col].push(i);
-                borderColors[o3.col] = true;
+                this.borderNodeIndices[obj1.col].push(i);
+                borderColors[obj1.col] = true;
+                this.borderNodeIndices[obj2.col].push(i);
+                borderColors[obj2.col] = true;
+                this.borderNodeIndices[obj3.col].push(i);
+                borderColors[obj3.col] = true;
             }
             curNode.borderColors = borderColors;
 
@@ -226,12 +226,14 @@ module.exports = (function () {
                         if(i < neighborNodes[ni]) {
                             borderEdge = {
                                 id: i+'-'+neighborNodes[ni],
-                                x1: curNode.x,
+                                n1: {x: curNode.x, y: curNode.y},
+                                n2: {x: curNeighbor.x, y: curNeighbor.y},
+                                /*x1: curNode.x,
                                 y1: curNode.y,
                                 x2: curNeighbor.x,
-                                y2: curNeighbor.y,
-                                o1: commonObj[0],
-                                o2: commonObj[1],
+                                y2: curNeighbor.y,*/
+                                obj1: commonObj[0],
+                                obj2: commonObj[1],
                                 col1: col1,
                                 col2: col2,
                                 p1: curNode,
@@ -280,23 +282,23 @@ module.exports = (function () {
                     for(var i = 0, len = oriColArr.length; i < len; i++) {
                         cmpEdge = oriColArr[i];
                         adjacent = false;
-                        if(prevEdge.x1 === cmpEdge.x1 && prevEdge.y1 === cmpEdge.y1) {
+                        if(prevEdge.n1.x === cmpEdge.n1.x && prevEdge.n1.y === cmpEdge.n1.y) {
                             // this case should only occur for the first edge in an edge loop, if at all
-                            // --> switch points for e1
+                            // --> swap points for e1
                             this.swapEdgePoints(prevEdge);
                             adjacent = true;
                             //this.logger.log('col '+col+': switched edge points for edge ' + prevEdge.id);
-                        } else if(prevEdge.x1 === cmpEdge.x2 && prevEdge.y1 === cmpEdge.y2) {
+                        } else if(prevEdge.n1.x === cmpEdge.n2.x && prevEdge.n1.y === cmpEdge.n2.y) {
                             // this case should only occur for the first edge in an edge loop, if at all
                             // --> switch points for e1, e2
                             this.swapEdgePoints(prevEdge);
                             this.swapEdgePoints(cmpEdge);
                             adjacent = true;
                             //this.logger.log('col '+col+': switched edge points for edge ' + prevEdge.id + ' AND ' + cmpEdge.id);
-                        } else if(prevEdge.x2 === cmpEdge.x1 && prevEdge.y2 === cmpEdge.y1) {
+                        } else if(prevEdge.n2.x === cmpEdge.n1.x && prevEdge.n2.y === cmpEdge.n1.y) {
                             // perfect case - no actions necessary
                             adjacent = true;
-                        } else if(prevEdge.x2 === cmpEdge.x2 && prevEdge.y2 === cmpEdge.y2) {
+                        } else if(prevEdge.n2.x === cmpEdge.n2.x && prevEdge.n2.y === cmpEdge.n2.y) {
                             // swap points for e2
                             this.swapEdgePoints(cmpEdge);
                             adjacent = true;
@@ -325,12 +327,9 @@ module.exports = (function () {
      * @private
      */
     VoronoiBorder.prototype.swapEdgePoints = function (e) {
-        var tmp = e.x1;
-        e.x1 = e.x2;
-        e.x2 = tmp;
-        tmp = e.y1;
-        e.y1 = e.y2;
-        e.y2 = tmp;
+        var tmp = e.n1;
+        e.n1 = e.n2;
+        e.n2 = tmp;
         tmp = e.p1;
         e.p1 = e.p2;
         e.p2 = tmp;
@@ -344,16 +343,14 @@ module.exports = (function () {
      * @param pullDist {Number} Borders will be pulled apart by this many units.
      */
     VoronoiBorder.prototype.separateEdges = function (pullDist) {
+        var oriEdges;
         var curLoopStartIdx;
-		var nextEdgeIdx;
         var curEdge, nextEdge;
-		var oriEdges;
         var curO, nextO;
 		var p1, p2, p3;
 		var vec1, perp1, vec2, perp2;
         var centerPoint;
         var adjVector;
-        var curEdgeVec, nextEdgeVec;
         var dotProduct;
 		var extFactor;
         for(var col in this.borderEdges) {
@@ -363,38 +360,34 @@ module.exports = (function () {
             curLoopStartIdx = -1;
 			oriEdges = JSON.parse(JSON.stringify(this.borderEdges[col]));
             for(var i = 0, len = this.borderEdges[col].length; i < len; i++) {
-                //curEdge = this.borderEdges[col][i];
-				curEdge = oriEdges[i];
+                curEdge = this.borderEdges[col][i];
                 if(curEdge.isFirstInLoop) {
                     curLoopStartIdx = i;
                 }
-                //nextEdge = this.borderEdges[col][i+1];
-				nextEdgeIdx = i+1;
-				nextEdge = oriEdges[nextEdgeIdx];
+                nextEdge = this.borderEdges[col][i+1];
                 if(!nextEdge || nextEdge.isFirstInLoop) {
-					nextEdgeIdx = curLoopStartIdx;
                     nextEdge = this.borderEdges[col][curLoopStartIdx];
                 }
-                curO = curEdge.col1 === col ? this.objects[curEdge.o1] : this.objects[curEdge.o2];
-                nextO = nextEdge.col1 === col ? this.objects[nextEdge.o1] : this.objects[nextEdge.o2];
-				
-				p1 = { x: curEdge.x1, y: curEdge.y1 };
-				p2 = { x: curEdge.x2, y: curEdge.y2 };
-				p3 = { x: nextEdge.x2, y: nextEdge.y2 };
-				
+                curO = curEdge.col1 === col ? this.objects[curEdge.obj1] : this.objects[curEdge.obj2];
+                nextO = nextEdge.col1 === col ? this.objects[nextEdge.obj1] : this.objects[nextEdge.obj2];
+
+				p1 = { x: oriEdges[i].n1.x, y: oriEdges[i].n1.y };
+				p2 = { x: oriEdges[i].n2.x, y: oriEdges[i].n2.y };
+				p3 = { x: nextEdge.n2.x, y: nextEdge.n2.y };
+
 				vec1 = [p2.x - p1.x, p2.y - p1.y];
 				Utils.normalizeVector2d(vec1);
-				centerPoint = {
+				/*centerPoint = {
                     x: (p1.x + p2.x) / 2,
                     y: (p1.y + p2.y) / 2
-                };
+                };*/
 				perp1 = [-vec1[1], vec1[0]];
+                // TODO there must be a more elegant way to determine this
 				if(Utils.distance(curO.x, curO.y, p2.x, p2.y) < Utils.distance(curO.x, curO.y, p2.x + perp1[0], p2.y + perp1[1])) {
 					perp1 = [vec1[1], -vec1[0]];
 				}
-				//perp1 = [curO.x - centerPoint.x, curO.y - centerPoint.y];
 				Utils.normalizeVector2d(perp1);
-				
+
 				vec2 = [p3.x - p2.x, p3.y - p2.y];
 				Utils.normalizeVector2d(vec2);
 				centerPoint = {
@@ -402,25 +395,26 @@ module.exports = (function () {
                     y: (p3.y + p2.y) / 2
                 };
 				perp2 = [-vec2[1], vec2[0]];
+                // TODO there must be a more elegant way to determine this
 				if(Utils.distance(nextO.x, nextO.y, p2.x, p2.y) < Utils.distance(nextO.x, nextO.y, p2.x + perp2[0], p2.y + perp2[1])) {
 					perp2 = [vec2[1], -vec2[0]];
 				}
-				//perp2 = [nextO.x - centerPoint.x, nextO.y - centerPoint.y];
 				Utils.normalizeVector2d(perp2);
-				
+
 				dotProduct = Utils.dotProduct2d(perp1, perp2);
-				
+
 				extFactor = 1;
 				// case 1: the angle between the two vectors is <= 90°
 				if(dotProduct >= 0) {
 					adjVector = [perp1[0] + perp2[0], perp1[1] + perp2[1]];
-					
+
 				// case 2: the angle between the two vectors is > 90°
 				} else {
 					// case 2a: the angle between curEdge and nextEdge is < 90*
-					if(Utils.distance(centerPoint.x, centerPoint.y, curO.x, curO.y) < Utils.distance(centerPoint.x + perp2[0], centerPoint.y + perp2[1], curO.x, curO.y)) {
+                    // TODO there must be a more elegant way to determine this
+					if(Utils.distance(curO.x, curO.y, centerPoint.x, centerPoint.y) < Utils.distance(curO.x, curO.y, centerPoint.x + perp2[0], centerPoint.y + perp2[1])) {
 						adjVector = [p2.x - p1.x + p2.x - p3.x, p2.y - p1.y + p2.y - p3.y];
-						
+
 					// case 2b: the angle between curEdge and nextEdge is > 180*
 					} else {
 						adjVector = [p1.x - p2.x + p3.x - p2.x, p1.y - p2.y + p3.y - p2.y];
@@ -428,40 +422,12 @@ module.exports = (function () {
 					extFactor =	0.6 * (1 - dotProduct); // TODO magic numbers. Also, this doesn't really have a big effect - leave out?
 				}
 				// scale the vector to be pullDist units long
-				Utils.normalizeVector2d(adjVector);
+				//Utils.normalizeVector2d(adjVector);
 				Utils.scaleVector2d(adjVector, pullDist * extFactor);
-				
+
 				// move the point in question
-				this.borderEdges[col][i].x2 = this.borderEdges[col][nextEdgeIdx].x1 = curEdge.x2 + adjVector[0];
-                this.borderEdges[col][i].y2 = this.borderEdges[col][nextEdgeIdx].y1 = curEdge.y2 + adjVector[1];
-				
-				/*
-                centerPoint = {
-                    x: (curEdge.x1 + curEdge.x2) / 2,
-                    y: (curEdge.y1 + curEdge.y2) / 2
-                }
-                // pull current Edge's second point / next edge's first point towards center point
-                adjVector = [curO.x - centerPoint.x, curO.y - centerPoint.y];
-
-                //adjVector = [centerPoint.x - curEdge.x2, centerPoint.y - curEdge.y2];
-                //adjVector = [curO.x - curEdge.x2, curO.y - curEdge.y2];
-                Utils.scaleVector2d(adjVector, pullDist);
-
-                if(col === 'OA') {
-                    console.log('a: ', curEdge.x2, curEdge.y2);
-                    console.log('b: ', adjVector);
-                }
-                // calculate the angle between this edge and the next one
-                curEdgeVec = [curEdge.x2 - curEdge.x1, curEdge.y2 - curEdge.y1];
-                Utils.normalizeVector2d(curEdgeVec);
-                nextEdgeVec = [nextEdge.x2 - nextEdge.x1, curEdge.y2 - curEdge.y1];
-                Utils.normalizeVector2d(nextEdgeVec);
-                //dotProduct = Utils.dotProduct2d([curEdge.x2 - curEdge.x1]);
-				*/                
-                /*if(col === 'OA') {
-                    console.log('c: ', curEdge.x2, curEdge.y2);
-                }*/
-
+				curEdge.n2.x = nextEdge.n1.x = oriEdges[i].n2.x + adjVector[0];
+                curEdge.n2.y = nextEdge.n1.y = oriEdges[i].n2.y + adjVector[1];
             }
         }
     };
@@ -477,8 +443,7 @@ module.exports = (function () {
         var p1, p2, p3, dist12, dist23, w, h;
         var curLoopStartIdx;
         var fa, fb;
-        var tension = .65;
-        tension = .35;
+        var tension = .35;//.65;
 
         // each color edge is treated separately
         for(var col in this.borderEdges) {
@@ -496,46 +461,49 @@ module.exports = (function () {
                 if(!nextEdge || nextEdge.isFirstInLoop) {
                     nextEdge = this.borderEdges[col][curLoopStartIdx];
                 }
-                p1 = [curEdge.x1, curEdge.y1];
-                p2 = [nextEdge.x1, nextEdge.y1]; // curEdge.p2 = nextEdge.p1
-                p3 = [nextEdge.x2, nextEdge.y2];
+                p1 = { x: curEdge.n1.x, y: curEdge.n1.y };
+                p2 = { x: nextEdge.n1.x, y: nextEdge.n1.y }; // curEdge.p2 = nextEdge.p1
+                p3 = { x: nextEdge.n2.x, y: nextEdge.n2.y };
 
                 // for border edge points that border on 3 different colors
                 if(Object.keys(nextEdge.p1.borderColors).length > 2) {// && !nextEdge.p1.borderColors['I']) {
-                    curEdge.p1c2x = p1[0]; //curEdge.x1;
-                    curEdge.p1c2y = p1[1]; //curEdge.y1;
-                    curEdge.p2c1x = curEdge.p2c2x = nextEdge.p1c1x = nextEdge.p1c2x = p2[0]; //nextEdge.x1;
-                    curEdge.p2c1y = curEdge.p2c2y = nextEdge.p1c1y = nextEdge.p1c2y = p2[1]; //nextEdge.y1;
-                    nextEdge.p2c1x = p3[0]; //nextEdge.x1;
-                    nextEdge.p2c1y = p3[1]; //nextEdge.y1;
+                    curEdge.n1c2 = { x: p1.x, y: p1.y };
+                    curEdge.n2c1 = curEdge.n2c2 = nextEdge.n1c1 = nextEdge.n1c2 = { x: p2.x, y: p2.y };
+                    nextEdge.n2c1 = { x: p3.x, y: p3.y };
+                    //curEdge.n1c2x = p1.x;
+                    //curEdge.n1c2y = p1.y;
+                    //curEdge.n2c1x = curEdge.n2c2x = nextEdge.n1c1x = nextEdge.n1c2x = p2.x;
+                    //curEdge.n2c1y = curEdge.n2c2y = nextEdge.n1c1y = nextEdge.n1c2y = p2.y;
+                    //nextEdge.n2c1x = p3.x;
+                    //nextEdge.n2c1y = p3.y;
 				}
 
-                dist12 = Utils.distance(p1[0], p1[1], p2[0], p2[1]);
-                dist23 = Utils.distance(p2[0], p2[1], p3[0], p3[1]);
+                dist12 = Utils.distance(p1.x, p1.y, p2.x, p2.y);
+                dist23 = Utils.distance(p2.x, p2.y, p3.x, p3.y);
 
                 // generate two control points for the looked at point (p2)
                 // see http://walter.bislins.ch/blog/index.asp?page=JavaScript%3A+Bezier%2DSegmente+f%FCr+Spline+berechnen
                 fa = tension * dist12 / (dist12 + dist23);
                 fb = tension * dist23 / (dist12 + dist23);
 
-                w = p3[0] - p1[0];
-                h = p3[1] - p1[1];
+                w = p3.x - p1.x;
+                h = p3.y - p1.y;
 
-                //if(curEdge.p1c1x !== curEdge.x1 || curEdge.p1c1y !== curEdge.y1) {
-                //}
-                if(curEdge.p2c1x === undefined && nextEdge.p1c1x === undefined) {
-                    curEdge.p2c1x = nextEdge.p1c1x = p2[0] - fa * w;
-                    curEdge.p2c1y = nextEdge.p1c1y = p2[1] - fa * h;
+                if(curEdge.n2c1 === undefined && nextEdge.n1c1 === undefined) {
+                    curEdge.n2c1 = nextEdge.n1c1 = {
+                        x: p2.x - fa * w,
+                        y: p2.y - fa * h
+                    };
                 } else {
-                    curEdge.p2c1x = nextEdge.p1c1x = (curEdge.p2c1x || nextEdge.p1c1x);
-                    curEdge.p2c1y = nextEdge.p1c1y = (curEdge.p2c1y || nextEdge.p1c1y);
+                    curEdge.n2c1 = nextEdge.n1c1 = (curEdge.n2c1 || nextEdge.n1c1);
                 }
-                if(curEdge.p2c2x === undefined && nextEdge.p1c2x === undefined) {
-                    curEdge.p2c2x = nextEdge.p1c2x = p2[0] + fb * w;
-                    curEdge.p2c2y = nextEdge.p1c2y = p2[1] + fb * h;
+                if(curEdge.n2c2x === undefined && nextEdge.n1c2x === undefined) {
+                    curEdge.n2c2 = nextEdge.n1c2 = {
+                        x: p2.x + fb * w,
+                        y: p2.y + fb * h
+                    };
                 } else {
-                    curEdge.p2c2x = nextEdge.p1c2x = (curEdge.p2c2x || nextEdge.p1c2x);
-                    curEdge.p2c2y = nextEdge.p1c2y = (curEdge.p2c2y || nextEdge.p1c2y);
+                    curEdge.n2c2 = nextEdge.n1c2 = (curEdge.n2c2 || nextEdge.n1c2);
                 }
             }
         }

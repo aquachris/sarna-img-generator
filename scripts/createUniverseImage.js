@@ -69,7 +69,12 @@ var main = function () {
 		vBorder = new VoronoiBorder(this.logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, 1);
 
 		// create an svg with a universe picture
-		writer.writeUniverseImage(curYear, vBorder, reader.systems, reader.factions);
+		writer.writeUniverseImage(curYear, vBorder, reader.systems, reader.factions, {
+			x: -200,
+			y: 400,
+			w: 400,
+			h: 600
+		});
 	}
 
     // finish by rendering out the logs

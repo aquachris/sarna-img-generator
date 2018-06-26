@@ -41,7 +41,7 @@ module.exports = (function () {
 
 		// iterate over all systems and paint them if they are within the bounds of the displayed rectangle
 		for(var i = 0, len = systems.length; i < len; i++) {
-			if(!this.systemIsVisible(systems[i], focusedSystem.x - 70, -focusedSystem.y - 70, 140, 140)) {
+			if(!this.pointIsVisible(systems[i], focusedSystem.x - 70, focusedSystem.y - 70, 140, 140)) {
 				continue;
 			}
 			faction = factions[systems[i]['3025']];
@@ -429,12 +429,12 @@ module.exports = (function () {
 					}*/
 					curD += ' M'+curE.x1.toFixed(2)+','+(-curE.y1).toFixed(2);
 				}
-				if(curE.p1c2x === null || curE.p1c2x === undefined ||
-					curE.p2c1x === null || curE.p2c1x === undefined) {
+				if(curE.n1c2x === null || curE.n1c2x === undefined ||
+					curE.n2c1x === null || curE.n2c1x === undefined) {
 					curD += ' L' + borderEdges[i].x2.toFixed(2)+','+(-borderEdges[i].y2).toFixed(2);
 				} else {
-					curD += ' C' + borderEdges[i].p1c2x.toFixed(2)+','+(-borderEdges[i].p1c2y).toFixed(2);
-					curD += ' ' + borderEdges[i].p2c1x.toFixed(2)+','+(-borderEdges[i].p2c1y).toFixed(2);
+					curD += ' C' + borderEdges[i].n1c2x.toFixed(2)+','+(-borderEdges[i].n1c2y).toFixed(2);
+					curD += ' ' + borderEdges[i].n2c1x.toFixed(2)+','+(-borderEdges[i].n2c1y).toFixed(2);
 					curD += ' ' + borderEdges[i].x2.toFixed(2)+','+(-borderEdges[i].y2).toFixed(2);
 				}
 			}
@@ -472,26 +472,18 @@ module.exports = (function () {
 		this.logger.log('file "' + filename + '" written');
 	};
 
-	SvgWriter.prototype.writeUniverseImage = function (year, vBorder, systems, factions) {
+	SvgWriter.prototype.writeUniverseImage = function (year, vBorder, systems, factions, viewBox) {
 		var name = 'universe_'+year;
 		var filename = this.baseDir + '/output/' + name + '.svg';
 		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
 		var rgb;
-		var curP, curD, curE;
+		var curP, curD, curEdge, prevEdge;
+		var curEdgeVisible, prevEdgeVisible;
 		var fill;
 		var parsedSystems;
 		var xmlString = '', systemsString = '';
+		var safeBox;
 
-
-		/*var factionColors = {
-			'DC': { stroke: '#a00', fill: 'rgba(255,20,20,.3)' },
-			'LC': { stroke: '#00a', fill: 'rgba(20, 20, 220, .3)' },
-			'CC': { stroke: '#0a0', fill: 'rgba(20, 220, 20, .3)' },
-			'FS': { stroke: '#fc0', fill: 'rgba(255, 200, 20, .3)' },
-			'FWL': { stroke: '#c3f', fill: 'rgba(220, 50, 255, .3)' },
-			'D': { stroke: '#f00', fill: 'rgba(255, 0, 0, .5)' }
-			//'DUMMY': { stroke: '#f00', fill: 'rgba(255, 0, 0, .5)' }
-		};*/
 		factions['D'] = {
 			shortName : 'D',
 			longName : 'Disputed',
@@ -501,6 +493,14 @@ module.exports = (function () {
 			dissolution: ''
 		};
 		factions['I'].color = '#000000';
+
+		viewBox.y *= -1;
+		safeBox = {
+			x: viewBox.x - 30,
+			y: viewBox.y - 30,
+			w: viewBox.w + 60,
+			h: viewBox.h + 60
+		};
 
 		for(var faction in factions) {
 			var borderEdges = vBorder.borderEdges[faction];
@@ -513,26 +513,35 @@ module.exports = (function () {
 			}
 			rgb = this.hexToRgb(factions[faction].color) || {r: 0, g:0, b:0};
 			factions[faction].fill = 'rgba('+rgb.r+','+rgb.g+','+rgb.b+', .3)';
+
 			curD = '';
-			if(factions[faction].color === '#ffffff') {
-				console.log('WHITE: ',factions[faction]);
-			}
 			for(var i = 0, len = borderEdges.length; i < len; i++) {
-				curE = borderEdges[i];
-				if(curE.isFirstInLoop) {
+				prevEdge = curEdge;
+				curEdge = borderEdges[i];
+				prevEdgeVisible = prevEdge && this.edgeIsVisible(prevEdge, safeBox);
+				curEdgeVisible = this.edgeIsVisible(curEdge, safeBox)
+				/*if(!curEdgeVisible) {
+					continue;
+				}*/
+				prevEdgeVisible = true; // TODO fix this
+				if(curEdge.isFirstInLoop || (!prevEdgeVisible && curEdgeVisible)) {
 					/*if(i > 0) {
 						curD += 'z';
 					}*/
-					curD += ' M'+curE.x1.toFixed(2)+','+(-curE.y1).toFixed(2);
+					curD += ' M'+curEdge.n1.x.toFixed(2)+','+(-curEdge.n1.y).toFixed(2);
 				}
-				if(curE.p1c2x === null || curE.p1c2x === undefined ||
-					curE.p2c1x === null || curE.p2c1x === undefined) {
-					curD += ' L' + borderEdges[i].x2.toFixed(2)+','+(-borderEdges[i].y2).toFixed(2);
+				if(curEdge.n1c2 === null || curEdge.n1c2 === undefined ||
+					curEdge.n2c1 === null || curEdge.n2c1 === undefined ||
+					!curEdgeVisible) {
+					curD += ' L' + borderEdges[i].n2.x.toFixed(2)+','+(-borderEdges[i].n2.y).toFixed(2);
 				} else {
-					curD += ' C' + borderEdges[i].p1c2x.toFixed(2)+','+(-borderEdges[i].p1c2y).toFixed(2);
-					curD += ' ' + borderEdges[i].p2c1x.toFixed(2)+','+(-borderEdges[i].p2c1y).toFixed(2);
-					curD += ' ' + borderEdges[i].x2.toFixed(2)+','+(-borderEdges[i].y2).toFixed(2);
+					curD += ' C' + borderEdges[i].n1c2.x.toFixed(2)+','+(-borderEdges[i].n1c2.y).toFixed(2);
+					curD += ' ' + borderEdges[i].n2c1.x.toFixed(2)+','+(-borderEdges[i].n2c1.y).toFixed(2);
+					curD += ' ' + borderEdges[i].n2.x.toFixed(2)+','+(-borderEdges[i].n2.y).toFixed(2);
 				}
+			}
+			if(curD.length === 0) {
+				continue;
 			}
 			xmlString += '<path fill-rule="evenodd" d="'+curD+'" ';
 			xmlString += 'style="stroke:'+factions[faction].color + ';stroke-width:2px;';
@@ -542,35 +551,51 @@ module.exports = (function () {
 		// paint system dots
 		parsedSystems = vBorder.objects;
 		for(var i = 0, len = parsedSystems.length; i < len; i++) {
-			if(parsedSystems[i].col === 'DUMMY') {
+			if(parsedSystems[i].col === 'DUMMY' ||
+				!this.pointIsVisible(parsedSystems[i], safeBox)) {
 				continue;
 			}
 			fill = '#aaa';
 			if(factions.hasOwnProperty(parsedSystems[i].col)) {
 				fill = factions[parsedSystems[i].col].color;
 			}
-			systemsString += '<circle data-name="'+parsedSystems[i].name+'" data-aff="'+parsedSystems[i].col+'" cx="' + parsedSystems[i].x + '" cy="' + (-parsedSystems[i].y) + '" r="2" style="stroke-width: 0; fill: '+fill+'" />\n';
+			systemsString += '<circle data-name="'+parsedSystems[i].name+'" ';
+			systemsString += 'data-aff="'+parsedSystems[i].col+'" ';
+			systemsString += 'cx="' + parsedSystems[i].x.toFixed(3) + '" ';
+			systemsString += 'cy="' + (-parsedSystems[i].y).toFixed(3) + '" ';
+			systemsString += 'r="2" style="stroke-width: 0; fill: '+fill+'" />\n';
 		}
 
-		tpl = tpl.replace('{WIDTH}', '700');
-		tpl = tpl.replace('{HEIGHT}', '700');
+		tpl = tpl.replace('{WIDTH}', viewBox.w); //'700');
+		tpl = tpl.replace('{HEIGHT}', viewBox.h); //'700');
 		//tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
 		//tpl = tpl.replace('{VIEWBOX}', '-2000 -2000 4000 4000');
-		tpl = tpl.replace('{VIEWBOX}', '-200 -400 400 600');
+		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);
 		tpl = tpl.replace('{ELEMENTS}', xmlString + systemsString);
 		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + filename + '" written');
 	};
 
 	/**
-	 * @returns {boolean} true if the system's coordinates are within the bounds of the given rectangle
+	 * Note that point's y coordinate will be flipped for visibility checks and for display.
+	 *
+	 * @returns {boolean} true if the point's coordinates are within the bounds of the given rectangle
 	 * @private
 	 */
-	SvgWriter.prototype.systemIsVisible = function (system, x, y, w, h) {
-		return system.x >= x
-				&& system.x <= x + w
-				&& -system.y >= y
-				&& -system.y <= y + h;
+	SvgWriter.prototype.pointIsVisible = function (point, rect) {
+		return point.x >= rect.x
+				&& point.x <= rect.x + rect.w
+				&& -point.y >= rect.y
+				&& -point.y <= rect.y + rect.h;
+	};
+
+	/**
+	 * @returns {boolean} true if the edge are within the bounds of the given rectangle
+	 * @private
+	 */
+	SvgWriter.prototype.edgeIsVisible = function (edge, rect) {
+		return this.pointIsVisible(edge.n1, rect)
+				|| this.pointIsVisible(edge.n2, rect);
 	};
 
 	/**
