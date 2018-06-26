@@ -66,7 +66,7 @@ var main = function () {
 		}
 
 		// generate the voronoi diagram to find borders
-		vBorder = new VoronoiBorder(this.logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS);
+		vBorder = new VoronoiBorder(this.logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, 1);
 
 		// create an svg with a universe picture
 		writer.writeUniverseImage(curYear, vBorder, reader.systems, reader.factions);

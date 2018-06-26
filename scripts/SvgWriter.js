@@ -473,7 +473,6 @@ module.exports = (function () {
 	};
 
 	SvgWriter.prototype.writeUniverseImage = function (year, vBorder, systems, factions) {
-		var xmlString = '';
 		var name = 'universe_'+year;
 		var filename = this.baseDir + '/output/' + name + '.svg';
 		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
@@ -481,6 +480,7 @@ module.exports = (function () {
 		var curP, curD, curE;
 		var fill;
 		var parsedSystems;
+		var xmlString = '', systemsString = '';
 
 
 		/*var factionColors = {
@@ -547,9 +547,9 @@ module.exports = (function () {
 			}
 			fill = '#aaa';
 			if(factions.hasOwnProperty(parsedSystems[i].col)) {
-				fill = factions[parsedSystems[i].col].fill;
+				fill = factions[parsedSystems[i].col].color;
 			}
-			xmlString += '<circle data-name="'+parsedSystems[i].name+'" data-aff="'+parsedSystems[i].col+'" cx="' + parsedSystems[i].x + '" cy="' + (-parsedSystems[i].y) + '" r="2" style="stroke-width: 0; fill: '+fill+'" />\n';
+			systemsString += '<circle data-name="'+parsedSystems[i].name+'" data-aff="'+parsedSystems[i].col+'" cx="' + parsedSystems[i].x + '" cy="' + (-parsedSystems[i].y) + '" r="2" style="stroke-width: 0; fill: '+fill+'" />\n';
 		}
 
 		tpl = tpl.replace('{WIDTH}', '700');
@@ -557,7 +557,7 @@ module.exports = (function () {
 		//tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
 		//tpl = tpl.replace('{VIEWBOX}', '-2000 -2000 4000 4000');
 		tpl = tpl.replace('{VIEWBOX}', '-200 -400 400 600');
-		tpl = tpl.replace('{ELEMENTS}', xmlString);
+		tpl = tpl.replace('{ELEMENTS}', xmlString + systemsString);
 		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + filename + '" written');
 	};

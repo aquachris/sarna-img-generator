@@ -248,7 +248,7 @@ module.exports = (function () {
         }
 
         this.sortBorderEdges();
-        this.separateEdges(this.borderSeparation);
+		this.separateEdges(this.borderSeparation);
         this.generateEdgeControlPoints();
     };
 
@@ -341,37 +341,101 @@ module.exports = (function () {
      * Pulls each border edge slightly closer to its same-color object.
      *
      * This is optional - works well when border strokes are shown.
-     * @param dist {Number} By how much the borders will be pulled apart.
+     * @param pullDist {Number} Borders will be pulled apart by this many units.
      */
     VoronoiBorder.prototype.separateEdges = function (pullDist) {
         var curLoopStartIdx;
+		var nextEdgeIdx;
         var curEdge, nextEdge;
+		var oriEdges;
         var curO, nextO;
+		var p1, p2, p3;
+		var vec1, perp1, vec2, perp2;
         var centerPoint;
         var adjVector;
         var curEdgeVec, nextEdgeVec;
         var dotProduct;
+		var extFactor;
         for(var col in this.borderEdges) {
             if(!this.borderEdges.hasOwnProperty(col)) {
                 continue;
             }
             curLoopStartIdx = -1;
+			oriEdges = JSON.parse(JSON.stringify(this.borderEdges[col]));
             for(var i = 0, len = this.borderEdges[col].length; i < len; i++) {
-                curEdge = this.borderEdges[col][i];
+                //curEdge = this.borderEdges[col][i];
+				curEdge = oriEdges[i];
                 if(curEdge.isFirstInLoop) {
                     curLoopStartIdx = i;
                 }
-                nextEdge = this.borderEdges[col][i+1];
+                //nextEdge = this.borderEdges[col][i+1];
+				nextEdgeIdx = i+1;
+				nextEdge = oriEdges[nextEdgeIdx];
                 if(!nextEdge || nextEdge.isFirstInLoop) {
+					nextEdgeIdx = curLoopStartIdx;
                     nextEdge = this.borderEdges[col][curLoopStartIdx];
                 }
                 curO = curEdge.col1 === col ? this.objects[curEdge.o1] : this.objects[curEdge.o2];
-                nextO = nextEdge.col2 === col ? this.objects[nextEdge.o1] : this.objects[nextEdge.o2];
-
-                /*centerPoint = {
-                    x: (curO.x + nextO.x) / 2,
-                    y: (curO.y + nextO.y) / 2
-                };*/
+                nextO = nextEdge.col1 === col ? this.objects[nextEdge.o1] : this.objects[nextEdge.o2];
+				
+				p1 = { x: curEdge.x1, y: curEdge.y1 };
+				p2 = { x: curEdge.x2, y: curEdge.y2 };
+				p3 = { x: nextEdge.x2, y: nextEdge.y2 };
+				
+				vec1 = [p2.x - p1.x, p2.y - p1.y];
+				Utils.normalizeVector2d(vec1);
+				centerPoint = {
+                    x: (p1.x + p2.x) / 2,
+                    y: (p1.y + p2.y) / 2
+                };
+				perp1 = [-vec1[1], vec1[0]];
+				if(Utils.distance(curO.x, curO.y, p2.x, p2.y) < Utils.distance(curO.x, curO.y, p2.x + perp1[0], p2.y + perp1[1])) {
+					perp1 = [vec1[1], -vec1[0]];
+				}
+				//perp1 = [curO.x - centerPoint.x, curO.y - centerPoint.y];
+				Utils.normalizeVector2d(perp1);
+				
+				vec2 = [p3.x - p2.x, p3.y - p2.y];
+				Utils.normalizeVector2d(vec2);
+				centerPoint = {
+                    x: (p3.x + p2.x) / 2,
+                    y: (p3.y + p2.y) / 2
+                };
+				perp2 = [-vec2[1], vec2[0]];
+				if(Utils.distance(nextO.x, nextO.y, p2.x, p2.y) < Utils.distance(nextO.x, nextO.y, p2.x + perp2[0], p2.y + perp2[1])) {
+					perp2 = [vec2[1], -vec2[0]];
+				}
+				//perp2 = [nextO.x - centerPoint.x, nextO.y - centerPoint.y];
+				Utils.normalizeVector2d(perp2);
+				
+				dotProduct = Utils.dotProduct2d(perp1, perp2);
+				
+				extFactor = 1;
+				// case 1: the angle between the two vectors is <= 90°
+				if(dotProduct >= 0) {
+					adjVector = [perp1[0] + perp2[0], perp1[1] + perp2[1]];
+					
+				// case 2: the angle between the two vectors is > 90°
+				} else {
+					// case 2a: the angle between curEdge and nextEdge is < 90*
+					if(Utils.distance(centerPoint.x, centerPoint.y, curO.x, curO.y) < Utils.distance(centerPoint.x + perp2[0], centerPoint.y + perp2[1], curO.x, curO.y)) {
+						adjVector = [p2.x - p1.x + p2.x - p3.x, p2.y - p1.y + p2.y - p3.y];
+						
+					// case 2b: the angle between curEdge and nextEdge is > 180*
+					} else {
+						adjVector = [p1.x - p2.x + p3.x - p2.x, p1.y - p2.y + p3.y - p2.y];
+					}
+					extFactor =	0.6 * (1 - dotProduct); // TODO magic numbers. Also, this doesn't really have a big effect - leave out?
+				}
+				// scale the vector to be pullDist units long
+				Utils.normalizeVector2d(adjVector);
+				Utils.scaleVector2d(adjVector, pullDist * extFactor);
+				
+				// move the point in question
+				this.borderEdges[col][i].x2 = this.borderEdges[col][nextEdgeIdx].x1 = curEdge.x2 + adjVector[0];
+                this.borderEdges[col][i].y2 = this.borderEdges[col][nextEdgeIdx].y1 = curEdge.y2 + adjVector[1];
+				
+				/*
                 centerPoint = {
                     x: (curEdge.x1 + curEdge.x2) / 2,
                     y: (curEdge.y1 + curEdge.y2) / 2
@@ -383,20 +447,17 @@ module.exports = (function () {
                 //adjVector = [curO.x - curEdge.x2, curO.y - curEdge.y2];
                 Utils.scaleVector2d(adjVector, pullDist);
 
-                /*if(col === 'OA') {
+                if(col === 'OA') {
                     console.log('a: ', curEdge.x2, curEdge.y2);
                     console.log('b: ', adjVector);
-                }*/
+                }
                 // calculate the angle between this edge and the next one
                 curEdgeVec = [curEdge.x2 - curEdge.x1, curEdge.y2 - curEdge.y1];
                 Utils.normalizeVector2d(curEdgeVec);
                 nextEdgeVec = [nextEdge.x2 - nextEdge.x1, curEdge.y2 - curEdge.y1];
                 Utils.normalizeVector2d(nextEdgeVec);
-                dotProduct = Utils.dotProduct2d([curEdge.x2 - curEdge.x1]);
-
-
-                curEdge.x2 = nextEdge.x1 = curEdge.x2 + adjVector[0];
-                curEdge.y2 = nextEdge.y1 = curEdge.y2 + adjVector[1];
+                //dotProduct = Utils.dotProduct2d([curEdge.x2 - curEdge.x1]);
+				*/                
                 /*if(col === 'OA') {
                     console.log('c: ', curEdge.x2, curEdge.y2);
                 }*/
@@ -447,7 +508,7 @@ module.exports = (function () {
                     curEdge.p2c1y = curEdge.p2c2y = nextEdge.p1c1y = nextEdge.p1c2y = p2[1]; //nextEdge.y1;
                     nextEdge.p2c1x = p3[0]; //nextEdge.x1;
                     nextEdge.p2c1y = p3[1]; //nextEdge.y1;
-                }
+				}
 
                 dist12 = Utils.distance(p1[0], p1[1], p2[0], p2[1]);
                 dist23 = Utils.distance(p2[0], p2[1], p3[0], p3[1]);

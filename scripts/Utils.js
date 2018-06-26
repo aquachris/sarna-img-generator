@@ -112,6 +112,9 @@ module.exports = (function () {
      */
     Utils.scaleVector2d = function (v, scaleTo) {
         var mag = this.vectorLength2d(v);
+		if(mag === 0) {
+			return;
+		}
         v[0] = v[0] * scaleTo / mag;
         v[1] = v[1] * scaleTo / mag;
     };
@@ -137,6 +140,18 @@ module.exports = (function () {
     Utils.dotProduct2d = function (v1, v2) {
         return v1[0] * v2[0] + v1[1] * v2[1];
     };
+	
+	/**
+	 * @returns {boolean} true if p is in the triangle formed by p0, p1, p2
+	 */ 
+	Utils.pointInTriangle = function(p, p0, p1, p2) {
+		var A = 1/2 * (-p1.y * p2.x + p0.y * (-p1.x + p2.x) + p0.x * (p1.y - p2.y) + p1.x * p2.y);
+		var sign = A < 0 ? -1 : 1;
+		var s = (p0.y * p2.x - p0.x * p2.y + (p2.y - p0.y) * p.x + (p0.x - p2.x) * p.y) * sign;
+		var t = (p0.x * p1.y - p0.y * p1.x + (p0.y - p1.y) * p.x + (p1.x - p0.x) * p.y) * sign;
+		
+		return s > 0 && t > 0 && (s + t) < 2 * A * sign;
+	};
 
     return Utils;
 })();

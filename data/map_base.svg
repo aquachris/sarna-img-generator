@@ -17,6 +17,7 @@
 		circle.system { fill: #000; stroke: #000; stroke-width: .25 } /* default color */
 		circle.jump-radius { fill: transparent; stroke: #888; stroke-width: .25 }
 		text.system-name { font-size: 3px; }
+		path { stroke-linejoin: round; stroke-linecap: round; }
 	</style>
 
 	<g>
