@@ -6,6 +6,7 @@ module.exports = (function () {
 	var Observable = require('./Observable.js');
 	var InfluenceMap = require('./InfluenceMap.js');
 	var VoronoiBorder = require('./VoronoiBorder.js');
+	var Utils = require('./Utils.js');
 
 	/**
 	 * An instance of this class writes SVG files on demand, using the given
@@ -472,7 +473,7 @@ module.exports = (function () {
 		this.logger.log('file "' + filename + '" written');
 	};
 
-	SvgWriter.prototype.writeUniverseImage = function (year, vBorder, systems, factions, viewBox) {
+	SvgWriter.prototype.writeUniverseImage = function (year, vBorder, systems, factions, viewRect) {
 		var name = 'universe_'+year;
 		var filename = this.baseDir + '/output/' + name + '.svg';
 		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
@@ -483,6 +484,7 @@ module.exports = (function () {
 		var parsedSystems;
 		var xmlString = '', systemsString = '';
 		var safeBox;
+		var viewBox;
 
 		factions['D'] = {
 			shortName : 'D',
@@ -493,17 +495,17 @@ module.exports = (function () {
 			dissolution: ''
 		};
 		factions['I'].color = '#000000';
-
-		viewBox.y *= -1;
-		safeBox = {
-			x: viewBox.x - 30,
-			y: viewBox.y - 30,
-			w: viewBox.w + 60,
-			h: viewBox.h + 60
+		
+		// svg viewBox's y is top left, not bottom left
+		viewBox = {
+			x: viewRect.x,
+			y: viewRect.y + viewRect.h
+			w: viewRect.w,
+			h: viewRect.h
 		};
 
 		for(var faction in factions) {
-			var borderEdges = vBorder.borderEdges[faction];
+			var borderEdges = vBorder.boundedBorderEdges[faction];
 			if(!borderEdges || borderEdges.length === 0) {
 				continue;
 			}
@@ -552,7 +554,7 @@ module.exports = (function () {
 		parsedSystems = vBorder.objects;
 		for(var i = 0, len = parsedSystems.length; i < len; i++) {
 			if(parsedSystems[i].col === 'DUMMY' ||
-				!this.pointIsVisible(parsedSystems[i], safeBox)) {
+				!Utils.pointInRectangle(parsedSystems[i], viewRect)) {
 				continue;
 			}
 			fill = '#aaa';
@@ -581,21 +583,13 @@ module.exports = (function () {
 	 *
 	 * @returns {boolean} true if the point's coordinates are within the bounds of the given rectangle
 	 * @private
+	 * @obsolete use Utils.pointInRectangle instead
 	 */
 	SvgWriter.prototype.pointIsVisible = function (point, rect) {
 		return point.x >= rect.x
 				&& point.x <= rect.x + rect.w
 				&& -point.y >= rect.y
 				&& -point.y <= rect.y + rect.h;
-	};
-
-	/**
-	 * @returns {boolean} true if the edge are within the bounds of the given rectangle
-	 * @private
-	 */
-	SvgWriter.prototype.edgeIsVisible = function (edge, rect) {
-		return this.pointIsVisible(edge.n1, rect)
-				|| this.pointIsVisible(edge.n2, rect);
 	};
 
 	/**

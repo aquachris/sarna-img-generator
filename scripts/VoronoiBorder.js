@@ -24,6 +24,8 @@ module.exports = (function () {
         this.nodes = null;
         // map of border edges for each color
         this.borderEdges = null;
+		// map of bounded border edges for each color
+		this.boundedBorderEdges = null;
         // map of border node indices
         this.borderNodeIndices = null;
         // distance between border lines
@@ -66,6 +68,7 @@ module.exports = (function () {
         this.points = [];
         this.nodes = [];
         this.borderEdges = {};
+		this.boundedBorderEdges = {};
         this.borderNodeIndices = {};
 
         // Step 1: Iterate over all objects and generate a point array
@@ -470,12 +473,6 @@ module.exports = (function () {
                     curEdge.n1c2 = { x: p1.x, y: p1.y };
                     curEdge.n2c1 = curEdge.n2c2 = nextEdge.n1c1 = nextEdge.n1c2 = { x: p2.x, y: p2.y };
                     nextEdge.n2c1 = { x: p3.x, y: p3.y };
-                    //curEdge.n1c2x = p1.x;
-                    //curEdge.n1c2y = p1.y;
-                    //curEdge.n2c1x = curEdge.n2c2x = nextEdge.n1c1x = nextEdge.n1c2x = p2.x;
-                    //curEdge.n2c1y = curEdge.n2c2y = nextEdge.n1c1y = nextEdge.n1c2y = p2.y;
-                    //nextEdge.n2c1x = p3.x;
-                    //nextEdge.n2c1y = p3.y;
 				}
 
                 dist12 = Utils.distance(p1.x, p1.y, p2.x, p2.y);
@@ -508,6 +505,67 @@ module.exports = (function () {
             }
         }
     };
-
+	
+	/**
+	 * Generate a set of bounded borders for each faction. 
+	 * This is an optional step that reduces the amount of edges in a border path to only those that are actually displayed, 
+	 * plus connecting "off-screen" lines to maintain shape closure.
+	 *
+	 * @param rect {Object} The bounding box (x, y, w, h in map space)
+	 */
+	VoronoiBorder.prototype.generateBoundedBorders = function (rect) {
+		var curColEdges;
+		var outsideEdgePoints;
+		var prevEdge, curEdge;
+		var prevEdgeVisible, curEdgeVisible;
+		var curLoopStartIdx;
+		var curLoopVisible;
+		var newEdge;
+		
+		this.boundedBorderEdges = {};
+		
+		for(var col in this.borderEdges) {
+			if(!this.borderEdges.hasOwnProperty(col)) {
+				continue;
+			}
+			curColEdges = [];
+			
+			curEdge = null;
+			curEdgeVisible = false;
+			curLoopVisible = false;
+			for(var i = 0, len = this.borderEdges[col].length; i < len; i++) {
+				prevEdge = curEdge;
+				curEdge = this.borderEdges[col][i];
+				
+				prevEdgeVisible = !!prevEdge && curEdgeVisible;
+				curEdgeVisible = Utils.pointInRectangle(curEdge.n1, rect) || Utils.pointInRectangle(curEdge.n2, rect);
+				
+				if(curEdge.isFirstInLoop) {
+					curLoopVisible = false;
+				}
+				
+				// determine whether the edge should be 
+				// a) simply displayed, if it's visible
+				// b.1) not displayed, but replaced with an off-screen edge
+				// b.2) aggregated into other off-screen edges
+				if(curEdgeVisible) {
+					newEdge = Utils.deepCopy(curEdge);
+					if(!curLoopVisible) {
+						newEdge.isFirstInLoop = true;
+						curLoopVisible = true;
+					}
+					curColEdges.push(newEdge);
+				} else {
+					// current edge invisible
+				}
+				
+			}
+			
+			if(curColEdges.length > 0) {
+				this.boundedBorderEdges[col] = curColEdges;
+			}
+		};
+	};
+	
     return VoronoiBorder;
 })();

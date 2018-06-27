@@ -133,6 +133,7 @@ module.exports = (function () {
      *
      * If vectors are normalized and the angle between them is theta, the
      * returned value is cos(theta).
+	 *
      * @param v1 {Array} 2-piece array representing the first vector
      * @param v2 {Array} 2-piece array representing the second vector
      * @returns {Number} dot product of v1 and v2
@@ -151,6 +152,23 @@ module.exports = (function () {
 		var t = (p0.x * p1.y - p0.y * p1.x + (p0.y - p1.y) * p.x + (p1.x - p0.x) * p.y) * sign;
 		
 		return s > 0 && t > 0 && (s + t) < 2 * A * sign;
+	};
+	
+	/**
+	 * @returns {boolean} true if p lies within the rectangle
+	 */
+	Utils.pointInRectangle = function(p, rect) {
+		return p.x >= rect.x
+				&& p.x <= rect.x + rect.w
+				&& p.y >= rect.y
+				&& p.y <= rect.y + rect.h;
+	};
+	
+	/**
+	 * @returns o {Object} Deep copy of the provided object
+	 */
+	Utils.deepCopy = function (o) {
+		return JSON.parse(JSON.stringify(o));
 	};
 
     return Utils;
