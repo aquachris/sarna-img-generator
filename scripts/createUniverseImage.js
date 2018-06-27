@@ -24,12 +24,20 @@ var main = function () {
     var voronoiSystems;
 	var curYear;
     var curSys, curAff, curP;
-	var viewBox = {
-		x: -200,
-		y: -200,
-		w: 400,
-		h: 600
+
+    // the visible rectangle, in map space:
+	var viewRect = {
+		x: -2000,
+		y: -2000,
+		w: 4000,
+		h: 4000
 	};
+    var viewRect2 = {
+        x: -50,
+        y: -50,
+        w: 100,
+        h: 100
+    };
 
     // generate additional points randomly
     var pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -70,15 +78,16 @@ var main = function () {
     			});
             }
 		}
-		
-		
+
+
 
 		// generate the voronoi diagram to find borders
 		vBorder = new VoronoiBorder(this.logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, 1);
-		vBorder.generatedBoundedBorders(viewBox);
+        vBorder.generateBoundedBorders(viewRect);
+		//vBorder.generateBoundedBorders(viewRect2);
 
 		// create an svg with a universe picture
-		writer.writeUniverseImage(curYear, vBorder, reader.systems, reader.factions, viewBox);
+		writer.writeUniverseImage(curYear, vBorder, reader.systems, reader.factions, viewRect);
 	}
 
     // finish by rendering out the logs

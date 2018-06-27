@@ -231,10 +231,6 @@ module.exports = (function () {
                                 id: i+'-'+neighborNodes[ni],
                                 n1: {x: curNode.x, y: curNode.y},
                                 n2: {x: curNeighbor.x, y: curNeighbor.y},
-                                /*x1: curNode.x,
-                                y1: curNode.y,
-                                x2: curNeighbor.x,
-                                y2: curNeighbor.y,*/
                                 obj1: commonObj[0],
                                 obj2: commonObj[1],
                                 col1: col1,
@@ -505,67 +501,146 @@ module.exports = (function () {
             }
         }
     };
-	
+
 	/**
-	 * Generate a set of bounded borders for each faction. 
-	 * This is an optional step that reduces the amount of edges in a border path to only those that are actually displayed, 
+	 * Generate a set of bounded borders for each faction.
+	 * This is an optional step that reduces the amount of edges in a border path to only those that are actually displayed,
 	 * plus connecting "off-screen" lines to maintain shape closure.
 	 *
 	 * @param rect {Object} The bounding box (x, y, w, h in map space)
 	 */
 	VoronoiBorder.prototype.generateBoundedBorders = function (rect) {
 		var curColEdges;
-		var outsideEdgePoints;
+		var outsideEdgePoints, outsideEdges;
 		var prevEdge, curEdge;
 		var prevEdgeVisible, curEdgeVisible;
 		var curLoopStartIdx;
 		var curLoopVisible;
 		var newEdge;
-		
+        var tolerance = 5;
+        var tRect = {
+            x: rect.x - tolerance,
+            y: rect.y - tolerance,
+            w: rect.w + tolerance * 2,
+            h: rect.h + tolerance * 2
+        };
+
+        // private helper function
+        var clampPoint = function(x, y, rect) {
+            return {
+                x: Math.min(Math.max(x, rect.x), rect.x + rect.w),
+                y: Math.min(Math.max(y, rect.y), rect.y + rect.h)
+            };
+        };
+
+        // private helper function
+        var aggregatePointsToEdges = function(points, log) {
+            var edges = [];
+            var p1, p2, p3;
+
+            if(!points || points.length < 2) {
+                return edges;
+            }
+
+            // Remove points one by one, while adding edges:
+            // If the array's first three points are on a common line along the
+            // x or y direction, the middle point can be removed.
+            // If not, a new edge must be added between point 1 and point 2, and point 1
+            // can be removed from the array.
+            while(points.length > 2) {
+                if(!!log) {
+                    console.log(points.length + ' points');
+                }
+                p1 = points[0];
+                p2 = points[1];
+                p3 = points[2];
+
+                // remove identical points p2, or ones that are on a line between p1 and p3
+                if( (p1.x === p2.x && (p1.y === p2.y || p2.x === p3.x)) ||
+                    (p1.y === p2.y && p2.y === p3.y) ) {
+                    points.splice(1, 1); // remove p2
+
+                // there is a switch in direction at p2 --> new edge
+                } else {
+                    edges.push({
+                        n1: p1,
+                        n2: p2,
+                        p1: p1,
+                        p2: p2
+                    });
+                    points.shift(); // remove p1
+                }
+            }
+            // clean up the remaining two points
+            edges.push({
+                n1: points[0],
+                n2: points[1],
+                p1: points[0],
+                p2: points[1]
+            });
+            return edges;
+        };
+
 		this.boundedBorderEdges = {};
-		
+
 		for(var col in this.borderEdges) {
 			if(!this.borderEdges.hasOwnProperty(col)) {
 				continue;
 			}
 			curColEdges = [];
-			
+            outsideEdgePoints = [];
+
 			curEdge = null;
 			curEdgeVisible = false;
 			curLoopVisible = false;
 			for(var i = 0, len = this.borderEdges[col].length; i < len; i++) {
 				prevEdge = curEdge;
-				curEdge = this.borderEdges[col][i];
-				
 				prevEdgeVisible = !!prevEdge && curEdgeVisible;
-				curEdgeVisible = Utils.pointInRectangle(curEdge.n1, rect) || Utils.pointInRectangle(curEdge.n2, rect);
-				
+
+                curEdge = this.borderEdges[col][i];
+				curEdgeVisible = Utils.pointInRectangle(curEdge.n1, tRect) || Utils.pointInRectangle(curEdge.n2, tRect);
+
 				if(curEdge.isFirstInLoop) {
 					curLoopVisible = false;
+                    outsideEdgePoints = [];
+                    prevEdge = null;
+                    prevEdgeVisible = false;
 				}
-				
-				// determine whether the edge should be 
-				// a) simply displayed, if it's visible
-				// b.1) not displayed, but replaced with an off-screen edge
-				// b.2) aggregated into other off-screen edges
-				if(curEdgeVisible) {
+
+			    // either the previous or the current edge is visible
+                // --> add the current edge to the list as is, after adding
+                //     any outside edges that precede it (if applicable)
+				if(prevEdgeVisible || curEdgeVisible) {
+                    if(outsideEdgePoints.length > 0) {
+                        // edge loop is coming back into view
+                        // --> resolve all outside edge points that were added for the current edge loop
+                        outsideEdges = aggregatePointsToEdges(outsideEdgePoints);
+                        for(var j = 0, jlen = outsideEdges.length; j < jlen; j++) {
+                            curColEdges.push(outsideEdges[j]);
+                        }
+                        outsideEdgePoints = [];
+                    }
 					newEdge = Utils.deepCopy(curEdge);
+
 					if(!curLoopVisible) {
 						newEdge.isFirstInLoop = true;
 						curLoopVisible = true;
 					}
-					curColEdges.push(newEdge);
-				} else {
-					// current edge invisible
+                    curColEdges.push(newEdge);
+
+                // both the previous and the current edge are invisible
+                // --> add the current edge's first point to a list of outside points
+                //     that will be aggregated and re-assembled to shorter path parts later
+                } else {
+                    outsideEdgePoints.push(clampPoint(curEdge.n1.x, curEdge.n1.y, tRect));
 				}
-				
 			}
-			
+
 			if(curColEdges.length > 0) {
 				this.boundedBorderEdges[col] = curColEdges;
 			}
 		};
 	};
-	
+
     return VoronoiBorder;
 })();

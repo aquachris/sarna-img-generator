@@ -483,7 +483,6 @@ module.exports = (function () {
 		var fill;
 		var parsedSystems;
 		var xmlString = '', systemsString = '';
-		var safeBox;
 		var viewBox;
 
 		factions['D'] = {
@@ -495,11 +494,12 @@ module.exports = (function () {
 			dissolution: ''
 		};
 		factions['I'].color = '#000000';
-		
+
 		// svg viewBox's y is top left, not bottom left
+		// viewRect is in map space, viewBox is in svg space
 		viewBox = {
 			x: viewRect.x,
-			y: viewRect.y + viewRect.h
+			y: - viewRect.y - viewRect.h,
 			w: viewRect.w,
 			h: viewRect.h
 		};
@@ -520,21 +520,11 @@ module.exports = (function () {
 			for(var i = 0, len = borderEdges.length; i < len; i++) {
 				prevEdge = curEdge;
 				curEdge = borderEdges[i];
-				prevEdgeVisible = prevEdge && this.edgeIsVisible(prevEdge, safeBox);
-				curEdgeVisible = this.edgeIsVisible(curEdge, safeBox)
-				/*if(!curEdgeVisible) {
-					continue;
-				}*/
-				prevEdgeVisible = true; // TODO fix this
-				if(curEdge.isFirstInLoop || (!prevEdgeVisible && curEdgeVisible)) {
-					/*if(i > 0) {
-						curD += 'z';
-					}*/
+				if(curEdge.isFirstInLoop) {
 					curD += ' M'+curEdge.n1.x.toFixed(2)+','+(-curEdge.n1.y).toFixed(2);
 				}
 				if(curEdge.n1c2 === null || curEdge.n1c2 === undefined ||
-					curEdge.n2c1 === null || curEdge.n2c1 === undefined ||
-					!curEdgeVisible) {
+					curEdge.n2c1 === null || curEdge.n2c1 === undefined) {
 					curD += ' L' + borderEdges[i].n2.x.toFixed(2)+','+(-borderEdges[i].n2.y).toFixed(2);
 				} else {
 					curD += ' C' + borderEdges[i].n1c2.x.toFixed(2)+','+(-borderEdges[i].n1c2.y).toFixed(2);
@@ -568,12 +558,16 @@ module.exports = (function () {
 			systemsString += 'r="2" style="stroke-width: 0; fill: '+fill+'" />\n';
 		}
 
-		tpl = tpl.replace('{WIDTH}', viewBox.w); //'700');
-		tpl = tpl.replace('{HEIGHT}', viewBox.h); //'700');
+		var boxString = '';//'<rect x="-50" y="-50" width="100" height="100" style="stroke: #000; stroke-width: 2; fill: none;" stroke-dasharray="12 2" />';
+
+		//tpl = tpl.replace('{WIDTH}', viewBox.w); //'700');
+		//tpl = tpl.replace('{HEIGHT}', viewBox.h); //'700');
+		tpl = tpl.replace('{WIDTH}', '700');
+		tpl = tpl.replace('{HEIGHT}', '700');
 		//tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
 		//tpl = tpl.replace('{VIEWBOX}', '-2000 -2000 4000 4000');
 		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);
-		tpl = tpl.replace('{ELEMENTS}', xmlString + systemsString);
+		tpl = tpl.replace('{ELEMENTS}', xmlString + systemsString + boxString);
 		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + filename + '" written');
 	};
