@@ -504,12 +504,13 @@ module.exports = (function () {
 
 	/**
 	 * Generate a set of bounded borders for each faction.
-	 * This is an optional step that reduces the amount of edges in a border path to only those that are actually 
+	 * This is an optional step that reduces the amount of edges in a border path to only those that are actually
 	 * displayed, and also adds connecting "off-screen" lines to maintain shape closure.
 	 *
 	 * @param rect {Object} The bounding box (x, y, w, h in map space)
+     * @param tolerance {Number} Bounding box tolerance, default is 5
 	 */
-	VoronoiBorder.prototype.generateBoundedBorders = function (rect) {
+	VoronoiBorder.prototype.generateBoundedBorders = function (rect, tolerance) {
 		var curColEdges;
 		var outsideEdgePoints, outsideEdges;
 		var prevEdge, curEdge;
@@ -517,8 +518,10 @@ module.exports = (function () {
 		var curLoopStartIdx;
 		var curLoopVisible;
 		var newEdge;
-        var tolerance = 5;
-        var tRect = {
+        var tRect;
+
+        tolerance === undefined ? tolerance = 5 : false;
+        tRect = {
             x: rect.x - tolerance,
             y: rect.y - tolerance,
             w: rect.w + tolerance * 2,
@@ -641,6 +644,34 @@ module.exports = (function () {
 			}
 		};
 	};
+
+    /**
+	 * Filter the objects array by whether the objects are within the bounding box or not.
+	 * This is an optional step that reduces the amount of invisible objects in the result set.
+	 *
+	 * @param rect {Object} The bounding box (x, y, w, h in map space)
+     * @param tolerance {Number} Bounding box tolerance, default is 5
+     * @returns {Array} The filtered objects array
+	 */
+    VoronoiBorder.prototype.generateBoundedObjects = function (rect, tolerance) {
+        var ret = [];
+        var tRect;
+
+        tolerance === undefined ? tolerance = 5 : false;
+        tRect = {
+            x: rect.x - tolerance,
+            y: rect.y - tolerance,
+            w: rect.w + tolerance * 2,
+            h: rect.h + tolerance * 2
+        };
+
+        for(var i = 0, len = this.objects.length; i < len; i++) {
+            if(Utils.pointInRectangle(this.objects[i], tRect)) {
+                ret.push(Utils.deepCopy(this.objects[i]));
+            }
+        }
+        return ret;
+    };
 
     return VoronoiBorder;
 })();

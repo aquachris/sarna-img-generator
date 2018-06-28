@@ -536,34 +536,36 @@ module.exports = (function () {
 				continue;
 			}
 			xmlString += '<path fill-rule="evenodd" d="'+curD+'" ';
-			xmlString += 'style="stroke:'+factions[faction].color + ';stroke-width:2px;';
+			xmlString += 'style="stroke:'+factions[faction].color + ';stroke-width:1px;';
 			xmlString += 'fill:'+factions[faction].fill+';" />\n';
 		}
 
 		// paint system dots
-		parsedSystems = vBorder.objects;
-		for(var i = 0, len = parsedSystems.length; i < len; i++) {
-			if(parsedSystems[i].col === 'DUMMY' ||
-				!Utils.pointInRectangle(parsedSystems[i], viewRect)) {
+		for(var i = 0, len = systems.length; i < len; i++) {
+			if(systems[i].col === 'DUMMY') {
+				//!Utils.pointInRectangle(parsedSystems[i], viewRect)) {
 				continue;
 			}
 			fill = '#aaa';
-			if(factions.hasOwnProperty(parsedSystems[i].col)) {
-				fill = factions[parsedSystems[i].col].color;
+			if(factions.hasOwnProperty(systems[i].col)) {
+				fill = factions[systems[i].col].color;
 			}
-			systemsString += '<circle data-name="'+parsedSystems[i].name+'" ';
-			systemsString += 'data-aff="'+parsedSystems[i].col+'" ';
-			systemsString += 'cx="' + parsedSystems[i].x.toFixed(3) + '" ';
-			systemsString += 'cy="' + (-parsedSystems[i].y).toFixed(3) + '" ';
-			systemsString += 'r="2" style="stroke-width: 0; fill: '+fill+'" />\n';
+			systemsString += '<circle data-name="'+systems[i].name+'" ';
+			systemsString += 'data-aff="'+systems[i].col+'" ';
+			systemsString += 'cx="' + systems[i].x.toFixed(3) + '" ';
+			systemsString += 'cy="' + (-systems[i].y).toFixed(3) + '" ';
+			systemsString += 'r="1" style="stroke: #000; stroke-width: 0.25; fill: '+fill+'" />\n';
+			systemsString += '<text x="'+(systems[i].x + 1.5).toFixed(3)+'" ';
+			systemsString += 'y="' + (-systems[i].y).toFixed(3) + '">';
+			systemsString += systems[i].name+ '</text>'
 		}
 
 		var boxString = '';//'<rect x="-50" y="-50" width="100" height="100" style="stroke: #000; stroke-width: 2; fill: none;" stroke-dasharray="12 2" />';
 
 		//tpl = tpl.replace('{WIDTH}', viewBox.w); //'700');
 		//tpl = tpl.replace('{HEIGHT}', viewBox.h); //'700');
-		tpl = tpl.replace('{WIDTH}', '700');
-		tpl = tpl.replace('{HEIGHT}', '700');
+		tpl = tpl.replace('{WIDTH}', '800');
+		tpl = tpl.replace('{HEIGHT}', '800');
 		//tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
 		//tpl = tpl.replace('{VIEWBOX}', '-2000 -2000 4000 4000');
 		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);

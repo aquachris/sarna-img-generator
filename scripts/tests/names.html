@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>System names</title>
+
+    <style type="text/css">
+        svg text {
+            font-family: Tahoma, Arial, sans-serif;
+            font-size: 3px;
+        }
+        svg rect {
+            fill: rgba(40, 40, 80, .2);
+            stroke: rgba(30, 30, 30, .5);
+            stroke-width: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <script src="https://d3js.org/d3.v5.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+
+        var svg = d3.select('body').append('svg')
+            .attr('viewBox', '0 0 200 200')
+            .attr('width', '800px')
+            .attr('height', '800px');
+        svg.append('g');
+        d3.tsv('./systemNames.tsv', function (d) {
+            return d;
+        }).then(function(data) {
+            data.sort(function (a, b) {
+                return a.name.length - b.name.length;
+            });
+            console.log(data);
+            var texts = d3.select('svg > g')
+                .selectAll('text')
+                .data(data)
+                .enter();
+
+            texts.append('text')
+                .text(function (d) { return d.name; })
+                .attr('x', function (d, i) {
+                    return 60 * Math.floor(i / 65);
+                })
+                .attr('y', function (d, i) {
+                    return 3*(i%65) + 3;
+                });
+            texts.append('rect')
+                .attr('x', function (d, i) {
+                    return 60 * Math.floor(i / 65);
+                })
+                .attr('y', function (d, i) {
+                    return 3*(i%65);
+                })
+                .attr('width', function (d, i) {
+                    return Math.round(d.name.length * 1.75);
+                })
+                .attr('height', '2.5');
+
+            var numChars = [];
+            var widths = [];
+            /*texts.selectAll('text').each(function (d, i) {
+                numChars.push(d.name.length);
+                widths.push(this.getComputedTextLength());
+            });
+
+            console.log(d3.max(widths)+' is widths maximum, ' + d3.max(numChars) + ' is char maximum');*/
+        });
+    </script>
+
+</body>
+
+</html>

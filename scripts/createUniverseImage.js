@@ -22,6 +22,7 @@ var main = function () {
 	var years = ['3025', '3030', '3052'];
     var reservedPoints;
     var voronoiSystems;
+    var filteredSystems;
 	var curYear;
     var curSys, curAff, curP;
 
@@ -32,6 +33,12 @@ var main = function () {
 		w: 4000,
 		h: 4000
 	};
+    viewRect = {
+        x: -100,
+        y: -100,
+        w: 200,
+        h: 200
+    };
     var viewRect2 = {
         x: -50,
         y: -50,
@@ -79,15 +86,15 @@ var main = function () {
             }
 		}
 
-
-
 		// generate the voronoi diagram to find borders
-		vBorder = new VoronoiBorder(this.logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, 1);
+		vBorder = new VoronoiBorder(this.logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
         vBorder.generateBoundedBorders(viewRect);
-		//vBorder.generateBoundedBorders(viewRect2);
+        //vBorder.generateBoundedBorders(viewRect2);
+        filteredSystems = vBorder.generateBoundedObjects(viewRect);
 
 		// create an svg with a universe picture
-		writer.writeUniverseImage(curYear, vBorder, reader.systems, reader.factions, viewRect);
+		//writer.writeUniverseImage(curYear, vBorder, reader.systems, reader.factions, viewRect);
+        writer.writeUniverseImage(curYear, vBorder, filteredSystems, reader.factions, viewRect);
 	}
 
     // finish by rendering out the logs
