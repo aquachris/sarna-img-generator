@@ -7,14 +7,21 @@ module.exports = (function () {
      * An instance of this class generates blue noise using Bridson's Poisson Disc algorithm
      */
     var PoissonDisc = function (logger) {
-        //this.parent.call(this);
         this.logger = logger || console;
     };
 
-    //VoronoiBorder.prototype = Object.create(Observable.prototype);
     PoissonDisc.prototype.constructor = PoissonDisc;
-    //VoronoiBorder.prototype.parent = Observable;
 
+	/**
+	 * (Re-)initializes and runs the algorithm.
+	 * 
+	 * @param x {Number} Algorithm area left limit
+	 * @param y {Number} Algorithm area bottom limit
+	 * @param w {Number} Algorithm area width
+	 * @param h {Number} Algorithm area height
+	 * @param radius {Number} "Elbow space" for each point: Generated points are placed at a distance of r to 2*r from each other
+	 * @param maxSamples {Number} Maximum amount of candidates for an active sample (optional, default is 30)
+	 */
     PoissonDisc.prototype.init = function (x, y, w, h, radius, maxSamples) {
         this.x = x;
         this.y = y;
@@ -38,15 +45,15 @@ module.exports = (function () {
         return this;
     };
 
+	/**
+	 * Runs the poisson disc algorithm and populates the generatedPoints property.
+	 */
     PoissonDisc.prototype.runUntilDone = function () {
         var s;
-        // generate samples
-        /*for(var i = 0, len = this.existingPoints.length; i < len; i++) {
-            this.placeSample(this.existingPoints[i][0], this.existingPoints[i][1], true);
-        }*/
         this.generatedPoints = [];
-        // start with a sample at a fixed x,y
+        // start with a sample at a fixed x,y (origin)
         this.generatedPoints.push(this.placeSample({x: this.x, y: this.y}));
+		// generate samples as long as a free spot can be found
         while(s = this.generateSample()) {
             this.generatedPoints.push(s);
         }
@@ -54,6 +61,17 @@ module.exports = (function () {
         this.logger.log('blue noise generation done, ' + this.sampleSize + ' points generated');
     };
 
+	/**
+	 * Generates a new sample by looking at a random active sample in the queue and 
+	 * spawning new candidates from that position. If a valid candidate is found, this candidate 
+	 * becomes our new sample. If no valid candidate is found, the active sample is marked 
+	 * inactive (removed from the queue), and the next random active sample is looked at for 
+	 * candidates. 
+	 * If no valid candidate can be found for any of the active samples, the function returns null
+	 * and the algorithm terminates.
+	 * 
+	 * @returns {Object} The generated sample, or null.
+	 */
     PoissonDisc.prototype.generateSample = function () {
         // Pick a random existing sample and remove it from the queue.
         while (this.queueSize) {
@@ -80,6 +98,14 @@ module.exports = (function () {
         return null;
     };
 
+	/**
+	 * Places a sample.
+	 * 
+	 * @param s {Object} The sample
+	 * @param grid {Array} The used cell occupation grid (optional)
+	 * @param noEnqueue {boolean} Set to true to place an inactive sample (optional)
+	 * @returns {Object} The sample
+	 */
     PoissonDisc.prototype.placeSample = function(s, grid, noEnqueue) {
         grid = grid || this.grid;
         if(!noEnqueue) {
@@ -92,6 +118,14 @@ module.exports = (function () {
         return s;
     };
 
+	/**
+	 * Determines whether point (x,y) is a valid position for a new sample.
+	 *
+	 * @param x {Number} Point's x coordinate
+	 * @param y {Number} Point's y coordinate
+	 * @param grid {Array} The grid to check for cell occupation (default is this.grid)
+	 * @returns {boolean} true if (x,y) is a valid / unoccupied position
+	 */
     PoissonDisc.prototype.positionValid = function (x, y, grid) {
         var i, j, i0, j0, i1, j1;
         grid = grid || this.grid;
@@ -117,6 +151,15 @@ module.exports = (function () {
         return true;
     };
 
+	/**
+	 * Introduces a new list of reserved points and aggregates them with the list of generated 
+	 * ("blue noise") points. The aggregated points list contains all reserved points, plus generated 
+	 * points in those places where there are no reserved points (according to the normal poisson disc
+	 * valid location determination). 
+	 * The function's output is saved in this.aggregatedPoints.
+	 *
+	 * @param reservedPoints {Array} List of existing fixed points
+	 */
     PoissonDisc.prototype.replaceReservedPoints = function (reservedPoints) {
         var poissonPoint, reservedPoint, pointsRejected = 0;
         this.reservedPoints = reservedPoints;

@@ -48,19 +48,17 @@ module.exports = (function () {
 
     /**
      * Converts the input line to its perpendicular bisector.
-     * Also inputs the points whose mid-point lies on the bisector.
      * Param abc will be modified.
      *
-     * @param p {Array} a 2D point
-     * @param q {Array} a 2D point
-     * @param abc {Array} a line, represented as ret[0]x + ret[1]y = ret[2]
+     * @param p {Array} a 2D point (first point of the source line)
+     * @param q {Array} a 2D point (second point of the source line)
+     * @param abc {Array} a line, represented as a*x + b*y = c
      */
      Utils.perpendicularBisectorFromLine = function (p, q, abc) {
          var midPoint = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2];
 
-        // c = -bx + ay
+        // -bx + ay = c is perpendicular to ax + by = c
         abc[2] = -abc[1]*(midPoint[0]) + abc[0]*(midPoint[1]);
-
         var temp = abc[0];
         abc[0] = -abc[1];
         abc[1] = temp;
@@ -69,13 +67,14 @@ module.exports = (function () {
     /**
      * Returns the intersection point of two lines.
      *
+	 * @param abc {Array} a line, represented as ret[0]
      * @returns {Array} The intersection point
      */
     Utils.lineLineIntersection = function (abc, efg) {
         var ret = [];
         var determinant = abc[0]*efg[1] - efg[0]*abc[1];
         if (determinant == 0) {
-            // The lines are parallel. This is simplified by returning Infinity
+            // lines are parallel
             return [Infinity, Infinity];
         }
 

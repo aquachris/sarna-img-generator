@@ -444,7 +444,7 @@ module.exports = (function () {
         var fa, fb;
         var tension = .35;//.65;
 
-        // each color edge is treated separately
+        // each color is treated separately
         for(var col in this.borderEdges) {
             if(!this.borderEdges.hasOwnProperty(col)) {
                 continue;
@@ -504,8 +504,8 @@ module.exports = (function () {
 
 	/**
 	 * Generate a set of bounded borders for each faction.
-	 * This is an optional step that reduces the amount of edges in a border path to only those that are actually displayed,
-	 * plus connecting "off-screen" lines to maintain shape closure.
+	 * This is an optional step that reduces the amount of edges in a border path to only those that are actually 
+	 * displayed, and also adds connecting "off-screen" lines to maintain shape closure.
 	 *
 	 * @param rect {Object} The bounding box (x, y, w, h in map space)
 	 */
