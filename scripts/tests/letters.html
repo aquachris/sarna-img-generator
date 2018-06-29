@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>System names</title>
+
+    <style type="text/css">
+        svg text {
+            font-family: Tahoma, Arial, sans-serif;
+            font-size: 3px;
+        }
+        svg rect {
+            fill: rgba(40, 40, 80, .2);
+            stroke: rgba(30, 30, 30, .5);
+            stroke-width: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <script src="https://d3js.org/d3.v5.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+
+        var svg = d3.select('body').append('svg')
+            .attr('viewBox', '0 0 200 100')
+            .attr('width', '1600px')
+            .attr('height', '800px');
+        svg.append('g');
+		
+		var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789' ";
+		var charWidths = {};
+		var calcWidths = {};
+		
+		var charsArr = [];
+		for(var i = 0; i < chars.length; i++) {
+			charsArr.push(chars[i]);
+			if(i < 24) {
+				charWidths[chars[i]] = 1.9;
+			} else if(i < 48) {
+				charWidths[chars[i]] = 1.5;
+			} else {
+				charWidths[chars[i]] = 1.5;
+			}
+		}
+		charWidths['C'] = 2;
+		charWidths['D'] = 2;
+		charWidths['E'] = 1.8;
+		charWidths['F'] = 1.8;
+		charWidths['G'] = 2.1;
+		charWidths['H'] = 2.1;
+		charWidths['I'] = 1.2;
+		charWidths['J'] = 1.2;
+		charWidths['L'] = 1.8;
+		charWidths['M'] = 2.4;
+		charWidths['N'] = 2;
+		charWidths['O'] = 2.1;
+		charWidths['Q'] = 2.1;
+		charWidths['R'] = 2;
+		charWidths['U'] = 2;
+		charWidths['W'] = 2.8;
+		charWidths['X'] = 1.8;
+		charWidths['Y'] = 1.8;
+		charWidths['Z'] = 1.8;
+		
+		charWidths['f'] = 1.2;
+		charWidths['i'] = 0.8;
+		charWidths['j'] = 1;
+		charWidths['l'] = 0.8;
+		charWidths['m'] = 2.4;
+		charWidths['r'] = 1.2;
+		charWidths['t'] = 1.0;
+		charWidths['w'] = 2.2;
+		
+		var texts = d3.select('svg > g')
+			.selectAll('text')
+			.data(charsArr)
+			.enter();
+			
+			
+		texts.append('text')
+			.text(function (d) { return d; })
+			.attr('y', function (d, i) {
+				return 3.3 * (i%26) + 3;
+			})
+			.attr('x', function (d, i) {
+				return 5 * Math.floor(i / 26);
+			});
+			
+		texts.selectAll('text').each(function(d, i) {
+			calcWidths[d] = this.getComputedTextLength();
+		});
+		
+		console.log(calcWidths);
+		
+		texts.append('rect')
+			.attr('x', function (d, i) {
+				return 5 * Math.floor(i / 26);
+			})
+			.attr('y', function (d, i) {
+				return 3.3 * (i%26);
+			})
+			.attr('height', 3)
+			.attr('width', function(d) {
+				return calcWidths[d];
+			});
+		
+		var testText = 'ABCdefg';
+		var combText = d3.select('svg > g')
+			.append('text')
+			.text(testText)
+			.attr('x', 30)
+			.attr('y', 3);
+			
+		var wSum = 0;
+		for(var i = 0; i < testText.length; i++) {
+			console.log(calcWidths[testText[i]]);
+			wSum += calcWidths[testText[i]] || 2;
+		}
+		console.log('wSum: ' + wSum + ', actual: ' + combText.node().getComputedTextLength());
+
+		// small letters:
+		// 0.8:                 i      l
+		// 1.0:                   j                   t
+		// 1.2:           f                       r
+		// 1.5: a b c d e   g h     k     n o p q   s   u v   x y z
+		// 2.2:                                             w
+		// 2.4:                         m
+		
+		// capital letters:
+		// 1.2:                 I J
+		// 1.8:         E F           L                       X Y Z
+		// 1.9: A B                 K         P     S T   V
+		// 2.0:     C D                   N       R     U
+		// 2.1:             G H             O   Q
+		// 2.4:                         M
+		// 2.8:                                             W
+    </script>
+
+</body>
+
+</html>

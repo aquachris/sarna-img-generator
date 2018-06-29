@@ -24,8 +24,8 @@
     <script type="text/javascript">
 
         var svg = d3.select('body').append('svg')
-            .attr('viewBox', '0 0 200 200')
-            .attr('width', '800px')
+            .attr('viewBox', '0 0 400 200')
+            .attr('width', '1600px')
             .attr('height', '800px');
         svg.append('g');
         d3.tsv('./systemNames.tsv', function (d) {
@@ -43,31 +43,33 @@
             texts.append('text')
                 .text(function (d) { return d.name; })
                 .attr('x', function (d, i) {
-                    return 60 * Math.floor(i / 65);
+                    return 60 * Math.floor(i / 500);
                 })
                 .attr('y', function (d, i) {
-                    return 3*(i%65) + 3;
+                    return 3*(i%500) + 3;
                 });
             texts.append('rect')
                 .attr('x', function (d, i) {
-                    return 60 * Math.floor(i / 65);
+                    return 60 * Math.floor(i / 500);
                 })
                 .attr('y', function (d, i) {
-                    return 3*(i%65);
+                    return 3*(i%500);
                 })
                 .attr('width', function (d, i) {
-                    return Math.round(d.name.length * 1.75);
+					// guesstimation of required space
+                    return d.name.length * (2 - 1 * (d.name.length - 2) / 36);
                 })
                 .attr('height', '2.5');
 
             var numChars = [];
             var widths = [];
-            /*texts.selectAll('text').each(function (d, i) {
+			//console.log(d3.max(data));
+            texts.selectAll('text').each(function (d, i) {
                 numChars.push(d.name.length);
-                widths.push(this.getComputedTextLength());
+                //widths.push(this.getComputedTextLength());
             });
-
-            console.log(d3.max(widths)+' is widths maximum, ' + d3.max(numChars) + ' is char maximum');*/
+			console.log(d3.max(numChars) + ' ' + data[data.length - 1].name);
+            //console.log(d3.max(widths)+' is widths maximum, ' + d3.max(numChars) + ' is char maximum');
         });
     </script>
 
