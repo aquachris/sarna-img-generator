@@ -574,6 +574,64 @@ module.exports = (function () {
 		this.logger.log('file "' + filename + '" written');
 	};
 
+	SvgWriter.prototype.writeLabelledImage = function(labelMgr, viewRect) {
+		var name = 'labels';
+		var filename = this.baseDir + '/output/' + name + '.svg';
+		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
+		var systems = labelMgr.objects;
+		var rgb;
+		var fill;
+		var parsedSystems;
+		var labelsString = '', systemsString = '';
+		var viewBox;
+
+		// svg viewBox's y is top left, not bottom left
+		// viewRect is in map space, viewBox is in svg space
+		viewBox = {
+			x: viewRect.x,
+			y: - viewRect.y - viewRect.h,
+			w: viewRect.w,
+			h: viewRect.h
+		};
+
+		// paint system dots
+		for(var i = 0, len = systems.length; i < len; i++) {
+			if(systems[i].col === 'DUMMY') {
+				//!Utils.pointInRectangle(parsedSystems[i], viewRect)) {
+				continue;
+			}
+			fill = '#000';
+			systemsString += '<rect x="'+systems[i].x+'" y="'+(-systems[i].y)+'"';
+			systemsString += ' height="'+systems[i].h+'" width="'+systems[i].w+'"';
+			systemsString += ' data-name="'+systems[i].name+'" data-id="'+systems[i].id+'"';
+			systemsString += ' style="stroke-width: 0; fill: #a00;" />';
+
+			for(var pos = 0; pos < 8; pos++) {
+				//console.log(systems[i]);
+				labelsString += '<rect x="'+systems[i].labels[pos].x+'"';
+				labelsString += ' y="'+(-systems[i].labels[pos].y)+'"';
+				labelsString += ' height="'+systems[i].labels[pos].h+'"';
+				labelsString += ' width="'+systems[i].labels[pos].w+'"';
+				labelsString += ' data-name="'+systems[i].name+'_'+pos+'"';
+				labelsString += ' data-id="'+systems[i].labels[pos].id+'"';
+				labelsString += ' style="stroke-width: 0; fill: rgba(50, 240, 50, 0.3);" />';
+				// labelsString += '<text x="'+systems[i].labels[pos].x+'"';
+				// labelsString += ' y="'+(-systems[i].labels[pos].y+3)+'">';
+				// labelsString += systems[i].name + '</text>';
+			}
+			// systemsString += '<text x="'+(systems[i].x + 1.5).toFixed(3)+'" ';
+			// systemsString += 'y="' + (-systems[i].y).toFixed(3) + '">';
+			// systemsString += systems[i].name+ '</text>'
+		}
+
+		tpl = tpl.replace('{WIDTH}', '800');
+		tpl = tpl.replace('{HEIGHT}', '800');
+		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);
+		tpl = tpl.replace('{ELEMENTS}', labelsString + systemsString);
+		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
+		this.logger.log('file "' + filename + '" written');
+	};
+
 	/**
 	 * Note that point's y coordinate will be flipped for visibility checks and for display.
 	 *

@@ -92,6 +92,21 @@ var main = function () {
         //vBorder.generateBoundedBorders(viewRect2);
         filteredSystems = vBorder.generateBoundedObjects(viewRect);
 
+        var systemSize = 1;
+        var systemBorder = .25;
+        var glyphWidths = {};
+        var glyphHeight = 3;
+        var nodeToTextDistance = 2;
+        LabelManager = new LabelManager().init(
+            viewRect,
+            filteredSystems,
+            systemSize + systemBorder,
+            nodeToTextDistance,
+            glyphWidths,
+            glyphHeight,
+            pxPerUnit
+        );
+
 		// create an svg with a universe picture
 		//writer.writeUniverseImage(curYear, vBorder, reader.systems, reader.factions, viewRect);
         writer.writeUniverseImage(curYear, vBorder, filteredSystems, reader.factions, viewRect);

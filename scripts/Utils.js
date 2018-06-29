@@ -163,12 +163,29 @@ module.exports = (function () {
 				&& p.y <= rect.y + rect.h;
 	};
 
+    /**
+     * @returns {boolean} true if rectangles overlap
+     */
+    Utils.rectanglesOverlap = function (rect1, rect2) {
+        return ( rect1.x < rect2.x + rect2.w
+            && rect1.x + rect1.w > rect2.x
+            && rect1.y + rect1.h > rect2.y
+            && rect1.y < rect2.y + rect2.h );
+    };
+
 	/**
 	 * @returns o {Object} Deep copy of the provided object
 	 */
 	Utils.deepCopy = function (o) {
 		return JSON.parse(JSON.stringify(o));
 	};
+
+    /**
+     * @returns A number clamped to the range [min,max]
+     */
+    Utils.clampNumber = function (num, min, max) {
+        return Math.max(min, Math.min(max, num));
+    };
 
     return Utils;
 })();
