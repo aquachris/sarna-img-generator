@@ -36,9 +36,9 @@ module.exports = (function () {
     RectangleGrid.prototype.constructGrid = function () {
         var gridCol;
         this.grid = [];
-        for(var x = this.x; x < this.viewRect.x + this.viewRect.w; x += this.gridCellSize) {
+        for(var x = this.viewRect.x; x < this.viewRect.x + this.viewRect.w; x += this.gridCellSize) {
             gridCol = [];
-            for(var y = this.y; y < this.viewRect.y + this.viewRect.h; y += this.gridCellSize) {
+            for(var y = this.viewRect.y; y < this.viewRect.y + this.viewRect.h; y += this.gridCellSize) {
                 // a single grid cell
                 gridCol.push({
                     bbox : {
@@ -61,20 +61,28 @@ module.exports = (function () {
      */
     RectangleGrid.prototype.gridCoordinatesForRect = function (rect) {
         var ret = [];
-        var curX, curY; // top left grid coordinate
-        var endX, endY; // bottom left grid coordinate
+        var startX, startY; // top left grid coordinates
+        var endX, endY; // bottom right grid coordinates
+        var curX, curY;
 
         if(this.grid.length === 0 || !Utils.rectanglesOverlap(rect, this.viewRect)) {
             return ret;
         }
 
-        curX = Utils.clampNumber(Math.floor((rect.x - this.viewRect.x) / this.gridSize), 0, this.grid.length-1);
-        curY = Utils.clampNumber(Math.floor((rect.y + rect.h - this.viewRect.y) / this.gridSize), 0, this.grid[0].length-1);
-        endX = Utils.clampNumber(Math.floor((rect.x + rect.w - this.viewRect.x) / this.gridSize), 0, this.grid.length-1);
-        endY = Utils.clampNumber(Math.floor((rect.y - this.viewRect.y) / this.gridSize), 0, this.grid[0].length-1);
+        startX = Utils.clampNumber(Math.floor((rect.x - this.viewRect.x) / this.gridCellSize), 0, this.grid.length-1);
+        startY = Utils.clampNumber(Math.floor((rect.y + rect.h - this.viewRect.y) / this.gridCellSize), 0, this.grid[0].length-1);
+        endX = Utils.clampNumber(Math.floor((rect.x + rect.w - this.viewRect.x) / this.gridCellSize), 0, this.grid.length-1);
+        endY = Utils.clampNumber(Math.floor((rect.y - this.viewRect.y) / this.gridCellSize), 0, this.grid[0].length-1);
 
-        while(curX !== endX || curY !== endY) {
+        curX = startX;
+        curY = startY;
+        while(curY >= endY) {
             ret.push({x: curX, y: curY});
+            curX++;
+            if(curX > endX) {
+                curX = startX;
+                curY--;
+            }
         }
         return ret;
     };
@@ -102,7 +110,7 @@ module.exports = (function () {
 
             if(!alreadyIn) {
                 curCell.occupants.push(o);
-                this.logger.log('object placed at grid coordinates '+gridCoords.x +','+gridCoords.y);
+                //this.logger.log('object placed at grid coordinates '+gridCoords[i].x +','+gridCoords[i].y);
             }
         }
     };
@@ -150,6 +158,34 @@ module.exports = (function () {
             }
         }
         return false;
+    };
+
+    /**
+     * Gets all overlapped items for a rectangular item
+     *
+     * @param o {Object} A rectangular object in the form {id: 'obj1', x: 0, y: 1, w: 2, h: 3}
+     * @returns {Array} The overlapped items
+     */
+    RectangleGrid.prototype.getOverlaps = function (o, idPrefixToIgnore) {
+        var ret = [];
+        var idMap = {};
+        var coords = this.gridCoordinatesForRect(o);
+        var occs;
+        for(var i = 0, len = coords.length; i < len; i++) {
+            occs = this.grid[coords[i].x][coords[i].y].occupants;
+            for(var j = 0, jlen = occs.length; j < jlen; j++) {
+                if(occs[j].id === o.id || occs[j].id.startsWith(idPrefixToIgnore)) {
+                    continue;
+                }
+                if(Utils.rectanglesOverlap(o, occs[j])) {
+                    if(!idMap.hasOwnProperty(occs[j].id)) {
+                        ret.push(occs[j]);
+                        idMap[occs[j]] = true;
+                    }
+                }
+            }
+        }
+        return ret;
     };
 
     /**

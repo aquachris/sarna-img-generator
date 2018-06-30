@@ -608,16 +608,22 @@ module.exports = (function () {
 
 			for(var pos = 0; pos < 8; pos++) {
 				//console.log(systems[i]);
+				fill = 'rgba(50, 240, 50, 0.3)';
+				if(systems[i].selLabelPos === pos) {
+					fill = 'rgba(240, 50, 50, 0.3)';
+				}
 				labelsString += '<rect x="'+systems[i].labels[pos].x+'"';
 				labelsString += ' y="'+(-systems[i].labels[pos].y)+'"';
 				labelsString += ' height="'+systems[i].labels[pos].h+'"';
 				labelsString += ' width="'+systems[i].labels[pos].w+'"';
 				labelsString += ' data-name="'+systems[i].name+'_'+pos+'"';
 				labelsString += ' data-id="'+systems[i].labels[pos].id+'"';
-				labelsString += ' style="stroke-width: 0; fill: rgba(50, 240, 50, 0.3);" />';
-				// labelsString += '<text x="'+systems[i].labels[pos].x+'"';
-				// labelsString += ' y="'+(-systems[i].labels[pos].y+3)+'">';
-				// labelsString += systems[i].name + '</text>';
+				labelsString += ' style="stroke-width: 0; fill: '+fill+';" />';
+				if(systems[i].selLabelPos === pos) {
+					labelsString += '<text x="'+systems[i].labels[pos].x+'"';
+					labelsString += ' y="'+(-systems[i].labels[pos].y+1.5)+'">';
+				 	labelsString += systems[i].name + '</text>';
+				}
 			}
 			// systemsString += '<text x="'+(systems[i].x + 1.5).toFixed(3)+'" ';
 			// systemsString += 'y="' + (-systems[i].y).toFixed(3) + '">';
