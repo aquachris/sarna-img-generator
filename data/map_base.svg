@@ -13,7 +13,7 @@
 	</defs>
 
 	<style>
-		text { fill: #000; font-family: Tahoma, Arial, sans-serif; font-size: 3px; transform: translateY(1px); }
+		text { fill: #000; font-family: Tahoma, Arial, sans-serif; font-size: 2.75px; transform: translateY(1px); }
 		circle.system { fill: #000; stroke: #000; stroke-width: .25 } /* default color */
 		circle.jump-radius { fill: transparent; stroke: #888; stroke-width: .25 }
 		text.system-name { font-size: 3px; }

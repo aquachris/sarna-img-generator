@@ -147,7 +147,19 @@ module.exports = (function () {
 			// read system
 			curSystem = {};
 			// name and status
-			curSystem.name = curRow[colIdxMap['system']];
+			curSystem.name_full = curRow[colIdxMap['system']];
+            curSystem.name = curSystem.name_full;
+            var parentheses;
+            if(parentheses = curSystem.name_full.match(/(.+)\s*\(\s*(.+)\s*\)/i)) {
+                if(parentheses[2].match(/[0-9]/)) {
+                    curSystem.oldName = parentheses[1].trim();
+                    curSystem.newName = parentheses[2].replace(/\s[0-9]+\'*s*\+*/g, '');
+                    curSystem.name = curSystem.newName;
+                } else {
+                    curSystem.name = parentheses[1].trim();
+                }
+                //console.log(parentheses, curSystem.name, curSystem.oldName || '', curSystem.newName || '');
+            }
 			curSystem.status = curRow[colIdxMap['status']];
 			// coordinates
 			curSystem.x = curRow[colIdxMap['x']];
@@ -157,12 +169,12 @@ module.exports = (function () {
 			curAffiliation = curRow[colIdxMap['3025']] || '';
 			curSystem['3025'] = curAffiliation.split(/\s*\,\s*/gi)[0];
 			curSystem['3025_all'] = curAffiliation;
-			
+
 			// 3030 affiliation
 			curAffiliation = curRow[colIdxMap['3030']] || '';
 			curSystem['3030'] = curAffiliation.split(/\s*\,\s*/gi)[0];
 			curSystem['3030_all'] = curAffiliation;
-			
+
 			// 3052 affiliation
 			curAffiliation = curRow[colIdxMap['3052']] || '';
 			curSystem['3052'] = curAffiliation.split(/\s*\,\s*/gi)[0];

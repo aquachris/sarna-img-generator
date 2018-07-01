@@ -121,6 +121,7 @@ module.exports = (function () {
      * @param o {Object}
      */
     RectangleGrid.prototype.unplaceObject = function (o) {
+        var curCell;
         var gridCoords = this.gridCoordinatesForRect(o);
 
         for(var i = 0, len = gridCoords.length; i < len; i++) {
@@ -130,7 +131,7 @@ module.exports = (function () {
                 if(curCell.occupants[j] === o) {
                     // remove object from cell
                     curCell.occupants.splice(j,1);
-                    this.logger.log('object removed from grid coordinates '+gridCoords.x +','+gridCoords.y);
+                    //this.logger.log('object removed from grid coordinates '+gridCoords[i].x +','+gridCoords[i].y);
                     break;
                 }
             }
@@ -180,7 +181,35 @@ module.exports = (function () {
                 if(Utils.rectanglesOverlap(o, occs[j])) {
                     if(!idMap.hasOwnProperty(occs[j].id)) {
                         ret.push(occs[j]);
-                        idMap[occs[j]] = true;
+                        idMap[occs[j].id] = true;
+                    }
+                }
+            }
+        }
+        return ret;
+    };
+
+    /**
+     * Gets all overlapped items for a rectangular item
+     *
+     * @param o {Object} A rectangular object in the form {id: 'obj1', x: 0, y: 1, w: 2, h: 3}
+     * @returns {Number} Number of overlapped items
+     */
+    RectangleGrid.prototype.getNumOverlaps = function (o, idPrefixToIgnore) {
+        var ret = 0;
+        var idMap = {};
+        var coords = this.gridCoordinatesForRect(o);
+        var occs;
+        for(var i = 0, len = coords.length; i < len; i++) {
+            occs = this.grid[coords[i].x][coords[i].y].occupants;
+            for(var j = 0, jlen = occs.length; j < jlen; j++) {
+                if(occs[j].id === o.id || occs[j].id.startsWith(idPrefixToIgnore)) {
+                    continue;
+                }
+                if(Utils.rectanglesOverlap(o, occs[j])) {
+                    if(!idMap.hasOwnProperty(occs[j].id)) {
+                        ret++;
+                        idMap[occs[j].id] = true;
                     }
                 }
             }
@@ -208,12 +237,12 @@ module.exports = (function () {
                         }
                         occ1 = occs[i];
                         occ2 = occs[j];
-                        if(overlapMap.hasOwnProperty(occ1+'_'+occ2)
-                        || overlapMap.hasOwnProperty(occ2+'_'+occ1)) {
+                        if(overlapMap.hasOwnProperty(occ1.id+'_'+occ2.id)
+                        || overlapMap.hasOwnProperty(occ2.id+'_'+occ1.id)) {
                             continue;
                         }
                         if(Utils.rectanglesOverlap(occ1, occ2)) {
-                            overlapMap[occ1+'_'+occ2] = true;
+                            overlapMap[occ1.id+'_'+occ2.id] = true;
                             sum++;
                         }
                     }

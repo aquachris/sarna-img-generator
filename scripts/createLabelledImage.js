@@ -71,7 +71,6 @@ var main = function () {
     labelMgr = new LabelManager().init(viewRect, filteredSystems, systemRadius, nodeToTextDistance, glyphSettings);
 
 	// create an svg with a universe picture
-	//writer.writeUniverseImage(curYear, vBorder, reader.systems, reader.factions, viewRect);
     writer.writeLabelledImage(labelMgr, viewRect);
 
     // finish by rendering out the logs

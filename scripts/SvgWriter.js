@@ -601,19 +601,20 @@ module.exports = (function () {
 				continue;
 			}
 			fill = '#000';
-			systemsString += '<rect x="'+systems[i].x+'" y="'+(-systems[i].y)+'"';
+			systemsString += '<rect x="'+systems[i].x+'" y="'+(-systems[i].y-systems[i].h)+'"';
 			systemsString += ' height="'+systems[i].h+'" width="'+systems[i].w+'"';
 			systemsString += ' data-name="'+systems[i].name+'" data-id="'+systems[i].id+'"';
+			systemsString += ' data-conflicts="'+systems[i].overlapCost+'"'
 			systemsString += ' style="stroke-width: 0; fill: #a00;" />';
 
 			for(var pos = 0; pos < 8; pos++) {
 				//console.log(systems[i]);
-				fill = 'rgba(50, 240, 50, 0.3)';
+				fill = 'rgba(50, 240, 50, 0.1)';
 				if(systems[i].selLabelPos === pos) {
-					fill = 'rgba(240, 50, 50, 0.3)';
+					fill = 'rgba(50, 200, 50, 0.5)';
 				}
 				labelsString += '<rect x="'+systems[i].labels[pos].x+'"';
-				labelsString += ' y="'+(-systems[i].labels[pos].y)+'"';
+				labelsString += ' y="'+(-systems[i].labels[pos].y - systems[i].labels[pos].h)+'"';
 				labelsString += ' height="'+systems[i].labels[pos].h+'"';
 				labelsString += ' width="'+systems[i].labels[pos].w+'"';
 				labelsString += ' data-name="'+systems[i].name+'_'+pos+'"';
@@ -621,7 +622,7 @@ module.exports = (function () {
 				labelsString += ' style="stroke-width: 0; fill: '+fill+';" />';
 				if(systems[i].selLabelPos === pos) {
 					labelsString += '<text x="'+systems[i].labels[pos].x+'"';
-					labelsString += ' y="'+(-systems[i].labels[pos].y+1.5)+'">';
+					labelsString += ' y="'+(-systems[i].labels[pos].y-systems[i].labels[pos].h+1.5)+'">';
 				 	labelsString += systems[i].name + '</text>';
 				}
 			}

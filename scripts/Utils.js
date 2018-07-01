@@ -164,13 +164,28 @@ module.exports = (function () {
 	};
 
     /**
+     * A rectangle is defined by its bottom left corner (x,y) and its
+     * width and height (w,h).
+     *
      * @returns {boolean} true if rectangles overlap
+     * @returns {Number} The two rectangles' overlapping area
      */
     Utils.rectanglesOverlap = function (rect1, rect2) {
-        return ( rect1.x < rect2.x + rect2.w
+        var left, right, top, bottom;
+        if( rect1.x < rect2.x + rect2.w
             && rect1.x + rect1.w > rect2.x
-            && rect1.y + rect1.h > rect2.y
-            && rect1.y < rect2.y + rect2.h );
+            && rect1.y < rect2.y + rect2.h
+            && rect1.y + rect1.h > rect2.y ) {
+            left = Math.max(rect1.x, rect2.x);
+            right = Math.min(rect1.x + rect1.w, rect2.x + rect2.w);
+            bottom = Math.max(rect1.y, rect2.y);
+            top = Math.min(rect1.y + rect1.h, rect2.y + rect2.h);
+            return (right - left) * (top - bottom);
+        }
+        /*return ( rect1.x < rect2.x + rect2.w
+            && rect1.x + rect1.w > rect2.x
+            && rect1.y < rect2.y + rect2.h
+            && rect1.y + rect1.h > rect2.y );*/
     };
 
 	/**
