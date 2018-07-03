@@ -43,9 +43,105 @@ module.exports = (function () {
 
         this.grid = new RectangleGrid().init(viewRect);
         this.setInitialState();
+        this.run();
         return this;
     };
 
+    LabelManager2.prototype.setInitialState = function () {
+        var curObj;
+        this.orderedObjIndices = [];
+
+        // private helper function
+        var generateLabelRect = function (obj, objIdx) {
+            var objRad = this.objectRadius;
+            var dist = this.objLabelDist;
+            var lineH = this.glyphSettings.lineHeight;
+            var defaultWidth = this.glyphSettings.widths.default;
+            var labelWidth = 0;
+            for(var i = 0; i < obj.name.length; i++) {
+                labelWidth += this.glyphSettings.widths[obj.name[i]] || defaultWidth;
+            }
+
+            return {
+                id: 'label_'+objIdx,
+                o: obj,
+                x: obj.centerX + objRad + dist,
+                y: obj.centerY - lineH * .5,
+                w: labelWidth,
+                h: lineH
+            }
+        };
+
+        for(var i = 0, len = this.objects.length; i < len; i++) {
+            this.orderedObjIndices.push(i);
+            curObj = this.objects[i];
+            curObj.centerX = curObj.x;
+            curObj.centerY = curObj.y;
+            curObj.x = curObj.x - this.objectRadius;
+            curObj.y = curObj.y - this.objectRadius;
+            curObj.w = curObj.h = this.objectRadius * 2;
+            curObj.id = 'obj_'+i;
+            curObj.label = generateLabelRect.call(this, curObj, i);
+
+            this.grid.placeObject(curObj);
+            this.grid.placeObject(curObj.label);
+        }
+    };
+
+    LabelManager2.prototype.run = function () {
+        var curObj, curLabel;
+        var overlaps;
+        var minY, maxY;
+
+        this.orderedObjIndices.sort(function(a, b) {
+            return this.objects[b].x - this.objects[a].x;
+        }.bind(this));
+
+        for(var i = 0, len = this.orderedObjIndices.length; i < len; i++) {
+            curObj = this.objects[this.orderedObjIndices[i]];
+            curLabel = curObj.label;
+
+            overlaps = this.grid.getOverlaps(curLabel);
+            if(overlaps.length === 0) {
+                continue;
+            }
+            minY = Infinity;
+            maxY = -Infinity;
+            for(var j = 0, jlen = overlaps.length; j < jlen; j++) {
+                if(overlaps[j].x < curObj.x) {
+                    continue;
+                }
+                minY = Math.min(overlaps[j].y, minY);
+                maxY = Math.max(overlaps[j].y, maxY);
+            }
+            if(minY === Infinity || maxY === -Infinity) {
+                continue;
+            }
+            if(curObj.name === 'Castor')
+                this.logger.log(curObj.centerY, minY, maxY);
+
+            // check for the closer overlap-free edge (top or bottom)
+            if(curObj.centerY - minY < maxY - curObj.centerY ) {
+                // move label down
+                curLabel.y = minY - this.glyphSettings.lineHeight;
+                if(minY <= curObj.centerY - this.objectRadius) {
+                    curLabel.x = curObj.centerX;
+                }
+                if(curObj.name === 'Castor')
+                    this.logger.log('label for ' + curObj.name + ' moved down');
+            } else if(maxY <= curObj.y) {
+                // move label up
+                curLabel.y = maxY + this.glyphSettings.lineHeight;
+                if(curLabel.y >= curObj.centerY + this.objectRadius) {
+                    curLabel.x = curObj.centerX;
+                }
+                if(curObj.name === 'Castor')
+                    this.logger.log('label for ' + curObj.name + ' moved up to ' + curLabel.y);
+            }
+        }
+    };
+
+    /*
     LabelManager2.prototype.setInitialState = function () {
         var curObj;
 
@@ -145,7 +241,7 @@ module.exports = (function () {
         this.logger.log('LabelManager: total cost after init: ' + this.totalCost);
         while(this.iterate()) {}
         this.logger.log('LabelManager: algorithm terminated after ' + this.iteration + ' iterations');
-    };
+    };*/
 
 
     return LabelManager2;
