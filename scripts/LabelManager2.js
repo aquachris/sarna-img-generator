@@ -92,6 +92,9 @@ module.exports = (function () {
         var curObj, curLabel;
         var overlaps;
         var minY, maxY;
+        var minOverlap;
+        var primaryDir;
+        var attempts;
 
         this.orderedObjIndices.sort(function(a, b) {
             return this.objects[b].x - this.objects[a].x;
@@ -120,8 +123,19 @@ module.exports = (function () {
             if(curObj.name === 'Castor')
                 this.logger.log(curObj.centerY, minY, maxY);
 
+            minOverlap = Infinity;
+            primaryDir = '';
+            attempts = 0;
+
+            // primary direction
+            // secondary direction
+            // left
+            // centered above
+            // centered below
+
             // check for the closer overlap-free edge (top or bottom)
             if(curObj.centerY - minY < maxY - curObj.centerY ) {
+                primaryDir = 'down';
                 // move label down
                 curLabel.y = minY - this.glyphSettings.lineHeight;
                 if(minY <= curObj.centerY - this.objectRadius) {
@@ -130,6 +144,7 @@ module.exports = (function () {
                 if(curObj.name === 'Castor')
                     this.logger.log('label for ' + curObj.name + ' moved down');
             } else if(maxY <= curObj.y) {
+                primaryDir = 'up';
                 // move label up
                 curLabel.y = maxY + this.glyphSettings.lineHeight;
                 if(curLabel.y >= curObj.centerY + this.objectRadius) {
@@ -138,6 +153,11 @@ module.exports = (function () {
                 if(curObj.name === 'Castor')
                     this.logger.log('label for ' + curObj.name + ' moved up to ' + curLabel.y);
             }
+
+            //
+            // up: Math.min(maxY + this.glyphSettings.lineHeight, curObj.y + this.glyphSettings.lineHeight)
+            // down: Math.max(minY - this.glyphSettings.lineHeight, curObj - this.glyphSettings.lineHeight)
+            
         }
     };
 
