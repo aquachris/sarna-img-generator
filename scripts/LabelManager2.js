@@ -92,9 +92,39 @@ module.exports = (function () {
         var curObj, curLabel;
         var overlaps;
         var minY, maxY;
-        var minOverlap;
-        var primaryDir;
+        var curOverlap, minOverlap;
+        var minOverlapX, minOverlapY;
+        var positionSequence;
         var attempts;
+
+        // private helper function
+        var moveLabelToPos = function (obj, dir) {
+            var dir = positionSequence[attempts];
+            if(obj.name === 'Agador' || obj.name === 'Quentin') {
+                console.log('moving '+obj.name+' ' + dir, minY, maxY);
+            }
+
+            if(dir === 'up') {
+                obj.label.y = Math.min(maxY, obj.y + obj.h) + this.objLabelDist;
+                if(obj.label.y >= obj.y + obj.h) {
+                    obj.label.x = obj.x;
+                }
+            } else if(dir === 'down') {
+                obj.label.y = Math.max(minY - this.glyphSettings.lineHeight, obj.y - this.glyphSettings.lineHeight) - this.objLabelDist;
+                if(obj.label.y <= obj.y - this.glyphSettings.lineHeight) {
+                    obj.label.x = obj.x;
+                }
+            } else if(dir === 'above') {
+                obj.label.x = obj.centerX - obj.label.w * .5;
+                obj.label.y = obj.y + obj.h;
+            } else if(dir === 'below') {
+                obj.label.x = obj.centerX - obj.label.w * .5;
+                obj.label.y = obj.y - this.glyphSettings.lineHeight;
+            } else if(dir === 'left') {
+                obj.label.x = obj.x - obj.label.w - this.objLabelDist;
+                obj.label.y = obj.centerY - this.glyphSettings.lineHeight * .5;
+            }
+        };
 
         this.orderedObjIndices.sort(function(a, b) {
             return this.objects[b].x - this.objects[a].x;
@@ -110,21 +140,25 @@ module.exports = (function () {
             }
             minY = Infinity;
             maxY = -Infinity;
+            curOverlap = 0;
+            minOverlap = Infinity;
+            minOverlapX = undefined;
+            minOverlapY = undefined;
             for(var j = 0, jlen = overlaps.length; j < jlen; j++) {
-                if(overlaps[j].x < curObj.x) {
+                if(overlaps[j].x < curObj.x && !overlaps[j].hasOwnProperty('label')) {
                     continue;
                 }
                 minY = Math.min(overlaps[j].y, minY);
-                maxY = Math.max(overlaps[j].y, maxY);
+                maxY = Math.max(overlaps[j].y+overlaps[j].h, maxY);
             }
             if(minY === Infinity || maxY === -Infinity) {
                 continue;
             }
+            this.grid.unplaceObject(curObj.label);
             if(curObj.name === 'Castor')
                 this.logger.log(curObj.centerY, minY, maxY);
 
-            minOverlap = Infinity;
-            primaryDir = '';
+            positionSequence = [];
             attempts = 0;
 
             // primary direction
@@ -135,29 +169,56 @@ module.exports = (function () {
 
             // check for the closer overlap-free edge (top or bottom)
             if(curObj.centerY - minY < maxY - curObj.centerY ) {
-                primaryDir = 'down';
-                // move label down
-                curLabel.y = minY - this.glyphSettings.lineHeight;
-                if(minY <= curObj.centerY - this.objectRadius) {
-                    curLabel.x = curObj.centerX;
-                }
-                if(curObj.name === 'Castor')
-                    this.logger.log('label for ' + curObj.name + ' moved down');
-            } else if(maxY <= curObj.y) {
-                primaryDir = 'up';
-                // move label up
-                curLabel.y = maxY + this.glyphSettings.lineHeight;
-                if(curLabel.y >= curObj.centerY + this.objectRadius) {
-                    curLabel.x = curObj.centerX;
-                }
-                if(curObj.name === 'Castor')
-                    this.logger.log('label for ' + curObj.name + ' moved up to ' + curLabel.y);
+                positionSequence = ['down', 'up', 'above', 'below', 'left'];
+            } else { //if(maxY <= curObj.y)
+                positionSequence = ['up', 'down', 'above', 'below', 'left'];
             }
 
+            while(attempts < positionSequence.length) {
+                moveLabelToPos.call(this, curObj);
+                overlaps = this.grid.getOverlaps(curLabel);
+                curOverlap = 0;
+                for(var j = 0, jlen = overlaps.length; j < jlen; j++) {
+                    if(overlaps[j].x < curObj.x && !overlaps[j].hasOwnProperty('label')) {
+                        continue;
+                    }
+                    curOverlap += Utils.rectanglesOverlap(curLabel, overlaps[j]);
+                }
+                if(curOverlap < minOverlap) {
+                    minOverlap = curOverlap;
+                    minOverlapX = curLabel.x;
+                    minOverlapY = curLabel.y;
+                }
+                if(curOverlap === 0) {
+                    break;
+                }
+                attempts++;
+            }
+
+            curLabel.x = minOverlapX;
+            curLabel.y = minOverlapY;
+            this.grid.placeObject(curObj.label);
             //
             // up: Math.min(maxY + this.glyphSettings.lineHeight, curObj.y + this.glyphSettings.lineHeight)
             // down: Math.max(minY - this.glyphSettings.lineHeight, curObj - this.glyphSettings.lineHeight)
-            
+            /*
+            // move label down
+            curLabel.y = minY - this.glyphSettings.lineHeight;
+            if(minY <= curObj.centerY - this.objectRadius) {
+                curLabel.x = curObj.centerX;
+            }
+            if(curObj.name === 'Castor')
+                this.logger.log('label for ' + curObj.name + ' moved down');
+
+            // move label up
+            curLabel.y = maxY + this.glyphSettings.lineHeight;
+            if(curLabel.y >= curObj.centerY + this.objectRadius) {
+                curLabel.x = curObj.centerX;
+            }
+            if(curObj.name === 'Castor')
+                this.logger.log('label for ' + curObj.name + ' moved up to ' + curLabel.y);
+                */
+
         }
     };
 
