@@ -7,14 +7,16 @@ module.exports = (function () {
 	/**
 	 * An instance of this class uses a heuristic algorithm in order to place labels
      * on a canvas with minimal overlap.
-     *
-     * Algorithm idea: Go from right to left.
-     * - For each system label, check if it overlaps other systems or labels. If it does, push it to the nearest
-     *   non-overlapping y direction (up or down) until there is no longer an overlap
-     * - If a label has been pushed up or down by more than its height, move it to the system's
-     *   other side and repeat algorithm.
-     * - If a label cannot be placed on either side of the system, try directly above or below the system
-     * - If the label still cannot be placed, give up (?)
+	 *
+	 * Algorithm idea: 
+	 * - While going from right to left and greedily picking the first 0-collision label position:
+	 * - try label positions directly right, above, below, left of the system, with r/1.5 units of tolerance (adjust for detected collision)
+	 * - try collision-adjusted positions right, above, below, left beyond tolerance up to maximum adjustment range
+	 * - if none of the position options can be used without collision, choose option with lowest collision value
+	 * - positions outside the viewRect are completely invalid
+	 * 
+	 * Note that coordinate system origin is considered to be bottom left. Each rectangle's origin is also 
+	 * at the rectangle's bottom left corner.
 	 */
 	var LabelManager2 = function (logger) {
         this.logger = logger || console;
@@ -58,15 +60,20 @@ module.exports = (function () {
             var lineH = this.glyphSettings.lineHeight;
             var defaultWidth = this.glyphSettings.widths.default;
             var labelWidth = 0;
+			var x, y;
             for(var i = 0; i < obj.name.length; i++) {
                 labelWidth += this.glyphSettings.widths[obj.name[i]] || defaultWidth;
             }
 
+			x = obj.centerX + objRad + dist;
+			y = obj.centerY - lineH * .5;
+			x = Math.max(this.viewRect.x, Math.min(x, this.viewRect.x + this.viewRect.w - labelWidth));
+			y = Math.max(this.viewRect.y + lineH, Math.min(y, this.viewRect.y + this.viewRect.h - lineH));
             return {
                 id: 'label_'+objIdx,
                 o: obj,
-                x: obj.centerX + objRad + dist,
-                y: obj.centerY - lineH * .5,
+                x: x,//obj.centerX + objRad + dist,
+                y: y,//obj.centerY - lineH * .5,
                 w: labelWidth,
                 h: lineH
             }
@@ -106,14 +113,14 @@ module.exports = (function () {
 
             if(dir === 'up') {
                 obj.label.y = Math.min(maxY, obj.y + obj.h) + this.objLabelDist;
-                if(obj.label.y >= obj.y + obj.h) {
+                /*if(obj.label.y >= obj.y + obj.h) {
                     obj.label.x = obj.x;
-                }
+                }*/
             } else if(dir === 'down') {
                 obj.label.y = Math.max(minY - this.glyphSettings.lineHeight, obj.y - this.glyphSettings.lineHeight) - this.objLabelDist;
-                if(obj.label.y <= obj.y - this.glyphSettings.lineHeight) {
+                /*if(obj.label.y <= obj.y - this.glyphSettings.lineHeight) {
                     obj.label.x = obj.x;
-                }
+                }*/
             } else if(dir === 'above') {
                 obj.label.x = obj.centerX - obj.label.w * .5;
                 obj.label.y = obj.y + obj.h;
@@ -198,131 +205,9 @@ module.exports = (function () {
             curLabel.x = minOverlapX;
             curLabel.y = minOverlapY;
             this.grid.placeObject(curObj.label);
-            //
-            // up: Math.min(maxY + this.glyphSettings.lineHeight, curObj.y + this.glyphSettings.lineHeight)
-            // down: Math.max(minY - this.glyphSettings.lineHeight, curObj - this.glyphSettings.lineHeight)
-            /*
-            // move label down
-            curLabel.y = minY - this.glyphSettings.lineHeight;
-            if(minY <= curObj.centerY - this.objectRadius) {
-                curLabel.x = curObj.centerX;
-            }
-            if(curObj.name === 'Castor')
-                this.logger.log('label for ' + curObj.name + ' moved down');
-
-            // move label up
-            curLabel.y = maxY + this.glyphSettings.lineHeight;
-            if(curLabel.y >= curObj.centerY + this.objectRadius) {
-                curLabel.x = curObj.centerX;
-            }
-            if(curObj.name === 'Castor')
-                this.logger.log('label for ' + curObj.name + ' moved up to ' + curLabel.y);
-                */
-
         }
     };
 
-    /*
-    LabelManager2.prototype.setInitialState = function () {
-        var curObj;
-
-        // private helper function
-        var generateLabelRect = function (o, objIdx, pos) {
-            var oRad = this.objectRadius;
-            var dist = this.objLabelDist;
-            var yDist = 0;//dist * .5;
-            var lineHBuf = -.25;//.25;
-            var lineH = this.glyphSettings.lineHeight + lineHBuf *2;
-            var xDelta = 0, yDelta = 0;
-
-            var labelWidth = 0;
-            var defaultWidth = this.glyphSettings.widths.default;
-            for(var i = 0; i < o.name.length; i++) {
-                labelWidth += this.glyphSettings.widths[o.name[i]] || defaultWidth;
-            }
-            switch(pos) {
-                case 0:
-                    xDelta = -labelWidth*.5;
-                    yDelta = oRad + yDist;
-                    break;
-                case 1:
-                    xDelta = oRad;// + dist *.5;
-                    yDelta = oRad + yDist;
-                    break;
-                case 2:
-                    xDelta = oRad + dist;
-                    yDelta = -lineH *.5;
-                    break;
-                case 3:
-                    xDelta = oRad;// + dist * .5;
-                    yDelta = -oRad - yDist - lineH;
-                    break;
-                case 4:
-                    xDelta = -labelWidth * .5;
-                    yDelta = -oRad - yDist - lineH;
-                    break;
-                case 5:
-                    xDelta = -oRad - labelWidth;//-oRad - dist - labelWidth;
-                    yDelta = -oRad - yDist - lineH;
-                    break;
-                case 6:
-                    xDelta = -oRad - dist - labelWidth;
-                    yDelta = -lineH * .5;
-                    break;
-                case 7:
-                    xDelta = -oRad - labelWidth;//-oRad - dist - labelWidth;
-                    yDelta = oRad + yDist;
-                    break;
-            }
-
-            return {
-                id: 'label_'+objIdx+'_'+pos,
-                o: o,
-                pos: pos,
-                x: o.centerX + xDelta,
-                y: o.centerY + yDelta,
-                w: labelWidth,
-                h: lineH
-            }
-        };
-
-        for(var i = 0, len = this.objects.length; i < len; i++) {
-            this.orderedObjIndices.push(i);
-            curObj = this.objects[i];
-            curObj.centerX = curObj.x;
-            curObj.centerY = curObj.y;
-            curObj.x = curObj.x - this.objectRadius;
-            curObj.y = curObj.y - this.objectRadius;
-            curObj.w = curObj.h = this.objectRadius * 2;
-            curObj.id = 'obj_'+i;
-            curObj.selLabelPos = 2; // use the 3 o'clock label by default
-            curObj.overlapCost = Infinity;
-            curObj.labelPosCost = LabelManager.POSITIONS[2];
-            curObj.labels = [];
-            for(var posIdx = 0; posIdx < 8; posIdx++) {
-                curObj.labels.push(generateLabelRect.call(this, curObj, i, posIdx));
-            }
-            //
-            delete curObj.neighbors;
-            delete curObj.neighbors_60;
-            delete curObj.adjacentTriIndices;
-            delete curObj['3030_all'];
-            delete curObj['3052_all'];
-            //
-            this.bestConfig.push(2);
-            this.grid.placeObject(curObj);
-            this.grid.placeObject(curObj.labels[curObj.selLabelPos]);
-        }
-
-        this.calculateTotalCost();
-        this.bestCost = this.totalCost;
-        this.saveCurrentConfigAsBest();
-        this.recalculateListSizes();
-        this.iteration = 0;
-        this.logger.log('LabelManager: total cost after init: ' + this.totalCost);
-        while(this.iterate()) {}
-        this.logger.log('LabelManager: algorithm terminated after ' + this.iteration + ' iterations');
-    };*/
 
 
     return LabelManager2;
