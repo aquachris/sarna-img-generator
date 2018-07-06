@@ -8,14 +8,14 @@ module.exports = (function () {
 	 * An instance of this class uses a heuristic algorithm in order to place labels
      * on a canvas with minimal overlap.
 	 *
-	 * Algorithm idea: 
+	 * Algorithm idea:
 	 * - While going from right to left and greedily picking the first 0-collision label position:
 	 * - try label positions directly right, above, below, left of the system, with r/1.5 units of tolerance (adjust for detected collision)
 	 * - try collision-adjusted positions right, above, below, left beyond tolerance up to maximum adjustment range
 	 * - if none of the position options can be used without collision, choose option with lowest collision value
 	 * - positions outside the viewRect are completely invalid
-	 * 
-	 * Note that coordinate system origin is considered to be bottom left. Each rectangle's origin is also 
+	 *
+	 * Note that coordinate system origin is considered to be bottom left. Each rectangle's origin is also
 	 * at the rectangle's bottom left corner.
 	 */
 	var LabelManager2 = function (logger) {
@@ -49,6 +49,10 @@ module.exports = (function () {
         return this;
     };
 
+    /**
+     * Instantiates the labels and adds all objects and labels to the grid.
+     * @private
+     */
     LabelManager2.prototype.setInitialState = function () {
         var curObj;
         this.orderedObjIndices = [];
@@ -95,6 +99,258 @@ module.exports = (function () {
         }
     };
 
+    /**
+     * @private
+     */
+    LabelManager2.prototype.keepInViewRect = function (obj) {
+        obj.x = Utils.clampNumber(obj.x, this.viewRect.x, this.viewRect.x + this.viewRect.w - obj.w);
+        obj.y = Utils.clampNumber(obj.y, this.viewRect.y, this.viewRect.y + this.viewRect.h - obj.h);
+    };
+
+    /**
+     * @private
+     */
+    LabelManager2.prototype.getOverlapData = function (label) {
+        var ret = {
+            minX : Infinity,
+            maxX : -Infinity,
+            minY : Infinity,
+            maxY : -Infinity,
+            area : 0
+        };
+        var overlaps = this.grid.getOverlaps(label);
+        for(var i = 0, len = overlaps.length; i < len; i++) {
+            // ignore other labels to the left of the current label (yet to be processed)
+            if(overlaps[i].hasOwnProperty('o') && overlaps[i].o.x < label.o.x) {
+                continue;
+            }
+            ret.minX = Math.min(ret.minX, overlaps[i].x);
+            ret.maxX = Math.max(ret.maxX, overlaps[i].x + overlaps[i].w);
+            ret.minY = Math.min(ret.minY, overlaps[i].y);
+            ret.maxY = Math.max(ret.maxY, overlaps[i].y + overlaps[i].h);
+            ret.area += Utils.rectanglesOverlap(label, overlaps[i]);
+        }
+
+        return ret;
+    };
+
+    /**
+     * Places a label at the best possible position.
+     * TODO This function is very repetitive. It should be possible to extract and modularize the repeated logic.
+     *
+     * @param obj {Object} The object whose label needs to be placed
+     * @returns {Number} The overlapped area's size (in square units) for the label's best position
+     * @private
+     */
+    LabelManager2.prototype.findBestLabelPositionFor = function (obj) {
+        var label = obj.label;
+        var objRad = this.objectRadius;
+        var dist = this.objLabelDist;
+        var opt1, opt2, tmp;
+        var overlaps;
+        var curOverlap, minOverlap;
+        var minOverlapX, minOverlapY;
+        var ovData;
+
+        var evaluateCurrentPos = function () {
+            this.keepInViewRect(label);
+            ovData = this.getOverlapData(label);
+            curOverlap = ovData.area;
+            if(curOverlap < 0.1) {
+                curOverlap = 0;
+            }
+            if(curOverlap < minOverlap) {
+                minOverlap = curOverlap;
+                minOverlapX = label.x;
+                minOverlapY = label.y;
+            }
+        };
+
+        // initially place label centered to the right
+        minOverlap = Infinity;
+        minOverlapX = label.x = obj.centerX + objRad + dist;
+        minOverlapY = label.y = obj.centerY - label.h * .5;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // if initial position overlaps, check alternatives on the right side, small tolerance
+        // push label up
+        opt1 = Math.min(ovData.maxY, obj.centerY) + dist;// + obj.h * 0.375);
+        // push label down
+        opt2 = Math.max(ovData.minY - label.h, obj.centerY - label.h) - dist; //- obj.h * 0.375 - label.h);
+
+        // if down direction is closer, swap options order
+        if(obj.centerY - ovData.minY < ovData.maxY - obj.centerY) {
+            tmp = opt1;
+            opt1 = opt2;
+            opt2 = tmp;
+        }
+
+        label.y = opt1;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        label.y = opt2;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check position above
+        label.x = obj.centerX - label.w * 0.5;
+        label.y = obj.y + obj.h + dist * 0.25;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check alternatives above
+        // push label right
+        opt1 = Math.min(ovData.maxX + dist, obj.x);
+        // push label left
+        opt2 = Math.max(ovData.minX - dist, obj.x + obj.w - label.w);
+
+        label.x = opt1;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+        label.x = opt2;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check position below
+        label.x = obj.centerX - label.w * 0.5;
+        label.y = obj.y - label.h - dist * 0.25;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check alternatives below
+        // push label right
+        opt1 = Math.min(ovData.maxX + dist * 2, obj.x);
+        // push label left
+        opt2 = Math.max(ovData.minX - label.w - dist, obj.x + obj.w - label.w);
+
+        label.x = opt1;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+        label.x = opt2;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check left side
+        label.x = obj.x - label.w - dist * 0.25;
+        label.y = obj.centerY - label.h * 0.5;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check alternatives on the left side, small tolerance
+        // push label up
+        opt1 = Math.min(ovData.maxY, obj.centerY) + dist;// + obj.h * 0.375);
+        // push label down
+        opt2 = Math.max(ovData.minY - label.h, obj.centerY - label.h) - dist; //- obj.h * 0.375 - label.h);
+
+        // if down direction is closer, swap options order
+        if(obj.centerY - ovData.minY < ovData.maxY - obj.centerY) {
+            tmp = opt1;
+            opt1 = opt2;
+            opt2 = tmp;
+        }
+
+        label.y = opt1;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        label.y = opt2;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check alternatives on the right side, large tolerance
+        label.x = obj.centerX + objRad + dist;
+        label.y = obj.centerY - label.h * .5;
+        evaluateCurrentPos.call(this);
+
+        // push label up
+        opt1 = Math.min(ovData.maxY, obj.centerY + obj.h) + dist;
+        // push label down
+        opt2 = Math.max(ovData.minY - label.h, obj.centerY - obj.h - label.h)  - dist;
+
+        // if down direction is closer, swap options order
+        if(obj.centerY - ovData.minY < ovData.maxY - obj.centerY) {
+            tmp = opt1;
+            opt1 = opt2;
+            opt2 = tmp;
+        }
+
+        label.y = opt1;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        label.y = opt2;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check alternatives on the left side, large tolerance
+        label.x = obj.x - label.w - dist * .25;
+        label.y = obj.centerY - label.h * .5;
+        evaluateCurrentPos.call(this);
+
+        // push label up
+        opt1 = Math.min(ovData.maxY + dist, obj.centerY + obj.h);
+        // push label down
+        opt2 = Math.max(ovData.minY - label.h - dist, obj.centerY - obj.h - label.h);
+
+        // if down direction is closer, swap options order
+        if(obj.centerY - ovData.minY < ovData.maxY - obj.centerY) {
+            tmp = opt1;
+            opt1 = opt2;
+            opt2 = tmp;
+        }
+
+        label.y = opt1;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        label.y = opt2;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // no overlap-free option found. Use option with minimal overlap.
+        label.x = minOverlapX;
+        label.y = minOverlapY;
+        return minOverlap;
+    };
+
+    /**
+     * Executes the label placement algorithm.
+     * @private
+     */
     LabelManager2.prototype.run = function () {
         var curObj, curLabel;
         var overlaps;
@@ -103,35 +359,7 @@ module.exports = (function () {
         var minOverlapX, minOverlapY;
         var positionSequence;
         var attempts;
-
-        // private helper function
-        var moveLabelToPos = function (obj, dir) {
-            var dir = positionSequence[attempts];
-            if(obj.name === 'Agador' || obj.name === 'Quentin') {
-                console.log('moving '+obj.name+' ' + dir, minY, maxY);
-            }
-
-            if(dir === 'up') {
-                obj.label.y = Math.min(maxY, obj.y + obj.h) + this.objLabelDist;
-                /*if(obj.label.y >= obj.y + obj.h) {
-                    obj.label.x = obj.x;
-                }*/
-            } else if(dir === 'down') {
-                obj.label.y = Math.max(minY - this.glyphSettings.lineHeight, obj.y - this.glyphSettings.lineHeight) - this.objLabelDist;
-                /*if(obj.label.y <= obj.y - this.glyphSettings.lineHeight) {
-                    obj.label.x = obj.x;
-                }*/
-            } else if(dir === 'above') {
-                obj.label.x = obj.centerX - obj.label.w * .5;
-                obj.label.y = obj.y + obj.h;
-            } else if(dir === 'below') {
-                obj.label.x = obj.centerX - obj.label.w * .5;
-                obj.label.y = obj.y - this.glyphSettings.lineHeight;
-            } else if(dir === 'left') {
-                obj.label.x = obj.x - obj.label.w - this.objLabelDist;
-                obj.label.y = obj.centerY - this.glyphSettings.lineHeight * .5;
-            }
-        };
+        var curPos;
 
         this.orderedObjIndices.sort(function(a, b) {
             return this.objects[b].x - this.objects[a].x;
@@ -139,76 +367,11 @@ module.exports = (function () {
 
         for(var i = 0, len = this.orderedObjIndices.length; i < len; i++) {
             curObj = this.objects[this.orderedObjIndices[i]];
-            curLabel = curObj.label;
-
-            overlaps = this.grid.getOverlaps(curLabel);
-            if(overlaps.length === 0) {
-                continue;
-            }
-            minY = Infinity;
-            maxY = -Infinity;
-            curOverlap = 0;
-            minOverlap = Infinity;
-            minOverlapX = undefined;
-            minOverlapY = undefined;
-            for(var j = 0, jlen = overlaps.length; j < jlen; j++) {
-                if(overlaps[j].x < curObj.x && !overlaps[j].hasOwnProperty('label')) {
-                    continue;
-                }
-                minY = Math.min(overlaps[j].y, minY);
-                maxY = Math.max(overlaps[j].y+overlaps[j].h, maxY);
-            }
-            if(minY === Infinity || maxY === -Infinity) {
-                continue;
-            }
             this.grid.unplaceObject(curObj.label);
-            if(curObj.name === 'Castor')
-                this.logger.log(curObj.centerY, minY, maxY);
-
-            positionSequence = [];
-            attempts = 0;
-
-            // primary direction
-            // secondary direction
-            // left
-            // centered above
-            // centered below
-
-            // check for the closer overlap-free edge (top or bottom)
-            if(curObj.centerY - minY < maxY - curObj.centerY ) {
-                positionSequence = ['down', 'up', 'above', 'below', 'left'];
-            } else { //if(maxY <= curObj.y)
-                positionSequence = ['up', 'down', 'above', 'below', 'left'];
-            }
-
-            while(attempts < positionSequence.length) {
-                moveLabelToPos.call(this, curObj);
-                overlaps = this.grid.getOverlaps(curLabel);
-                curOverlap = 0;
-                for(var j = 0, jlen = overlaps.length; j < jlen; j++) {
-                    if(overlaps[j].x < curObj.x && !overlaps[j].hasOwnProperty('label')) {
-                        continue;
-                    }
-                    curOverlap += Utils.rectanglesOverlap(curLabel, overlaps[j]);
-                }
-                if(curOverlap < minOverlap) {
-                    minOverlap = curOverlap;
-                    minOverlapX = curLabel.x;
-                    minOverlapY = curLabel.y;
-                }
-                if(curOverlap === 0) {
-                    break;
-                }
-                attempts++;
-            }
-
-            curLabel.x = minOverlapX;
-            curLabel.y = minOverlapY;
+            this.findBestLabelPositionFor(curObj);
             this.grid.placeObject(curObj.label);
         }
     };
-
-
 
     return LabelManager2;
 })();

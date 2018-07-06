@@ -14,7 +14,7 @@ module.exports = (function () {
 
 	/**
 	 * (Re-)initializes and runs the algorithm.
-	 * 
+	 *
 	 * @param x {Number} Algorithm area left limit
 	 * @param y {Number} Algorithm area bottom limit
 	 * @param w {Number} Algorithm area width
@@ -62,14 +62,14 @@ module.exports = (function () {
     };
 
 	/**
-	 * Generates a new sample by looking at a random active sample in the queue and 
-	 * spawning new candidates from that position. If a valid candidate is found, this candidate 
-	 * becomes our new sample. If no valid candidate is found, the active sample is marked 
-	 * inactive (removed from the queue), and the next random active sample is looked at for 
-	 * candidates. 
+	 * Generates a new sample by looking at a random active sample in the queue and
+	 * spawning new candidates from that position. If a valid candidate is found, this candidate
+	 * becomes our new sample. If no valid candidate is found, the active sample is marked
+	 * inactive (removed from the queue), and the next random active sample is looked at for
+	 * candidates.
 	 * If no valid candidate can be found for any of the active samples, the function returns null
 	 * and the algorithm terminates.
-	 * 
+	 *
 	 * @returns {Object} The generated sample, or null.
 	 */
     PoissonDisc.prototype.generateSample = function () {
@@ -100,7 +100,7 @@ module.exports = (function () {
 
 	/**
 	 * Places a sample.
-	 * 
+	 *
 	 * @param s {Object} The sample
 	 * @param grid {Array} The used cell occupation grid (optional)
 	 * @param noEnqueue {boolean} Set to true to place an inactive sample (optional)
@@ -152,10 +152,10 @@ module.exports = (function () {
     };
 
 	/**
-	 * Introduces a new list of reserved points and aggregates them with the list of generated 
-	 * ("blue noise") points. The aggregated points list contains all reserved points, plus generated 
+	 * Introduces a new list of reserved points and aggregates them with the list of generated
+	 * ("blue noise") points. The aggregated points list contains all reserved points, plus generated
 	 * points in those places where there are no reserved points (according to the normal poisson disc
-	 * valid location determination). 
+	 * valid location determination).
 	 * The function's output is saved in this.aggregatedPoints.
 	 *
 	 * @param reservedPoints {Array} List of existing fixed points

@@ -42,7 +42,7 @@ var main = function () {
 
     // generate the voronoi diagram to find borders
 	vBorder = new VoronoiBorder(this.logger).init(filteredSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
-    filteredSystems = vBorder.generateBoundedObjects(viewRect);
+    filteredSystems = vBorder.generateBoundedObjects(viewRect, 1);
 
     var systemRadius = 1;
     var glyphSettings = {

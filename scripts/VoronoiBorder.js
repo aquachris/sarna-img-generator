@@ -267,7 +267,7 @@ module.exports = (function () {
             if(!this.borderEdges.hasOwnProperty(col)) {
                 continue;
             }
-            oriColArr = JSON.parse(JSON.stringify(this.borderEdges[col]));
+            oriColArr = Utils.deepCopy(this.borderEdges[col]);
             newColArr = [];
             curEdge = null;
             prevEdge = null;
