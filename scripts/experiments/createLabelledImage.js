@@ -3,7 +3,7 @@ var Logger = require('./Logger.js');
 var LogRenderer = require('./LogRenderer.js');
 var SystemsReader = require('./SystemsReader.js');
 var SvgWriter = require('./SvgWriter.js');
-var LabelManager2 = require('./LabelManager2.js');
+var LabelManager = require('./LabelManager.js');
 var VoronoiBorder = require('./VoronoiBorder.js');
 
 var main = function () {
@@ -42,7 +42,7 @@ var main = function () {
 
     // generate the voronoi diagram to find borders
 	vBorder = new VoronoiBorder(this.logger).init(filteredSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
-    filteredSystems = vBorder.generateBoundedObjects(viewRect, 1);
+    filteredSystems = vBorder.generateBoundedObjects(viewRect);
 
     var systemRadius = 1;
     var glyphSettings = {
@@ -68,10 +68,10 @@ var main = function () {
     }
     var nodeToTextDistance = .5;
 
-    labelMgr = new LabelManager2().init(viewRect, filteredSystems, systemRadius, nodeToTextDistance, glyphSettings);
+    labelMgr = new LabelManager().init(viewRect, filteredSystems, systemRadius, nodeToTextDistance, glyphSettings);
 
 	// create an svg with a universe picture
-    writer.writeLabelledImage2(labelMgr, viewRect);
+    writer.writeLabelledImage(labelMgr, viewRect);
 
     // finish by rendering out the logs
     logRenderer.render();

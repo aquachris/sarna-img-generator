@@ -7,26 +7,22 @@ module.exports = (function () {
 	/**
 	 * An instance of this class uses a heuristic algorithm in order to place labels
      * on a canvas with minimal overlap.
-     * The implemented algorithm is a variant of the tabu search with fixed label options.
-     *
-     * @see http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.21.6115&rep=rep1&type=pdf
+	 *
+	 * Algorithm idea:
+	 * - While going from right to left and greedily picking the first 0-collision label position:
+	 * - try label positions directly right, above, below, left of the system, with r/1.5 units of tolerance (adjust for detected collision)
+	 * - try collision-adjusted positions right, above, below, left beyond tolerance up to maximum adjustment range
+	 * - if none of the position options can be used without collision, choose option with lowest collision value
+	 * - positions outside the viewRect are completely invalid
+	 *
+	 * Note that coordinate system origin is considered to be bottom left. Each rectangle's origin is also
+	 * at the rectangle's bottom left corner.
 	 */
 	var LabelManager = function (logger) {
         this.logger = logger || console;
 	};
 
 	LabelManager.prototype.constructor = LabelManager;
-
-    /**
-     * Default label position preference values
-     * Indices:
-     * 7 | 0 | 1
-     * 6 | X | 2
-     * 5 | 4 | 3
-     */
-    LabelManager.POSITIONS = [
-        0.25, 0.6, 0.0, 0.6, 0.25, 0.8, 0.25, 0.8
-    ];
 
     /**
      * Initializes this object.
@@ -36,12 +32,9 @@ module.exports = (function () {
      * @param objectRadius {Number} Radius of a single object node
      * @param objLabelDist {Number} Empty space between an object node and its text label
      * @param glyphSettings {Object} Several settings such as default width and height, and specific glyph widths
-     * @param positionPrefs {Object} Position preferences in the same form as LabelManager.POSITIONS
-     * @param alpha1 {Number} Weight for overlapping labels. Default is 1.0
-     * @param alpha2 {Number} Weight for cartographic preference. Default is 0.0
      * @returns {LabelManager} this object
      */
-    LabelManager.prototype.init = function (viewRect, objects, objectRadius, objLabelDist, glyphSettings, positionPrefs, alpha1, alpha2) {
+    LabelManager.prototype.init = function (viewRect, objects, objectRadius, objLabelDist, glyphSettings) {
         this.viewRect = viewRect || {x: 0, y: 0, w: 0, h: 0};
         this.objects = Utils.deepCopy(objects || []);
         this.objectRadius = objectRadius || 1;
@@ -49,89 +42,42 @@ module.exports = (function () {
         this.glyphSettings = glyphSettings || {};
         this.glyphSettings.lineHeight = this.glyphSettings.lineHeight || 3;
         this.glyphSettings.widths = this.glyphSettings.widths || { default: 1.6 };
-        this.alpha1 = alpha1 === undefined ? 1.0 : alpha1;
-        this.alpha2 = alpha2 === undefined ? 0.5 : alpha2;
-
-        // tabu search variables
-        this.totalCost = Infinity;
-        this.totalNumOverlaps = Infinity;
-        this.bestCost = Infinity;
-        this.bestConfig = [];
-        this.tabuListSizeLimit = 0;
-        this.tabuList = [];
-        this.orderedObjIndices = [];
-        this.candidateListSizeLimit = 0;
-        this.candidateList = [];
-        this.tabuCandidateList = [];
-        this.iteration = 0;
-        this.iterationLimit = 300;
 
         this.grid = new RectangleGrid().init(viewRect);
         this.setInitialState();
+        this.run();
         return this;
     };
 
-    // - find out all *potential* overlap situations
-    //
-
+    /**
+     * Instantiates the labels and adds all objects and labels to the grid.
+     * @private
+     */
     LabelManager.prototype.setInitialState = function () {
         var curObj;
+        this.orderedObjIndices = [];
 
         // private helper function
-        var generateLabelRect = function (o, objIdx, pos) {
-            var oRad = this.objectRadius;
+        var generateLabelRect = function (obj, objIdx) {
+            var objRad = this.objectRadius;
             var dist = this.objLabelDist;
-            var yDist = 0;//dist * .5;
-            var lineHBuf = -.25;//.25;
-            var lineH = this.glyphSettings.lineHeight + lineHBuf *2;
-            var xDelta = 0, yDelta = 0;
-
-            var labelWidth = 0;
+            var lineH = this.glyphSettings.lineHeight;
             var defaultWidth = this.glyphSettings.widths.default;
-            for(var i = 0; i < o.name.length; i++) {
-                labelWidth += this.glyphSettings.widths[o.name[i]] || defaultWidth;
-            }
-            switch(pos) {
-                case 0:
-                    xDelta = -labelWidth*.5;
-                    yDelta = oRad + yDist;
-                    break;
-                case 1:
-                    xDelta = oRad;// + dist *.5;
-                    yDelta = oRad + yDist;
-                    break;
-                case 2:
-                    xDelta = oRad + dist;
-                    yDelta = -lineH *.5;
-                    break;
-                case 3:
-                    xDelta = oRad;// + dist * .5;
-                    yDelta = -oRad - yDist - lineH;
-                    break;
-                case 4:
-                    xDelta = -labelWidth * .5;
-                    yDelta = -oRad - yDist - lineH;
-                    break;
-                case 5:
-                    xDelta = -oRad - labelWidth;//-oRad - dist - labelWidth;
-                    yDelta = -oRad - yDist - lineH;
-                    break;
-                case 6:
-                    xDelta = -oRad - dist - labelWidth;
-                    yDelta = -lineH * .5;
-                    break;
-                case 7:
-                    xDelta = -oRad - labelWidth;//-oRad - dist - labelWidth;
-                    yDelta = oRad + yDist;
-                    break;
+            var labelWidth = 0;
+			var x, y;
+            for(var i = 0; i < obj.name.length; i++) {
+                labelWidth += this.glyphSettings.widths[obj.name[i]] || defaultWidth;
             }
 
+			x = obj.centerX + objRad + dist;
+			y = obj.centerY - lineH * .5;
+			x = Math.max(this.viewRect.x, Math.min(x, this.viewRect.x + this.viewRect.w - labelWidth));
+			y = Math.max(this.viewRect.y + lineH, Math.min(y, this.viewRect.y + this.viewRect.h - lineH));
             return {
-                id: 'label_'+objIdx+'_'+pos,
-                o: o,
-                pos: pos,
-                x: o.centerX + xDelta,
-                y: o.centerY + yDelta,
+                id: 'label_'+objIdx,
+                o: obj,
+                x: x,//obj.centerX + objRad + dist,
+                y: y,//obj.centerY - lineH * .5,
                 w: labelWidth,
                 h: lineH
             }
@@ -146,270 +92,284 @@ module.exports = (function () {
             curObj.y = curObj.y - this.objectRadius;
             curObj.w = curObj.h = this.objectRadius * 2;
             curObj.id = 'obj_'+i;
-            curObj.selLabelPos = 2; // use the 3 o'clock label by default
-            curObj.overlapCost = Infinity;
-            curObj.labelPosCost = LabelManager.POSITIONS[2];
-            curObj.labels = [];
-            for(var posIdx = 0; posIdx < 8; posIdx++) {
-                curObj.labels.push(generateLabelRect.call(this, curObj, i, posIdx));
-            }
-            //
-            delete curObj.neighbors;
-            delete curObj.neighbors_60;
-            delete curObj.adjacentTriIndices;
-            delete curObj['3030_all'];
-            delete curObj['3052_all'];
-            //
-            this.bestConfig.push(2);
-            this.grid.placeObject(curObj);
-            this.grid.placeObject(curObj.labels[curObj.selLabelPos]);
-        }
+            curObj.label = generateLabelRect.call(this, curObj, i);
 
-        this.calculateTotalCost();
-        this.bestCost = this.totalCost;
-        this.saveCurrentConfigAsBest();
-        this.recalculateListSizes();
-        this.iteration = 0;
-        this.logger.log('LabelManager: total cost after init: ' + this.totalCost);
-        while(this.iterate()) {}
-        this.logger.log('LabelManager: algorithm terminated after ' + this.iteration + ' iterations');
+            this.grid.placeObject(curObj);
+            this.grid.placeObject(curObj.label);
+        }
     };
 
     /**
-     * @returns {boolean} false if the algorithm has terminated
+     * @private
      */
-    LabelManager.prototype.iterate = function () {
-        var curCandidate, curObj, curLabel;
-        var overlaps, numOverlaps;
-        var curCost;
-        var bestCandidate;
-        var otherObj;
-
-        this.findCandidates();
-        for(var i = 0, len = this.candidateList.length; i < len; i++) {
-            curCandidate = this.candidateList[i];
-            curObj = this.objects[curCandidate.idx];
-            curCandidate.bestPos = curObj.selLabelPos;
-            curCandidate.bestCost = curObj.overlapCost + curObj.labelPosCost;
-            /*if(curCandidate.idx === 175) {
-                curLabel = curObj.labels[4];
-                otherObj = this.grid.getOverlaps(curLabel, 'label_'+curCandidate.idx);
-                console.log('175 ', 6, curCost);
-                console.log('this:', curLabel.x, curLabel.y, curLabel.w, curLabel.h);
-                console.log(otherObj.length);
-                //console.log('other: ', otherObj.x, otherObj.y, otherObj.w, otherObj.h);
-            }*/
-            for(var pos = 0; pos < 8; pos++) {
-                curLabel = curObj.labels[pos];
-                numOverlaps = this.grid.getNumOverlaps(curLabel, 'label_'+curCandidate.idx);
-                curCost = this.alpha1 * numOverlaps + this.alpha2 * LabelManager.POSITIONS[pos];
-                if(pos !== curObj.selLabelPos && curCost < curCandidate.bestCost) {
-                    if(curCandidate.idx === 122) {
-                        console.log(curObj.selLabelPos, curCandidate.bestCost, 'now', pos, curCost);
-                    }
-                    curCandidate.bestPos = pos;
-                    curCandidate.bestCost = curCost;
-                }
-            }
-            if((!bestCandidate && curCandidate.bestCost <= curObj.overlapCost + curObj.labelPosCost)
-                || curCandidate.bestCost < bestCandidate.bestCost
-            ) {
-                bestCandidate = curCandidate;
-                if(bestCandidate.idx === 122) {
-                    console.log('BEST: ', bestCandidate);
-                }
-            }
-        }
-
-        if(!bestCandidate) {
-            this.logger.log('no non-tabu best candidate found');
-            for(var i = 0, len = this.tabuCandidateList.length; i < len; i++) {
-                curCandidate = this.tabuCandidateList[i];
-                curObj = this.objects[curCandidate.idx];
-                curCandidate.bestPos = curObj.selLabelPos;
-                curCandidate.bestCost = curObj.overlapCost + curObj.labelPosCost;
-                for(var pos = 0; pos < 8; pos++) {
-                    curLabel = curObj.labels[pos];
-                    numOverlaps = this.grid.getNumOverlaps(curLabel, 'label_'+curCandidate.idx);
-                    curCost = this.alpha1 * numOverlaps + this.alpha2 * LabelManager.POSITIONS[pos];
-                    if(curCost < curCandidate.bestCost) {
-                        curCandidate.bestPos = pos;
-                        curCandidate.bestCost = curCost;
-                    }
-                }
-                if(!bestCandidate || curCandidate.bestCost < bestCandidate.bestCost){
-                    bestCandidate = curCandidate;
-                    if(bestCandidate.idx === 183) {
-                        console.log('BEST: ', bestCandidate);
-                    }
-                }
-            }
-        }
-
-        if(!bestCandidate) {
-            this.logger.warn('LabelManager: no best candidate found');
-            return false;
-        }
-        //this.logger.log('LabelManager: best candidate is now ', bestCandidate);
-
-        curObj = this.objects[bestCandidate.idx];
-        curLabel = curObj.labels[curObj.selLabelPos];
-        curCost = curObj.overlapCost + curObj.labelPosCost;
-
-        // update costs for current object: remove label cost
-        curObj.labelPosCost -= this.alpha2 * LabelManager.POSITIONS[curObj.selLabelPos];
-
-        // remove previous label and update costs accordingly
-        overlaps = this.grid.getOverlaps(curLabel);
-        for(var i = 0, len = overlaps.length; i < len; i++) {
-            otherObj = overlaps[i];
-            // check if overlapped rectangle is an object or a label
-            if(!otherObj.hasOwnProperty('labels')) {
-                // label
-                otherObj = otherObj.o;
-                //otherObj.labelPosCost -= this.alpha2 * LabelManager.POSITIONS[curObj.selLabelPos];
-                this.totalCost -= this.alpha2 * LabelManager.POSITIONS[curObj.selLabelPos];
-            }
-            curObj.overlapCost -= this.alpha1;
-            //otherObj.overlapCost -= this.alpha1 * 1;
-            this.totalCost -= this.alpha1;
-            this.totalNumOverlaps--;
-        }
-        this.grid.unplaceObject(curLabel);
-
-        // add new label and update costs accordingly
-        curObj.selLabelPos = bestCandidate.bestPos;
-        //this.logger.log('best label position for ' + curObj.id + ' is now ' + bestCandidate.bestPos);
-        curLabel = curObj.labels[curObj.selLabelPos];
-        // update costs for current object: add label cost
-        curObj.labelPosCost += this.alpha2 * LabelManager.POSITIONS[curObj.selLabelPos];
-
-        overlaps = this.grid.getOverlaps(curLabel);
-        for(var i = 0, len = overlaps.length; i < len; i++) {
-            otherObj = overlaps[i];
-            // check if overlapped rectangle is an object or a label
-            if(!otherObj.hasOwnProperty('labels')) {
-                // label
-                otherObj = otherObj.o;
-                //otherObj.labelPosCost += this.alpha2 * LabelManager.POSITIONS[curObj.selLabelPos];
-                this.totalCost += this.alpha2 * LabelManager.POSITIONS[curObj.selLabelPos];
-            }
-            curObj.overlapCost += this.alpha1;
-            //otherObj.overlapCost += this.alpha1 * 1;
-            this.totalCost += this.alpha1;
-            this.totalNumOverlaps++;
-        }
-        this.grid.placeObject(curLabel);
-
-        // add this object to the tabu list
-        this.tabuList.push(bestCandidate.idx);
-        if(this.tabuList.length > this.tabuListSizeLimit) {
-            this.tabuList.shift();
-        }
-
-        this.iteration++;
-        if(this.iteration % 100 === 0) {
-            this.logger.log('finished iteration #' + this.iteration +', total cost is now ' + this.totalCost);
-        }
-        if(this.totalNumOverlaps === 0 || this.iteration >= this.iterationLimit) {
-            /*this.findCandidates();
-            for(var i = 0; i < this.candidateList.length; i++) {
-                curCandidate = this.candidateList[i];
-                curObj = this.objects[curCandidate.idx];
-                this.logger.log('candidate: ', this.candidateList[i], curObj.overlapCost);
-            }*/
-            return false;
-        } else if(this.iteration % 50 === 0) {
-            this.recalculateListSizes();
-        }
-        return true;
+    LabelManager.prototype.keepInViewRect = function (obj) {
+        obj.x = Utils.clampNumber(obj.x, this.viewRect.x, this.viewRect.x + this.viewRect.w - obj.w);
+        obj.y = Utils.clampNumber(obj.y, this.viewRect.y, this.viewRect.y + this.viewRect.h - obj.h);
     };
 
-    LabelManager.prototype.calculateTotalCost = function () {
-        var curObj, curLabel, otherObj, otherLabel;
+    /**
+     * @private
+     */
+    LabelManager.prototype.getOverlapData = function (label) {
+        var ret = {
+            minX : Infinity,
+            maxX : -Infinity,
+            minY : Infinity,
+            maxY : -Infinity,
+            area : 0
+        };
+        var overlaps = this.grid.getOverlaps(label);
+        for(var i = 0, len = overlaps.length; i < len; i++) {
+            // ignore other labels to the left of the current label (yet to be processed)
+            if(overlaps[i].hasOwnProperty('o') && overlaps[i].o.x < label.o.x) {
+                continue;
+            }
+            ret.minX = Math.min(ret.minX, overlaps[i].x);
+            ret.maxX = Math.max(ret.maxX, overlaps[i].x + overlaps[i].w);
+            ret.minY = Math.min(ret.minY, overlaps[i].y);
+            ret.maxY = Math.max(ret.maxY, overlaps[i].y + overlaps[i].h);
+            ret.area += Utils.rectanglesOverlap(label, overlaps[i]);
+        }
+
+        return ret;
+    };
+
+    /**
+     * Places a label at the best possible position.
+     * TODO This function is very repetitive. It should be possible to extract and modularize the repeated logic.
+     *
+     * @param obj {Object} The object whose label needs to be placed
+     * @returns {Number} The overlapped area's size (in square units) for the label's best position
+     * @private
+     */
+    LabelManager.prototype.findBestLabelPositionFor = function (obj) {
+        var label = obj.label;
+        var objRad = this.objectRadius;
+        var dist = this.objLabelDist;
+        var opt1, opt2, tmp;
         var overlaps;
+        var curOverlap, minOverlap;
+        var minOverlapX, minOverlapY;
+        var ovData;
 
-        // reset total cost and number of overlaps
-        this.totalCost = 0;
-        this.totalNumOverlaps = 0;
-        // reset all costs
-        for(var i = 0, len = this.objects.length; i < len; i++) {
-            this.objects[i].overlapCost = 0;
-            this.objects[i].labelPosCost = LabelManager.POSITIONS[this.objects[i].selLabelPos];
-        }
-
-        // iterate over all objects and add costs where overlaps are found
-        for(var i = 0, len = this.objects.length; i < len; i++) {
-            curObj = this.objects[i];
-            curLabel = curObj.labels[curObj.selLabelPos];
-            overlaps = this.grid.getOverlaps(curLabel, 'label_'+i);
-            this.totalCost += this.alpha2 * LabelManager.POSITIONS[curObj.selLabelPos];
-            for(var j = 0, jlen = overlaps.length; j < jlen; j++) {
-                otherObj = overlaps[j];
-                // check if overlapped rectangle is an object or a label
-                if(!otherObj.hasOwnProperty('labels')) {
-                    // label
-                    otherObj = otherObj.o;
-                    //otherObj.labelPosCost += this.alpha2 * LabelManager.POSITIONS[curObj.selLabelPos];
-                }
-                curObj.overlapCost += this.alpha1 * 1;
-                //otherObj.overlapCost += this.alpha1 * 1;
-                this.totalCost += this.alpha1;
-                this.totalNumOverlaps++;
+        var evaluateCurrentPos = function () {
+            this.keepInViewRect(label);
+            ovData = this.getOverlapData(label);
+            curOverlap = ovData.area;
+            if(curOverlap < 0.1) {
+                curOverlap = 0;
             }
-        }
-    };
-
-    LabelManager.prototype.saveCurrentConfigAsBest = function () {
-        for(var i = 0, len = this.objects.length; i < len; i++) {
-            this.bestConfig[i] = this.objects[i].selLabelPos;
-        }
-    };
-
-    LabelManager.prototype.recalculateListSizes = function () {
-        this.tabuListSizeLimit = Math.min(7 + Math.floor(0.25 * this.totalNumOverlaps), this.objects.length - 1);
-        while(this.tabuList.length > this.tabuListSizeLimit) {
-            this.tabuList.shift();
-        }
-        this.candidateListSizeLimit = 1 + Math.floor(0.15 * this.totalNumOverlaps);
-        this.logger.log('tabu list size is now ' + this.tabuListSizeLimit + ', candidate list size is now ' + this.candidateListSizeLimit);
-    };
-
-    LabelManager.prototype.findCandidates = function () {
-        var tabuKeys = {};
-        this.candidateList = [];
-        this.orderedObjIndices.sort(function (a,b) {
-            if(this.objects[a].overlapCost + this.objects[a].labelPosCost
-                > this.objects[b].overlapCost + this.objects[b].labelPosCost) {
-                return -1;
+            if(curOverlap < minOverlap) {
+                minOverlap = curOverlap;
+                minOverlapX = label.x;
+                minOverlapY = label.y;
             }
-            return 1;
+        };
+
+        // initially place label centered to the right
+        minOverlap = Infinity;
+        minOverlapX = label.x = obj.centerX + objRad + dist;
+        minOverlapY = label.y = obj.centerY - label.h * .5;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // if initial position overlaps, check alternatives on the right side, small tolerance
+        // push label up
+        opt1 = Math.min(ovData.maxY, obj.centerY) + dist;// + obj.h * 0.375);
+        // push label down
+        opt2 = Math.max(ovData.minY - label.h, obj.centerY - label.h) - dist; //- obj.h * 0.375 - label.h);
+
+        // if down direction is closer, swap options order
+        if(obj.centerY - ovData.minY < ovData.maxY - obj.centerY) {
+            tmp = opt1;
+            opt1 = opt2;
+            opt2 = tmp;
+        }
+
+        label.y = opt1;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        label.y = opt2;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check position above
+        label.x = obj.centerX - label.w * 0.5;
+        label.y = obj.y + obj.h + dist * 0.25;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check alternatives above
+        // push label right
+        opt1 = Math.min(ovData.maxX + dist, obj.x);
+        // push label left
+        opt2 = Math.max(ovData.minX - dist, obj.x + obj.w - label.w);
+
+        label.x = opt1;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+        label.x = opt2;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check position below
+        label.x = obj.centerX - label.w * 0.5;
+        label.y = obj.y - label.h - dist * 0.25;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check alternatives below
+        // push label right
+        opt1 = Math.min(ovData.maxX + dist * 2, obj.x);
+        // push label left
+        opt2 = Math.max(ovData.minX - label.w - dist, obj.x + obj.w - label.w);
+
+        label.x = opt1;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+        label.x = opt2;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check left side
+        label.x = obj.x - label.w - dist * 0.25;
+        label.y = obj.centerY - label.h * 0.5;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check alternatives on the left side, small tolerance
+        // push label up
+        opt1 = Math.min(ovData.maxY, obj.centerY) + dist;// + obj.h * 0.375);
+        // push label down
+        opt2 = Math.max(ovData.minY - label.h, obj.centerY - label.h) - dist; //- obj.h * 0.375 - label.h);
+
+        // if down direction is closer, swap options order
+        if(obj.centerY - ovData.minY < ovData.maxY - obj.centerY) {
+            tmp = opt1;
+            opt1 = opt2;
+            opt2 = tmp;
+        }
+
+        label.y = opt1;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        label.y = opt2;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check alternatives on the right side, large tolerance
+        label.x = obj.centerX + objRad + dist;
+        label.y = obj.centerY - label.h * .5;
+        evaluateCurrentPos.call(this);
+
+        // push label up
+        opt1 = Math.min(ovData.maxY, obj.centerY + obj.h) + dist;
+        // push label down
+        opt2 = Math.max(ovData.minY - label.h, obj.centerY - obj.h - label.h)  - dist;
+
+        // if down direction is closer, swap options order
+        if(obj.centerY - ovData.minY < ovData.maxY - obj.centerY) {
+            tmp = opt1;
+            opt1 = opt2;
+            opt2 = tmp;
+        }
+
+        label.y = opt1;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        label.y = opt2;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check alternatives on the left side, large tolerance
+        label.x = obj.x - label.w - dist * .25;
+        label.y = obj.centerY - label.h * .5;
+        evaluateCurrentPos.call(this);
+
+        // push label up
+        opt1 = Math.min(ovData.maxY + dist, obj.centerY + obj.h);
+        // push label down
+        opt2 = Math.max(ovData.minY - label.h - dist, obj.centerY - obj.h - label.h);
+
+        // if down direction is closer, swap options order
+        if(obj.centerY - ovData.minY < ovData.maxY - obj.centerY) {
+            tmp = opt1;
+            opt1 = opt2;
+            opt2 = tmp;
+        }
+
+        label.y = opt1;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        label.y = opt2;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // no overlap-free option found. Use option with minimal overlap.
+        label.x = minOverlapX;
+        label.y = minOverlapY;
+        return minOverlap;
+    };
+
+    /**
+     * Executes the label placement algorithm.
+     * @private
+     */
+    LabelManager.prototype.run = function () {
+        var curObj, curLabel;
+        var overlaps;
+        var minY, maxY;
+        var curOverlap, minOverlap;
+        var minOverlapX, minOverlapY;
+        var positionSequence;
+        var attempts;
+        var curPos;
+
+        this.orderedObjIndices.sort(function(a, b) {
+            return this.objects[b].x - this.objects[a].x;
         }.bind(this));
-        for(var i = 0, len = this.tabuList.length; i < len; i++) {
-            tabuKeys[this.tabuList[i]] = true;
-        }
-        for(var i = 0; i < this.orderedObjIndices.length; i++) {
-            if(tabuKeys.hasOwnProperty(this.orderedObjIndices[i])) {
-                this.tabuCandidateList.push({
-                    idx: this.orderedObjIndices[i],
-                    bestPos: -1,
-                    bestCost: Infinity,
-                    isTabu : tabuKeys.hasOwnProperty(this.orderedObjIndices[i])
-                });
-            } else {
-                if(this.objects[this.orderedObjIndices[i]].overlapCost === 0) {
-                    continue;
-                }
-                this.candidateList.push({
-                    idx: this.orderedObjIndices[i],
-                    bestPos: -1,
-                    bestCost: Infinity,
-                    isTabu : tabuKeys.hasOwnProperty(this.orderedObjIndices[i])
-                });
-                if(this.candidateList.length >= this.candidateListSizeLimit) {
-                    break;
-                }
-            }
+
+        for(var i = 0, len = this.orderedObjIndices.length; i < len; i++) {
+            curObj = this.objects[this.orderedObjIndices[i]];
+            this.grid.unplaceObject(curObj.label);
+            this.findBestLabelPositionFor(curObj);
+            this.grid.placeObject(curObj.label);
         }
     };
 
