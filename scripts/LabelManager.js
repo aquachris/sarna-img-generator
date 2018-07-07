@@ -202,7 +202,7 @@ module.exports = (function () {
 
         // check position above
         label.x = obj.centerX - label.w * 0.5;
-        label.y = obj.y + obj.h + dist * 0.25;
+        label.y = obj.y + obj.h + dist * 0.5;
         evaluateCurrentPos.call(this);
         if(curOverlap === 0) {
             return 0;
@@ -227,7 +227,7 @@ module.exports = (function () {
 
         // check position below
         label.x = obj.centerX - label.w * 0.5;
-        label.y = obj.y - label.h - dist * 0.25;
+        label.y = obj.y - label.h - dist * 0.5;
         evaluateCurrentPos.call(this);
         if(curOverlap === 0) {
             return 0;
@@ -251,7 +251,7 @@ module.exports = (function () {
         }
 
         // check left side
-        label.x = obj.x - label.w - dist * 0.25;
+        label.x = obj.x - label.w - dist;// * 0.25;
         label.y = obj.centerY - label.h * 0.5;
         evaluateCurrentPos.call(this);
         if(curOverlap === 0) {
@@ -313,7 +313,7 @@ module.exports = (function () {
         }
 
         // check alternatives on the left side, large tolerance
-        label.x = obj.x - label.w - dist * .25;
+        label.x = obj.x - label.w - dist;
         label.y = obj.centerY - label.h * .5;
         evaluateCurrentPos.call(this);
 

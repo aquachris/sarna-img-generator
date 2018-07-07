@@ -8,7 +8,7 @@
     <style type="text/css">
         svg text {
             font-family: Tahoma, Arial, sans-serif;
-            font-size: 3px;
+            font-size: 2.5px;
         }
         svg rect {
             fill: rgba(40, 40, 80, .2);
@@ -92,7 +92,7 @@
 			calcWidths[d] = this.getComputedTextLength();
 		});
 
-		console.log(calcWidths);
+		console.log(JSON.stringify(calcWidths));
 
 		texts.append('rect')
 			.attr('x', function (d, i) {

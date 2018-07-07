@@ -3,8 +3,6 @@ module.exports = (function () {
 
 	var fs = require('fs');
 	var Delaunator = require('Delaunator');
-	var Observable = require('./Observable.js');
-	var InfluenceMap = require('./InfluenceMap.js');
 	var VoronoiBorder = require('./VoronoiBorder.js');
 	var Utils = require('./Utils.js');
 
@@ -13,14 +11,11 @@ module.exports = (function () {
 	 * base map and the desired center coordinates and bounds.
 	 */
 	var SvgWriter = function (logger, baseDir) {
-		this.parent.call(this);
 		this.baseDir = baseDir || '.';
 		this.logger = logger;
 	};
 
-	SvgWriter.prototype = Object.create(Observable.prototype);
     SvgWriter.prototype.constructor = SvgWriter;
-    SvgWriter.prototype.parent = Observable;
 
 	/**
 	 * Create an SVG file
@@ -71,8 +66,8 @@ module.exports = (function () {
 	/**
 	 *
 	 */
-	SvgWriter.prototype.writeNeighborhoodImage = function (systems, factions, vBorder, viewRect) {
-		var name = 'neighborhood_';
+	SvgWriter.prototype.writeNeighborhoodImage = function (era, systems, factions, vBorder, labelMgr, viewRect) {
+		var name = 'neighborhood_' + era;
 		var filename = this.baseDir + '/output/' + name + '.svg';
 		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
 		var viewBox;
@@ -80,7 +75,8 @@ module.exports = (function () {
 		var curD;
 		var borderEdges;
 		var prevEdge, curEdge;
-		var borderElements;
+		var borderElements, systemElements, systemNameElements, jumpRadiusElements;
+		var stroke, fill;
 
 		// svg viewBox's y is top left, not bottom left
 		// viewRect is in map space, viewBox is in svg space
@@ -108,7 +104,7 @@ module.exports = (function () {
 				continue;
 			}
 			// don't paint borders for independent planets
-			if(faction === 'I') {
+			if(faction === 'I' || faction === 'D') {
 				continue;
 			}
 			rgb = this.hexToRgb(factions[faction].color) || {r: 0, g:0, b:0};
@@ -140,10 +136,35 @@ module.exports = (function () {
 			borderElements += 'fill:'+factions[faction].fill+';" />\n';
 		}
 
+		systemElements = '';
+		for(var i = 0, len = systems.length; i < len; i++) {
+			if(systems[i].col === 'DUMMY') {
+				//!Utils.pointInRectangle(parsedSystems[i], viewRect)) {
+				continue;
+			}
+			fill = '#aaa';
+			if(factions.hasOwnProperty(systems[i].col)) {
+				fill = factions[systems[i].col].color;
+			}
+			systemElements += '<circle data-name="'+systems[i].name+'" ';
+			systemElements += 'data-aff="'+systems[i].col+'" ';
+			systemElements += 'cx="' + systems[i].centerX.toFixed(3) + '" ';
+			systemElements += 'cy="' + (-systems[i].centerY).toFixed(3) + '" ';
+			systemElements += 'r="1" style="stroke: #000; stroke-width: 0.25; fill: '+fill+'" />\n';
+			systemNameElements += '<text x="'+systems[i].label.x.toFixed(3) + '" ';
+			systemNameElements += ' y="'+(-systems[i].label.y-systems[i].label.h*.5).toFixed(3)+'" class="system-name">';
+			systemNameElements += systems[i].name + '</text>';
+			//systemsString += '<text x="'+(systems[i].x + 1.5).toFixed(3)+'" ';
+			//systemsString += 'y="' + (-systems[i].y).toFixed(3) + '">';
+			//systemsString += systems[i].name+ '</text>'
+		}
+
+		jumpRadiusElements = '<circle class="jump-radius" cx="'+(viewBox.x+viewBox.w*.5)+'" cy="'+(viewBox.y+viewBox.h*.5)+'" r="30" />\n';
+
 		tpl = tpl.replace('{WIDTH}', '800');
 		tpl = tpl.replace('{HEIGHT}', '800');
 		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);
-		tpl = tpl.replace('{ELEMENTS}', borderElements);
+		tpl = tpl.replace('{ELEMENTS}', borderElements + jumpRadiusElements + systemElements + systemNameElements);
 		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + filename + '" written');
 	};
