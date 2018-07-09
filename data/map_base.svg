@@ -13,14 +13,13 @@
 	</defs>
 
 	<style>
-		text { fill: #000; font-family: Tahoma, Arial, sans-serif; font-size: 2.75px; transform: translateY(1px); }
+		text { fill: #000; font-family: Tahoma, Arial, sans-serif; font-size: 2.75px; }
 		circle.system { fill: #000; stroke: #000; stroke-width: .25 } /* default color */
 		circle.jump-radius { fill: transparent; stroke: #888; stroke-width: .25 }
-		text.system-name { font-size: 2.5px; text-shadow: 1px 1px 0 #eee, -1px 1px 0 #eee, 1px -1px 0 #eee, -1px -1px 0 #eee;  }
+		text.system-label { font-size: 2.5px; text-shadow: .2em .2em 0 #eee, -.2em .2em 0 #eee, .2em -.2em 0 #eee, -.2em -.2em 0 #eee; }
+		text.faction-label { fill: #aaa; font-size: 6px; font-style: italic; font-weight: bold; text-shadow: .05em .05em 0 #eee, -.05em .05em 0 #eee, .05em -.05em 0 #eee, -.05em -.05em 0 #eee; }
 		path { stroke-linejoin: round; stroke-linecap: round; }
 	</style>
 
-	<g>
-		{ELEMENTS}
-	</g>
+	{ELEMENTS}
 </svg>

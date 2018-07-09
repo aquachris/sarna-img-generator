@@ -490,7 +490,7 @@ module.exports = (function () {
                 } else {
                     curEdge.n2c1 = nextEdge.n1c1 = (curEdge.n2c1 || nextEdge.n1c1);
                 }
-                if(curEdge.n2c2x === undefined && nextEdge.n1c2x === undefined) {
+                if(curEdge.n2c2 === undefined && nextEdge.n1c2 === undefined) {
                     curEdge.n2c2 = nextEdge.n1c2 = {
                         x: p2.x + fb * w,
                         y: p2.y + fb * h

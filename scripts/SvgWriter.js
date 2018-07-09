@@ -66,7 +66,7 @@ module.exports = (function () {
 	/**
 	 *
 	 */
-	SvgWriter.prototype.writeNeighborhoodImage = function (era, systems, factions, vBorder, labelMgr, viewRect) {
+	SvgWriter.prototype.writeNeighborhoodImage = function (dimensions, viewRect, era, systems, factions, vBorder) {
 		var name = 'neighborhood_' + era;
 		var filename = this.baseDir + '/output/' + name + '.svg';
 		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
@@ -75,8 +75,11 @@ module.exports = (function () {
 		var curD;
 		var borderEdges;
 		var prevEdge, curEdge;
-		var borderElements, systemElements, systemNameElements, jumpRadiusElements;
+		var factionLabelElements, borderElements, systemElements, systemNameElements, jumpRadiusElements;
+		var elements;
 		var stroke, fill;
+
+		dimensions = dimensions || { w: 800, h: 800 };
 
 		// svg viewBox's y is top left, not bottom left
 		// viewRect is in map space, viewBox is in svg space
@@ -97,6 +100,9 @@ module.exports = (function () {
 			dissolution : ''
 		};
 		factions['I'].color = '#000000';
+
+		factionLabelElements = '';
+		borderElements = '';
 
 		for(var faction in factions) {
 			borderEdges = vBorder.boundedBorderEdges[faction];
@@ -134,9 +140,18 @@ module.exports = (function () {
 			borderElements += '<path fill-rule="evenodd" d="'+curD+'" ';
 			borderElements += 'style="stroke:'+factions[faction].color + ';stroke-width:1px;';
 			borderElements += 'fill:'+factions[faction].fill+';" />\n';
+
+			if(factions[faction].centerX !== undefined && factions[faction].centerY !== undefined) {
+				factionLabelElements += '<text x="'+factions[faction].centerX.toFixed(3)+'"';
+				factionLabelElements += ' y="'+(-factions[faction].centerY).toFixed(3)+'" ';
+				factionLabelElements += ' class="faction-label '+faction+'">';
+				factionLabelElements +=	factions[faction].longName;
+				factionLabelElements += '</text>\n';
+			}
 		}
 
 		systemElements = '';
+		systemNameElements = '';
 		for(var i = 0, len = systems.length; i < len; i++) {
 			if(systems[i].col === 'DUMMY') {
 				//!Utils.pointInRectangle(parsedSystems[i], viewRect)) {
@@ -152,242 +167,24 @@ module.exports = (function () {
 			systemElements += 'cy="' + (-systems[i].centerY).toFixed(3) + '" ';
 			systemElements += 'r="1" style="stroke: #000; stroke-width: 0.25; fill: '+fill+'" />\n';
 			systemNameElements += '<text x="'+systems[i].label.x.toFixed(3) + '" ';
-			systemNameElements += ' y="'+(-systems[i].label.y-systems[i].label.h*.5).toFixed(3)+'" class="system-name">';
+			systemNameElements += ' y="'+(-systems[i].label.y-systems[i].h*.25).toFixed(3)+'" class="system-label">';
 			systemNameElements += systems[i].name + '</text>';
-			//systemsString += '<text x="'+(systems[i].x + 1.5).toFixed(3)+'" ';
-			//systemsString += 'y="' + (-systems[i].y).toFixed(3) + '">';
-			//systemsString += systems[i].name+ '</text>'
 		}
 
 		jumpRadiusElements = '<circle class="jump-radius" cx="'+(viewBox.x+viewBox.w*.5)+'" cy="'+(viewBox.y+viewBox.h*.5)+'" r="30" />\n';
 
-		tpl = tpl.replace('{WIDTH}', '800');
-		tpl = tpl.replace('{HEIGHT}', '800');
+		elements = '<g class="borders">'+borderElements+'</g>\n';
+		//elements += '<g class="faction-labels">'+factionLabelElements+'</g>\n';
+		elements += '<g class="jump-radius">'+jumpRadiusElements+'</g>\n';
+		elements += '<g class="systems">'+systemElements+'</g>\n';
+		elements += '<g class="system-labels">'+systemNameElements+'</g>\n';
+
+		//tpl = tpl.replace('{WIDTH}', '5000');
+		//tpl = tpl.replace('{HEIGHT}', '5000');
+		tpl = tpl.replace('{WIDTH}', dimensions.w);
+		tpl = tpl.replace('{HEIGHT}', dimensions.h);
 		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);
-		tpl = tpl.replace('{ELEMENTS}', borderElements + jumpRadiusElements + systemElements + systemNameElements);
-		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
-		this.logger.log('file "' + filename + '" written');
-	};
-
-	SvgWriter.prototype.writeUniverseImage = function (year, vBorder, systems, factions, viewRect) {
-		var name = 'universe_'+year;
-		var filename = this.baseDir + '/output/' + name + '.svg';
-		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
-		var rgb;
-		var curP, curD, curEdge, prevEdge;
-		var curEdgeVisible, prevEdgeVisible;
-		var fill;
-		var parsedSystems;
-		var xmlString = '', systemsString = '';
-		var viewBox;
-
-		factions['D'] = {
-			shortName : 'D',
-			longName : 'Disputed',
-			category : '',
-			color : '#ff0000',
-			founding: 0,
-			dissolution: ''
-		};
-		factions['I'].color = '#000000';
-
-		// svg viewBox's y is top left, not bottom left
-		// viewRect is in map space, viewBox is in svg space
-		viewBox = {
-			x: viewRect.x,
-			y: - viewRect.y - viewRect.h,
-			w: viewRect.w,
-			h: viewRect.h
-		};
-
-		for(var faction in factions) {
-			var borderEdges = vBorder.boundedBorderEdges[faction];
-			if(!borderEdges || borderEdges.length === 0) {
-				continue;
-			}
-			// don't paint borders for independent planets
-			if(faction === 'I') {
-				continue;
-			}
-			rgb = this.hexToRgb(factions[faction].color) || {r: 0, g:0, b:0};
-			factions[faction].fill = 'rgba('+rgb.r+','+rgb.g+','+rgb.b+', .3)';
-
-			curD = '';
-			for(var i = 0, len = borderEdges.length; i < len; i++) {
-				prevEdge = curEdge;
-				curEdge = borderEdges[i];
-				if(curEdge.isFirstInLoop) {
-					curD += ' M'+curEdge.n1.x.toFixed(2)+','+(-curEdge.n1.y).toFixed(2);
-				}
-				if(curEdge.n1c2 === null || curEdge.n1c2 === undefined ||
-					curEdge.n2c1 === null || curEdge.n2c1 === undefined) {
-					curD += ' L' + borderEdges[i].n2.x.toFixed(2)+','+(-borderEdges[i].n2.y).toFixed(2);
-				} else {
-					curD += ' C' + borderEdges[i].n1c2.x.toFixed(2)+','+(-borderEdges[i].n1c2.y).toFixed(2);
-					curD += ' ' + borderEdges[i].n2c1.x.toFixed(2)+','+(-borderEdges[i].n2c1.y).toFixed(2);
-					curD += ' ' + borderEdges[i].n2.x.toFixed(2)+','+(-borderEdges[i].n2.y).toFixed(2);
-				}
-			}
-			if(curD.length === 0) {
-				continue;
-			}
-			xmlString += '<path fill-rule="evenodd" d="'+curD+'" ';
-			xmlString += 'style="stroke:'+factions[faction].color + ';stroke-width:1px;';
-			xmlString += 'fill:'+factions[faction].fill+';" />\n';
-		}
-
-		// paint system dots
-		for(var i = 0, len = systems.length; i < len; i++) {
-			if(systems[i].col === 'DUMMY') {
-				//!Utils.pointInRectangle(parsedSystems[i], viewRect)) {
-				continue;
-			}
-			fill = '#aaa';
-			if(factions.hasOwnProperty(systems[i].col)) {
-				fill = factions[systems[i].col].color;
-			}
-			systemsString += '<circle data-name="'+systems[i].name+'" ';
-			systemsString += 'data-aff="'+systems[i].col+'" ';
-			systemsString += 'cx="' + systems[i].x.toFixed(3) + '" ';
-			systemsString += 'cy="' + (-systems[i].y).toFixed(3) + '" ';
-			systemsString += 'r="1" style="stroke: #000; stroke-width: 0.25; fill: '+fill+'" />\n';
-			systemsString += '<text x="'+(systems[i].x + 1.5).toFixed(3)+'" ';
-			systemsString += 'y="' + (-systems[i].y).toFixed(3) + '">';
-			systemsString += systems[i].name+ '</text>'
-		}
-
-		var boxString = '';//'<rect x="-50" y="-50" width="100" height="100" style="stroke: #000; stroke-width: 2; fill: none;" stroke-dasharray="12 2" />';
-
-		//tpl = tpl.replace('{WIDTH}', viewBox.w); //'700');
-		//tpl = tpl.replace('{HEIGHT}', viewBox.h); //'700');
-		tpl = tpl.replace('{WIDTH}', '800');
-		tpl = tpl.replace('{HEIGHT}', '800');
-		//tpl = tpl.replace('{VIEWBOX}', '-700 -700 1400 1400');
-		//tpl = tpl.replace('{VIEWBOX}', '-2000 -2000 4000 4000');
-		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);
-		tpl = tpl.replace('{ELEMENTS}', xmlString + systemsString + boxString);
-		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
-		this.logger.log('file "' + filename + '" written');
-	};
-
-	SvgWriter.prototype.writeLabelledImage = function(labelMgr, viewRect) {
-		var name = 'labels';
-		var filename = this.baseDir + '/output/' + name + '.svg';
-		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
-		var systems = labelMgr.objects;
-		var rgb;
-		var fill;
-		var parsedSystems;
-		var labelsString = '', systemsString = '';
-		var viewBox;
-
-		// svg viewBox's y is top left, not bottom left
-		// viewRect is in map space, viewBox is in svg space
-		viewBox = {
-			x: viewRect.x,
-			y: - viewRect.y - viewRect.h,
-			w: viewRect.w,
-			h: viewRect.h
-		};
-
-		// paint system dots
-		for(var i = 0, len = systems.length; i < len; i++) {
-			if(systems[i].col === 'DUMMY') {
-				//!Utils.pointInRectangle(parsedSystems[i], viewRect)) {
-				continue;
-			}
-			fill = '#000';
-			systemsString += '<rect x="'+systems[i].x+'" y="'+(-systems[i].y-systems[i].h)+'"';
-			systemsString += ' height="'+systems[i].h+'" width="'+systems[i].w+'"';
-			systemsString += ' data-name="'+systems[i].name+'" data-id="'+systems[i].id+'"';
-			systemsString += ' data-conflicts="'+systems[i].overlapCost+'"'
-			systemsString += ' style="stroke-width: 0; fill: #a00;" />';
-
-			for(var pos = 0; pos < 8; pos++) {
-				//console.log(systems[i]);
-				fill = 'rgba(50, 240, 50, 0.1)';
-				if(systems[i].selLabelPos === pos) {
-					fill = 'rgba(50, 200, 50, 0.5)';
-				}
-				labelsString += '<rect x="'+systems[i].labels[pos].x+'"';
-				labelsString += ' y="'+(-systems[i].labels[pos].y - systems[i].labels[pos].h)+'"';
-				labelsString += ' height="'+systems[i].labels[pos].h+'"';
-				labelsString += ' width="'+systems[i].labels[pos].w+'"';
-				labelsString += ' data-name="'+systems[i].name+'_'+pos+'"';
-				labelsString += ' data-id="'+systems[i].labels[pos].id+'"';
-				labelsString += ' style="stroke-width: 0; fill: '+fill+';" />';
-				if(systems[i].selLabelPos === pos) {
-					labelsString += '<text x="'+systems[i].labels[pos].x+'"';
-					labelsString += ' y="'+(-systems[i].labels[pos].y-systems[i].labels[pos].h+1.5)+'">';
-				 	labelsString += systems[i].name + '</text>';
-				}
-			}
-			// systemsString += '<text x="'+(systems[i].x + 1.5).toFixed(3)+'" ';
-			// systemsString += 'y="' + (-systems[i].y).toFixed(3) + '">';
-			// systemsString += systems[i].name+ '</text>'
-		}
-
-		tpl = tpl.replace('{WIDTH}', '800');
-		tpl = tpl.replace('{HEIGHT}', '800');
-		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);
-		tpl = tpl.replace('{ELEMENTS}', labelsString + systemsString);
-		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
-		this.logger.log('file "' + filename + '" written');
-	};
-
-	SvgWriter.prototype.writeLabelledImage2 = function(labelMgr, viewRect) {
-		var name = 'labels2';
-		var filename = this.baseDir + '/output/' + name + '.svg';
-		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
-		var systems = labelMgr.objects;
-		var rgb;
-		var fill;
-		var parsedSystems;
-		var labelsString = '', systemsString = '';
-		var viewBox;
-
-		// svg viewBox's y is top left, not bottom left
-		// viewRect is in map space, viewBox is in svg space
-		viewBox = {
-			x: viewRect.x,
-			y: - viewRect.y - viewRect.h,
-			w: viewRect.w,
-			h: viewRect.h
-		};
-
-		// paint system dots
-		for(var i = 0, len = systems.length; i < len; i++) {
-			if(systems[i].col === 'DUMMY') {
-				//!Utils.pointInRectangle(parsedSystems[i], viewRect)) {
-				continue;
-			}
-			fill = '#000';
-			systemsString += '<rect x="'+systems[i].x+'" y="'+(-systems[i].y-systems[i].h)+'"';
-			systemsString += ' height="'+systems[i].h+'" width="'+systems[i].w+'"';
-			systemsString += ' data-name="'+systems[i].name+'" data-id="'+systems[i].id+'"';
-			systemsString += ' data-conflicts="'+systems[i].overlapCost+'"'
-			systemsString += ' style="stroke-width: 0; fill: #a00;" />';
-
-			fill = 'rgba(50, 200, 50, 0.5)';
-			labelsString += '<rect x="'+systems[i].label.x+'"';
-			labelsString += ' y="'+(-systems[i].label.y - systems[i].label.h)+'"';
-			labelsString += ' height="'+systems[i].label.h+'"';
-			labelsString += ' width="'+systems[i].label.w+'"';
-			labelsString += ' data-name="'+systems[i].name+'"';
-			labelsString += ' data-id="'+systems[i].label.id+'"';
-			labelsString += ' style="stroke-width: 0; fill: '+fill+';" />';
-			labelsString += '<text x="'+systems[i].label.x+'"';
-			labelsString += ' y="'+(-systems[i].label.y-systems[i].label.h+1.5)+'">';
-		 	labelsString += systems[i].name + '</text>';
-			// systemsString += '<text x="'+(systems[i].x + 1.5).toFixed(3)+'" ';
-			// systemsString += 'y="' + (-systems[i].y).toFixed(3) + '">';
-			// systemsString += systems[i].name+ '</text>'
-		}
-
-		tpl = tpl.replace('{WIDTH}', '800');
-		tpl = tpl.replace('{HEIGHT}', '800');
-		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);
-		tpl = tpl.replace('{ELEMENTS}', labelsString + systemsString);
+		tpl = tpl.replace('{ELEMENTS}', elements);
 		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + filename + '" written');
 	};

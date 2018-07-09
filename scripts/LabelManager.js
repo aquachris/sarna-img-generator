@@ -28,13 +28,14 @@ module.exports = (function () {
      * Initializes this object.
      *
      * @param viewRect {Object} The visible rectangle {x, y, w, h}
-     * @param objects {Array} List of objects that need to be labelled
+     * @param objects {Array} List of objects that need to be labelled. Required properties: x, y, name, col (=faction)
      * @param objectRadius {Number} Radius of a single object node
      * @param objLabelDist {Number} Empty space between an object node and its text label
      * @param glyphSettings {Object} Several settings such as default width and height, and specific glyph widths
+     * @param factions {Object} Key-value map of the available factions
      * @returns {LabelManager} this object
      */
-    LabelManager.prototype.init = function (viewRect, objects, objectRadius, objLabelDist, glyphSettings) {
+    LabelManager.prototype.init = function (viewRect, objects, objectRadius, objLabelDist, glyphSettings, factions) {
         this.viewRect = viewRect || {x: 0, y: 0, w: 0, h: 0};
         this.objects = Utils.deepCopy(objects || []);
         this.objectRadius = objectRadius || 1;
@@ -42,6 +43,7 @@ module.exports = (function () {
         this.glyphSettings = glyphSettings || {};
         this.glyphSettings.lineHeight = this.glyphSettings.lineHeight || 3;
         this.glyphSettings.widths = this.glyphSettings.widths || { default: 1.6 };
+        this.factions = Utils.deepCopy(factions);
 
         this.grid = new RectangleGrid().init(viewRect);
         this.setInitialState();
@@ -51,10 +53,12 @@ module.exports = (function () {
 
     /**
      * Instantiates the labels and adds all objects and labels to the grid.
+     * Also generates faction centroids.
      * @private
      */
     LabelManager.prototype.setInitialState = function () {
         var curObj;
+        var curFaction;
         this.orderedObjIndices = [];
 
         // private helper function
@@ -93,6 +97,19 @@ module.exports = (function () {
             curObj.w = curObj.h = this.objectRadius * 2;
             curObj.id = 'obj_'+i;
             curObj.label = generateLabelRect.call(this, curObj, i);
+
+            if(curObj.hasOwnProperty('col')) {
+                curFaction = this.factions[curObj.col];
+                if(!curFaction) {
+                    continue;
+                }
+                curFaction.centroidSums = curFaction.centroidSums || {x:0,y:0};
+                curFaction.centroidSums.x += curObj.centerX;
+                curFaction.centroidSums.y += curObj.centerY;
+                curFaction.numObj = (curFaction.numObj || 0) + 1;
+                curFaction.centerX = curFaction.centroidSums.x / curFaction.numObj;
+                curFaction.centerY = curFaction.centroidSums.y / curFaction.numObj;
+            }
 
             this.grid.placeObject(curObj);
             this.grid.placeObject(curObj.label);
@@ -370,6 +387,16 @@ module.exports = (function () {
             this.grid.unplaceObject(curObj.label);
             this.findBestLabelPositionFor(curObj);
             this.grid.placeObject(curObj.label);
+        }
+    };
+
+    /**
+     * Generates and places faction labels
+     */
+    LabelManager.prototype.placeFactionLabels = function () {
+        var curFaction;
+        for(var faction in this.factions) {
+            curFaction = this.factions[faction];
         }
     };
 
