@@ -465,7 +465,7 @@ module.exports = (function () {
                 p3 = { x: nextEdge.n2.x, y: nextEdge.n2.y };
 
                 // for border edge points that border on 3 different colors
-                if(Object.keys(nextEdge.p1.borderColors).length > 2) {// && !nextEdge.p1.borderColors['I']) {
+                if(Object.keys(nextEdge.p1.borderColors).length > 2 && !(nextEdge.p1.borderColors['DUMMY'] && nextEdge.p1.borderColors['I'])) {// && !nextEdge.p1.borderColors['I']) {
                     curEdge.n1c2 = { x: p1.x, y: p1.y };
                     curEdge.n2c1 = curEdge.n2c2 = nextEdge.n1c1 = nextEdge.n1c2 = { x: p2.x, y: p2.y };
                     nextEdge.n2c1 = { x: p3.x, y: p3.y };

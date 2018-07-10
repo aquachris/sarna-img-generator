@@ -43,12 +43,26 @@ var main = function () {
 		w: 4000,
 		h: 4000
 	};
+
     viewRect = {
         x: -70,
         y: -70,
         w: 140,
         h: 140
     };
+    /*viewRect = {
+        x: -50,
+        y: -50,
+        w: 100,
+        h: 100
+    };*/
+    /*viewRect = {
+        x: -150,
+        y: -150,
+        w: 300,
+        h: 300
+    };*/
+    /*
     // Spica
     viewRect.x = 92.538 - 70;
     viewRect.y = -237.625 - 70;
@@ -73,11 +87,10 @@ var main = function () {
     // Sierra
     viewRect.x = -411.234 - 70;
     viewRect.y = -111.752 - 70;
-
     // Luthien
-    //viewRect.x = 167.621 - 70;
-    //viewRect.y = 250.493 - 70;
-
+    viewRect.x = 167.621 - 70;
+    viewRect.y = 250.493 - 70;
+    */
     /*viewRect = {
         x: -650,
         y: -650,
