@@ -18,78 +18,37 @@ module.exports = (function () {
     SvgWriter.prototype.constructor = SvgWriter;
 
 	/**
-	 * Create an SVG file
+	 * Create an SVG file.
 	 *
-	 * @param systems {Array} The array containing all systems
-	 * @param focusedSystemIdx {int} Focused system's index in the systems array
+	 * @param filename {String} The file name
+	 * @param dimensions {Object} The image dimensions in pixels {w:<width>, h:<height>}
+	 * @param viewRect {Object} The viewport rectangle in map space {x: <left x>, y: <bottom y>, w:<width>, h:<height>}
+	 * @param era {String} The era key
+	 * @param systems {Array} Array of all displayed systems
+	 * @param factions {Object} Key/value map of the displayed factions
+	 * @param borders {Object} Key/value map of faction borders
+	 * @param additionalConfig {Object} Additional configuration options like jump radius circles or cutout rectangles
 	 */
-	SvgWriter.prototype.writeSvg = function (systems, factions, focusedSystemIdx, displayedYear) {
-		var focusedSystem = systems[focusedSystemIdx];
-		var filename = this.baseDir + '/output/' + focusedSystem.name + '_' + displayedYear + '.svg';
-		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
-		var faction, factionColor;
-		var svgMarkup = '';
-
-		// jump radius circles
-		svgMarkup += '<circle cx="'+focusedSystem.x+'" cy="'+(-focusedSystem.y)+'" r="30" class="jump-radius" />';
-		svgMarkup += '<circle cx="'+focusedSystem.x+'" cy="'+(-focusedSystem.y)+'" r="60" class="jump-radius" />';
-		//svgMarkup += '<text x="'+focusedSystem.x+'" y="'+(-focusedSystem.y)+'"><textPath xlink:href="#jump-circle-30">30 LY</textPath></text>';
-
-		// iterate over all systems and paint them if they are within the bounds of the displayed rectangle
-		for(var i = 0, len = systems.length; i < len; i++) {
-			if(!this.pointIsVisible(systems[i], focusedSystem.x - 70, focusedSystem.y - 70, 140, 140)) {
-				continue;
-			}
-			faction = factions[systems[i]['3025']];
-			if(faction) {
-				factionColor = factions[systems[i]['3025']].color;
-			} else {
-				factionColor = '#fff';
-			}
-			svgMarkup += '<circle class="system '+systems[i]['3025'].toLowerCase()+'" cx="'+systems[i].x+'" cy="'+(-systems[i].y)+'" r=".75" style="fill:'+factionColor+'" />\n';
-			svgMarkup += '<text class="system-name '+systems[i]['3025']+'" x="'+systems[i].x+'" y="'+(-systems[i].y)+'" dx="1.5" dy="1">'+systems[i].name+'</text>';
-		}
-
-		tpl = tpl.replace('{WIDTH}', '550');
-		tpl = tpl.replace('{HEIGHT}', '550');
-		tpl = tpl.replace('{VIEWBOX}', (focusedSystem.x - 70) + ',' + (-focusedSystem.y - 70) + ', 140, 140');
-		tpl = tpl.replace('{ELEMENTS}', svgMarkup);
-
-		// make filename safe
-		filename = filename.replace(/[\+\s\(\)]/g, '_');
-
-		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
-		this.logger.log('file "' + filename + '" written');
-	};
-
-
-	/**
-	 *
-	 */
-	SvgWriter.prototype.writeNeighborhoodImage = function (dimensions, viewRect, era, systems, factions, vBorder) {
-		var name = 'neighborhood_' + era;
-		var filename = this.baseDir + '/output/' + name + '.svg';
-		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf8' });
+	SvgWriter.prototype.writeSvg = function (filename, dimensions, viewRect, era, systems, factions, borders, additionalConfig) {
+		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf-8' });
 		var viewBox;
-		var rgb;
-		var curD;
+		var elementsStr;
+		var els;
 		var borderEdges;
-		var prevEdge, curEdge;
-		var factionLabelElements, borderElements, systemElements, systemNameElements, jumpRadiusElements;
-		var elements;
-		var stroke, fill;
+		var stroke, fill, rgb;
+		var prevEdge, curEdge, curD;
 
-		dimensions = dimensions || { w: 800, h: 800 };
-
-		// svg viewBox's y is top left, not bottom left
-		// viewRect is in map space, viewBox is in svg space
-		viewBox = {
-			x: viewRect.x,
-			y: -viewRect.y - viewRect.h,
-			w: viewRect.w,
-			h: viewRect.h
+		// initialize elements object
+		els = {
+			borders: '',
+			factionLabels : '',
+			jumpRadius : '',
+			cutout : '',
+			systems : '',
+			systemLabels : ''
 		};
 
+		// create a faction entry for disputed systems
 		factions['D'] = {
 			shortName : 'D',
 			longName : 'Disputed',
@@ -99,13 +58,23 @@ module.exports = (function () {
 			founding : 0,
 			dissolution : ''
 		};
+		// change independent systems' primary color to black (from white)
 		factions['I'].color = '#000000';
 
-		factionLabelElements = '';
-		borderElements = '';
-
+		// iterate over factions
 		for(var faction in factions) {
-			borderEdges = vBorder.boundedBorderEdges[faction];
+			// add faction labels (if faction centroids have been set)
+			/*if(factions[faction].centerX !== undefined && factions[faction].centerY !== undefined) {
+				els.factionLabels += '<text x="'+factions[faction].centerX.toFixed(3)+'"';
+				els.factionLabels += ' y="'+(-factions[faction].centerY).toFixed(3)+'" ';
+				els.factionLabels += ' class="faction-label '+faction+'">';
+				els.factionLabels +=	factions[faction].longName;
+				els.factionLabels += '</text>\n';
+			}*/
+
+			// add borders (if faction borders have been passed)
+			//borderEdges = vBorder.boundedBorderEdges[faction];
+			borderEdges = borders[faction];
 			if(!borderEdges || borderEdges.length === 0) {
 				continue;
 			}
@@ -137,21 +106,11 @@ module.exports = (function () {
 			if(curD.length === 0) {
 				continue;
 			}
-			borderElements += '<path fill-rule="evenodd" d="'+curD+'" ';
-			borderElements += 'style="stroke:'+factions[faction].color + ';stroke-width:1px;';
-			borderElements += 'fill:'+factions[faction].fill+';" />\n';
-
-			if(factions[faction].centerX !== undefined && factions[faction].centerY !== undefined) {
-				factionLabelElements += '<text x="'+factions[faction].centerX.toFixed(3)+'"';
-				factionLabelElements += ' y="'+(-factions[faction].centerY).toFixed(3)+'" ';
-				factionLabelElements += ' class="faction-label '+faction+'">';
-				factionLabelElements +=	factions[faction].longName;
-				factionLabelElements += '</text>\n';
-			}
+			els.borders += '<path fill-rule="evenodd" d="'+curD+'" ';
+			els.borders += 'style="stroke:'+factions[faction].color + ';stroke-width:1px;';
+			els.borders += 'fill:'+factions[faction].fill+';" />\n';
 		}
 
-		systemElements = '';
-		systemNameElements = '';
 		for(var i = 0, len = systems.length; i < len; i++) {
 			if(systems[i].col === 'DUMMY') {
 				//!Utils.pointInRectangle(parsedSystems[i], viewRect)) {
@@ -161,32 +120,59 @@ module.exports = (function () {
 			if(factions.hasOwnProperty(systems[i].col)) {
 				fill = factions[systems[i].col].color;
 			}
-			systemElements += '<circle data-name="'+systems[i].name+'" ';
-			systemElements += 'data-aff="'+systems[i].col+'" ';
-			systemElements += 'cx="' + systems[i].centerX.toFixed(3) + '" ';
-			systemElements += 'cy="' + (-systems[i].centerY).toFixed(3) + '" ';
-			systemElements += 'r="1" style="stroke: #000; stroke-width: 0.25; fill: '+fill+'" />\n';
-			systemNameElements += '<text x="'+systems[i].label.x.toFixed(3) + '" ';
-			systemNameElements += ' y="'+(-systems[i].label.y-systems[i].h*.25).toFixed(3)+'" class="system-label">';
-			systemNameElements += systems[i].name + '</text>';
+			els.systems += '<circle class="system '+systems[i].col+'" ';
+			els.systems += ' data-name="'+systems[i].name+'"';
+			els.systems += ' data-aff="'+systems[i].col+'"';
+			els.systems += ' cx="' + systems[i].centerX.toFixed(3) + '"';
+			els.systems += ' cy="' + (-systems[i].centerY).toFixed(3) + '"';
+			els.systems += ' r="1" style="stroke: #000; stroke-width: 0.25; fill: '+fill+'" />\n';
+			els.systemLabels += '<text x="'+systems[i].label.x.toFixed(3) + '" ';
+			els.systemLabels += ' y="'+(-systems[i].label.y-systems[i].h*.25).toFixed(3)+'" class="system-label">';
+			els.systemLabels += systems[i].name + '</text>';
 		}
 
-		jumpRadiusElements = '<circle class="jump-radius" cx="'+(viewBox.x+viewBox.w*.5)+'" cy="'+(viewBox.y+viewBox.h*.5)+'" r="30" />\n';
+		els.jumpRadius = '<circle class="jump-radius" cx="'+(viewRect.x+viewRect.w*.5)+'" cy="'+(-viewRect.y-viewRect.h*.5)+'" r="30" />\n';
 
-		elements = '<g class="borders">'+borderElements+'</g>\n';
-		//elements += '<g class="faction-labels">'+factionLabelElements+'</g>\n';
-		elements += '<g class="jump-radius">'+jumpRadiusElements+'</g>\n';
-		elements += '<g class="systems">'+systemElements+'</g>\n';
-		elements += '<g class="system-labels">'+systemNameElements+'</g>\n';
+		elementsStr = '';
+		if(!!els.borders) {
+			elementsStr += '<g class="borders">'+els.borders+'</g>\n';
+		}
+		if(!!els.factionLabels) {
+			elementsStr += '<g class="faction-labels">'+els.factionLabels+'</g>\n';
+		}
+		if(!!els.jumpRadius) {
+			elementsStr += '<g class="jump-radius">'+els.jumpRadius+'</g>\n';
+		}
+		if(!!els.systems) {
+			elementsStr += '<g class="systems">'+els.systems+'</g>\n';
+		}
+		if(!!els.systemLabels) {
+			elementsStr += '<g class="system-labels">'+els.systemLabels+'</g>\n';
+		}
 
-		//tpl = tpl.replace('{WIDTH}', '5000');
-		//tpl = tpl.replace('{HEIGHT}', '5000');
 		tpl = tpl.replace('{WIDTH}', dimensions.w);
 		tpl = tpl.replace('{HEIGHT}', dimensions.h);
+		// svg viewBox's y is top left, not bottom left
+		// viewRect is in map space, viewBox is in svg space
+		viewBox = {
+			x: viewRect.x,
+			y: -viewRect.y - viewRect.h,
+			w: viewRect.w,
+			h: viewRect.h
+		};
 		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);
-		tpl = tpl.replace('{ELEMENTS}', elements);
+		tpl = tpl.replace('{ELEMENTS}', elementsStr);
+		// make filename safe
+		filename = filename.replace(/[\+\s\(\)]/g, '_');
+		// write file
 		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + filename + '" written');
+	};
+
+
+	SvgWriter.prototype.writeSystemNeighborhoodSvg = function (dimensions, viewRect, era, systems, factions, borders) {
+		var filename = this.baseDir + '/output/neighborhood_' + era + '.svg';
+		this.writeSvg(filename, dimensions, viewRect, era, systems, factions, borders);
 	};
 
 	/**
@@ -218,8 +204,6 @@ module.exports = (function () {
 	        b: parseInt(result[3], 16)
 	    } : null;
 	};
-
-
 
 	return SvgWriter;
 

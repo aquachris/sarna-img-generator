@@ -49,12 +49,41 @@ var main = function () {
         w: 140,
         h: 140
     };
-    viewRect = {
+    // Spica
+    viewRect.x = 92.538 - 70;
+    viewRect.y = -237.625 - 70;
+    // Stein's Folly
+    viewRect.x = 159.739 - 70;
+    viewRect.y = -200.359 - 70;
+    // Victoria
+    viewRect.x = 225.660 - 70;
+    viewRect.y = -176.869 - 70;
+    // Torrence
+    viewRect.x = 289.510 - 70;
+    viewRect.y = -130.880 - 70;
+    // Covington
+    viewRect.x = 360.339 - 70;
+    viewRect.y = -149.712 - 70;
+    // Waipahu
+    viewRect.x = 426.507 - 70;
+    viewRect.y = -187.968 - 70;
+    // Jaboatao
+    viewRect.x = 481.307 - 70;
+    viewRect.y = -212.055 - 70;
+    // Sierra
+    viewRect.x = -411.234 - 70;
+    viewRect.y = -111.752 - 70;
+
+    // Luthien
+    //viewRect.x = 167.621 - 70;
+    //viewRect.y = 250.493 - 70;
+
+    /*viewRect = {
         x: -650,
         y: -650,
         w: 1300,
         h: 1300
-    };
+    };*/
 
     // generate additional points randomly
     var pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -142,7 +171,7 @@ var main = function () {
 		}
 
 		// generate the voronoi diagram to find borders
-		vBorder = new VoronoiBorder(this.logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
+		vBorder = new VoronoiBorder(logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
         vBorder.generateBoundedBorders(viewRect);
         filteredSystems = vBorder.generateBoundedObjects(viewRect, 1);
 
@@ -156,7 +185,8 @@ var main = function () {
         );
 
 		// create an svg with a universe picture
-        writer.writeNeighborhoodImage(dimensions, viewRect, curYear, labelMgr.objects, labelMgr.factions, vBorder);
+        //writer.writeNeighborhoodImage(dimensions, viewRect, curYear, labelMgr.objects, labelMgr.factions, vBorder);
+        writer.writeSystemNeighborhoodSvg(dimensions, viewRect, curYear, labelMgr.objects, labelMgr.factions, vBorder.boundedBorderEdges);
 	}
 
     // finish by rendering out the logs

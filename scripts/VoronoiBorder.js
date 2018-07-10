@@ -519,6 +519,7 @@ module.exports = (function () {
 		var curLoopVisible;
 		var newEdge;
         var tRect;
+        var outsideEdgeIsFirst;
 
         tolerance === undefined ? tolerance = 5 : false;
         tRect = {
@@ -537,9 +538,10 @@ module.exports = (function () {
         };
 
         // private helper function
-        var aggregatePointsToEdges = function(points, log) {
+        var aggregatePointsToEdges = function(points, markAsFirst, log) {
             var edges = [];
             var p1, p2, p3;
+            var newEdge;
 
             if(!points || points.length < 2) {
                 return edges;
@@ -565,22 +567,32 @@ module.exports = (function () {
 
                 // there is a switch in direction at p2 --> new edge
                 } else {
-                    edges.push({
+                    newEdge = {
                         n1: p1,
                         n2: p2,
                         p1: p1,
-                        p2: p2
-                    });
+                        p2: p2,
+                    };
+                    if(markAsFirst) {
+                        newEdge.isFirstInLoop = true;
+                        markAsFirst = false;
+                    }
+                    edges.push(newEdge);
                     points.shift(); // remove p1
                 }
             }
             // clean up the remaining two points
-            edges.push({
+            newEdge = {
                 n1: points[0],
                 n2: points[1],
                 p1: points[0],
                 p2: points[1]
-            });
+            };
+            if(markAsFirst) {
+                newEdge.isFirstInLoop = true;
+                markAsFirst = false;
+            }
+            edges.push(newEdge);
             return edges;
         };
 
@@ -604,10 +616,21 @@ module.exports = (function () {
 				curEdgeVisible = Utils.pointInRectangle(curEdge.n1, tRect) || Utils.pointInRectangle(curEdge.n2, tRect);
 
 				if(curEdge.isFirstInLoop) {
-					curLoopVisible = false;
+                    // add 'dangling' outside edges from the previous loop
+                    if(outsideEdgePoints.length > 0) {
+                        outsideEdges = aggregatePointsToEdges(outsideEdgePoints, outsideEdgeIsFirst);
+                        if(curLoopVisible || outsideEdges.length >= 4) {
+                            for(var j = 0, jlen = outsideEdges.length; j < jlen; j++) {
+                                curColEdges.push(outsideEdges[j]);
+                            }
+                        }
+                    }
+
+                    curLoopVisible = false;
                     outsideEdgePoints = [];
                     prevEdge = null;
                     prevEdgeVisible = false;
+                    outsideEdgeIsFirst = false;
 				}
 
 			    // either the previous or the current edge is visible
@@ -617,27 +640,42 @@ module.exports = (function () {
                     if(outsideEdgePoints.length > 0) {
                         // edge loop is coming back into view
                         // --> resolve all outside edge points that were added for the current edge loop
-                        outsideEdges = aggregatePointsToEdges(outsideEdgePoints);
+                        outsideEdges = aggregatePointsToEdges(outsideEdgePoints, outsideEdgeIsFirst);
                         for(var j = 0, jlen = outsideEdges.length; j < jlen; j++) {
                             curColEdges.push(outsideEdges[j]);
                         }
                         outsideEdgePoints = [];
+                        outsideEdgeIsFirst = false;
                     }
 					newEdge = Utils.deepCopy(curEdge);
-
-					if(!curLoopVisible) {
-						newEdge.isFirstInLoop = true;
+                    curColEdges.push(newEdge);
+                    if(!curLoopVisible) {
 						curLoopVisible = true;
 					}
-                    curColEdges.push(newEdge);
 
                 // both the previous and the current edge are invisible
                 // --> add the current edge's first point to a list of outside points
                 //     that will be aggregated and re-assembled to shorter path parts later
                 } else {
+                    if(curEdge.isFirstInLoop) {
+                        outsideEdgeIsFirst = true;
+                    }
                     outsideEdgePoints.push(clampPoint(curEdge.n1.x, curEdge.n1.y, tRect));
 				}
 			}
+
+            // add remaining outside edges
+            if(outsideEdgePoints.length > 0) {
+                outsideEdges = aggregatePointsToEdges(outsideEdgePoints, outsideEdgeIsFirst);
+                if(curLoopVisible || outsideEdges.length >= 4) {
+                    for(var j = 0, jlen = outsideEdges.length; j < jlen; j++) {
+                        curColEdges.push(outsideEdges[j]);
+                    }
+                }
+                outsideEdgePoints = [];
+                outsideEdgeIsFirst = false;
+            }
+
 
 			if(curColEdges.length > 0) {
 				this.boundedBorderEdges[col] = curColEdges;
