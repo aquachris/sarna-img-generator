@@ -19,7 +19,7 @@ var main = function () {
     var filteredSystems;
 	var curYear;
     var curSys, curAff, curP;
-    var years = ['3025', '3030', '3052'];
+    var years = [];//['3025', '3030', '3052'];
     var glyphSettings;
     var systemRadius = 1;
     var labelDist = 0.5;

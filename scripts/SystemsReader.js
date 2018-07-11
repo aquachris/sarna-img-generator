@@ -121,7 +121,7 @@ module.exports = (function () {
 		//console.log(curRow);
 
 		for(var i = 0, len = curRow.length; i < len; i++) {
-			colIdxMap[(''+curRow[i]).toLowerCase()] = i;
+			colIdxMap[(curRow[i]+' '+systemsSheet[0][i]).toLowerCase()] = i;
 		}
 
 		//console.log(colIdxMap);
@@ -140,9 +140,9 @@ module.exports = (function () {
 			}
 
 			// skip systems without a 3025 affiliation for now (TODO)
-			if(curRow[colIdxMap['3025']] === undefined) {
+			/*if(curRow[colIdxMap['3025']] === undefined) {
 				continue;
-			}
+			}*/
 
 			// read system
 			curSystem = {};
