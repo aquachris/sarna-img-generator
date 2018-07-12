@@ -28,7 +28,7 @@ var main = function () {
 	reader.readFactions();
 
     // read planetary systems from the xlsx
-    reader.readSystems();
+    reader.readSystemsAndEras();
 
     // image dimensions in pixels
     var dimensions = {
@@ -145,15 +145,15 @@ var main = function () {
         }
     };
 
-    // for each year ...
-	for(var yi = 0; yi < years.length; yi++) {
-		curYear = years[yi];
+    // for each era ...
+	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
+		curEra = reader.eras[eraI];
 		reservedPoints = [];
 		voronoiSystems = [];
 
 		for(var i = 0; i < reader.systems.length; i++) {
 			curSys = reader.systems[i];
-			curAff = curSys[curYear].split(',')[0].trim();
+			curAff = curSys.affiliations[eraI].split(',')[0].trim();
 			if(curAff === '' || curAff === 'U' || curAff === 'A') {
 				continue;
 			}
@@ -199,7 +199,7 @@ var main = function () {
 
 		// create an svg with a universe picture
         //writer.writeNeighborhoodImage(dimensions, viewRect, curYear, labelMgr.objects, labelMgr.factions, vBorder);
-        writer.writeSystemNeighborhoodSvg(dimensions, viewRect, curYear, labelMgr.objects, labelMgr.factions, vBorder.boundedBorderEdges);
+        writer.writeSystemNeighborhoodSvg(dimensions, viewRect, curEra, labelMgr.objects, labelMgr.factions, vBorder.boundedBorderEdges);
 	}
 
     // finish by rendering out the logs

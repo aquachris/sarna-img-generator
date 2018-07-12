@@ -16,6 +16,7 @@ module.exports = (function () {
         this.logger = logger || console;
 		this.workbook = undefined;
 		this.factions = undefined;
+        this.eras = undefined;
 		this.systems = undefined;
 		this.nebulae = undefined;
         this.addEventTopics('systemsRead');
@@ -59,12 +60,12 @@ module.exports = (function () {
 
 		// headers
 		var headerRowIdx = 0; // TODO magic number
-		var colIdxMap = {}; // map of column titles (lowercase) to column indices
+		var columnIdxMap = {}; // map of column titles (lowercase) to column indices
 		curRow = factionsSheet.data[headerRowIdx];
 
 		// sort out column title -> column index mapping
 		for(var i = 0, len = curRow.length; i < len; i++) {
-			colIdxMap[(''+curRow[i]).toLowerCase()] = i;
+			columnIdxMap[(''+curRow[i]).toLowerCase()] = i;
 		}
 
 		// read faction data
@@ -72,25 +73,25 @@ module.exports = (function () {
 			curRow = factionsSheet.data[rowIdx];
 
 			// skip factions without a short character sequence
-			if(!curRow[colIdxMap['short']]) {
+			if(!curRow[columnIdxMap['short']]) {
 				continue;
 			}
 
 			// read faction
 			curColor = '#';
-			curR = curRow[colIdxMap['r']] || 0;
-			curG = curRow[colIdxMap['g']] || 0;
-			curB = curRow[colIdxMap['b']] || 0;
+			curR = curRow[columnIdxMap['r']] || 0;
+			curG = curRow[columnIdxMap['g']] || 0;
+			curB = curRow[columnIdxMap['b']] || 0;
 			curColor += ('0' + curR.toString(16)).slice(-2);
 			curColor += ('0' + curG.toString(16)).slice(-2);
 			curColor += ('0' + curB.toString(16)).slice(-2);
 			curFaction = {
-				shortName: curRow[colIdxMap['short']],
-				longName: curRow[colIdxMap['long']],
-				category: curRow[colIdxMap['#class']],
+				shortName: curRow[columnIdxMap['short']],
+				longName: curRow[columnIdxMap['long']],
+				category: curRow[columnIdxMap['#class']],
 				color: curColor,
-				founding: curRow[colIdxMap['founding']] || '',
-				dissolution: curRow[colIdxMap['dissolution']] || ''
+				founding: curRow[columnIdxMap['founding']] || '',
+				dissolution: curRow[columnIdxMap['dissolution']] || ''
 			};
 			this.factions[curFaction.shortName] = curFaction;
 		}
@@ -101,53 +102,62 @@ module.exports = (function () {
 	 *
 	 * @returns {Array} The systems list
      */
-    SystemsReader.prototype.readSystems = function () {
+    SystemsReader.prototype.readSystemsAndEras = function () {
 		this.readWorkbook();
 
         this.logger.log('Systems reader started');
 
 		var systemsSheet = this.workbook[1];
-
         //var nebulaeSheet = this.workbook[3];
 
 		var curRow, curSystem, curAffiliation;
-		this.systems = [];
-
 		// sort out headers
 		var headerRowIdx = 2; // TODO magic number
-		var colIdxMap = {}; // map of column titles (lowercase) to column indices
+		var columnIdxMap = {}; // map of column titles (lowercase) to column indices
+        var curEra;
+
+        this.systems = [];
+        this.eras = [];
 
 		curRow = systemsSheet.data[headerRowIdx];
-		//console.log(curRow);
 
+        // column index map
 		for(var i = 0, len = curRow.length; i < len; i++) {
-			colIdxMap[(curRow[i]+' '+systemsSheet[0][i]).toLowerCase()] = i;
+            if(i < 5) { // TODO magic number
+                columnIdxMap[curRow[i]+''] = i;
+            } else {
+                columnIdxMap['era_'+this.eras.length] = i;
+                this.eras.push({
+                    idx: i,
+                    name: systemsSheet.data[0][i], // TODO magic number
+                    year: curRow[i]
+                });
+            }
 		}
 
-		//console.log(colIdxMap);
-
+        console.log('reading ' + (systemsSheet.data.length - headerRowIdx) + ' systems');
 		for(var rowIdx = headerRowIdx + 1, endIdx = systemsSheet.data.length; rowIdx < endIdx; rowIdx++) {
 			curRow = systemsSheet.data[rowIdx];
 
 			// skip systems without coordinates
-			if(curRow[colIdxMap['x']] === undefined || curRow[colIdxMap['y']] === undefined) {
+			if(curRow[columnIdxMap['x']] === undefined || curRow[columnIdxMap['y']] === undefined) {
 				continue;
 			}
 
 			// skip apocryphal systems for now (TODO)
-			if(curRow[colIdxMap['status']].toLowerCase() === 'apocryphal') {
+			if(curRow[columnIdxMap['status']].toLowerCase() === 'apocryphal') {
 				continue;
 			}
 
 			// skip systems without a 3025 affiliation for now (TODO)
-			/*if(curRow[colIdxMap['3025']] === undefined) {
+			/*if(curRow[columnIdxMap['3025']] === undefined) {
 				continue;
 			}*/
 
 			// read system
 			curSystem = {};
 			// name and status
-			curSystem.name_full = curRow[colIdxMap['system']];
+			curSystem.name_full = curRow[columnIdxMap['system']];
             curSystem.name = curSystem.name_full;
             var parentheses;
             if(parentheses = curSystem.name_full.match(/(.+)\s*\(\s*(.+)\s*\)/i)) {
@@ -160,32 +170,42 @@ module.exports = (function () {
                 }
                 //console.log(parentheses, curSystem.name, curSystem.oldName || '', curSystem.newName || '');
             }
-			curSystem.status = curRow[colIdxMap['status']];
+			curSystem.status = curRow[columnIdxMap['status']];
 			// coordinates
-			curSystem.x = curRow[colIdxMap['x']];
-			curSystem.y = curRow[colIdxMap['y']];
+			curSystem.x = curRow[columnIdxMap['x']];
+			curSystem.y = curRow[columnIdxMap['y']];
 
-			// 3025 affiliation
-			curAffiliation = curRow[colIdxMap['3025']] || '';
-			curSystem['3025'] = curAffiliation.split(/\s*\,\s*/gi)[0];
-			curSystem['3025_all'] = curAffiliation;
+            // era affiliations
+            for(var eraI = 0; eraI < this.eras.length; eraI++) {
+                curEra = this.eras[eraI];
+                curAffiliation = curRow[columnIdxMap['era_'+eraIdx]] || '';//eras[eraI].idx] || '';
+                curSystem.affiliations[eraI] = curAffiliation;
+            }
 
-			// 3030 affiliation
-			curAffiliation = curRow[colIdxMap['3030']] || '';
-			curSystem['3030'] = curAffiliation.split(/\s*\,\s*/gi)[0];
-			curSystem['3030_all'] = curAffiliation;
-
-			// 3052 affiliation
-			curAffiliation = curRow[colIdxMap['3052']] || '';
-			curSystem['3052'] = curAffiliation.split(/\s*\,\s*/gi)[0];
-			curSystem['3052_all'] = curAffiliation;
+            //
+			// // 3025 affiliation
+			// curAffiliation = curRow[columnIdxMap['3025']] || '';
+			// curSystem['3025'] = curAffiliation.split(/\s*\,\s*/gi)[0];
+			// curSystem['3025_all'] = curAffiliation;
+            //
+			// // 3030 affiliation
+			// curAffiliation = curRow[columnIdxMap['3030']] || '';
+			// curSystem['3030'] = curAffiliation.split(/\s*\,\s*/gi)[0];
+			// curSystem['3030_all'] = curAffiliation;
+            //
+			// // 3052 affiliation
+			// curAffiliation = curRow[columnIdxMap['3052']] || '';
+			// curSystem['3052'] = curAffiliation.split(/\s*\,\s*/gi)[0];
+			// curSystem['3052_all'] = curAffiliation;
 
 			this.systems.push(curSystem);
 		}
 
-        this.findNeighbors([30, 60]);
+        //this.findNeighbors([30, 60]);
 
-		fs.writeFileSync('./output/systems.json', JSON.stringify(this.systems), { encoding: 'utf8' });
+		//fs.writeFileSync('./output/systems.json', JSON.stringify(this.systems), { encoding: 'utf8' });
+        //this.logger.log('systems file written');
+
 		/*
 		console.log(systemsSheet.name, systemsSheet.data.length);
 		console.log(systemsSheet.data[0]); // era descriptions
@@ -195,7 +215,6 @@ module.exports = (function () {
 		console.log(systemsSheet.data[4]);
 		console.log(systemsSheet.data[5]);
 		*/
-		this.logger.log('systems file written');
     };
 
     /**

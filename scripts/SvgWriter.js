@@ -23,7 +23,7 @@ module.exports = (function () {
 	 * @param filename {String} The file name
 	 * @param dimensions {Object} The image dimensions in pixels {w:<width>, h:<height>}
 	 * @param viewRect {Object} The viewport rectangle in map space {x: <left x>, y: <bottom y>, w:<width>, h:<height>}
-	 * @param era {String} The era key
+	 * @param era {Object} The map era
 	 * @param systems {Array} Array of all displayed systems
 	 * @param factions {Object} Key/value map of the displayed factions
 	 * @param borders {Object} Key/value map of faction borders
@@ -182,7 +182,8 @@ module.exports = (function () {
 
 
 	SvgWriter.prototype.writeSystemNeighborhoodSvg = function (dimensions, viewRect, era, systems, factions, borders) {
-		var filename = this.baseDir + '/output/neighborhood_' + era + '.svg';
+		var safeEraName = era.name.replace(/[\\\/]/g, '_');
+		var filename = this.baseDir + '/output/neighborhood_' +era.year + '_' + safeEraName + '.svg';
 		this.writeSvg(filename, dimensions, viewRect, era, systems, factions, borders);
 	};
 
