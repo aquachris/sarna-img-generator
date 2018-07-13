@@ -9,7 +9,24 @@
 	height="{HEIGHT}px">
 
 	<defs>
-		<!-- path d="M-30,0a30,30 0 1,0 60,0a30,30 0 1,0 -60,0" id="jump-circle-30" /-->
+		<filter id="sLblShd">
+			<feFlood flood-color="white" result="flood"/>
+			<feOffset dx="-0.15" dy="-0.15" in="SourceAlpha" result="offset1"/>
+			<feComposite operator="in" in="flood" in2="offset1" result="shadow1"/>
+			<feOffset dx="-0.15" dy="0.15" in="SourceAlpha" result="offset2"/>
+			<feComposite operator="in" in="flood" in2="offset2" result="shadow2"/>
+			<feOffset dx="0.15" dy="-0.15" in="SourceAlpha" result="offset3"/>
+			<feComposite operator="in" in="flood" in2="offset3" result="shadow3"/>
+			<feOffset dx="0.15" dy="0.15" in="SourceAlpha" result="offset4"/>
+			<feComposite operator="in" in="flood" in2="offset4" result="shadow4"/>
+			<feMerge>
+				<feMergeNode in="shadow1"/>
+				<feMergeNode in="shadow2"/>
+				<feMergeNode in="shadow3"/>
+				<feMergeNode in="shadow4"/>
+				<feMergeNode in="SourceGraphic"/>
+			</feMerge>
+		</filter>
 	</defs>
 
 	<style>
@@ -19,7 +36,6 @@
 		text.system-label { font-size: 2.5px; } /* text-shadow: .2px .2px 0 #eee, -.2px .2px 0 #eee, .2px -.2px 0 #eee, -.2px -.2px 0 #eee; }*/
 		text.faction-label { fill: #aaa; font-size: 6px; font-style: italic; font-weight: bold; text-shadow: .05em .05em 0 #eee, -.05em .05em 0 #eee, .05em -.05em 0 #eee, -.05em -.05em 0 #eee; }
 		path { stroke-linejoin: round; stroke-linecap: round; }
-		{STYLES}
 	</style>
 
 	{ELEMENTS}

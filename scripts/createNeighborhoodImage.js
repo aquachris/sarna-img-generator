@@ -50,22 +50,12 @@ var main = function () {
         w: 140,
         h: 140
     };
-    /*viewRect = {
-        x: -50,
-        y: -50,
-        w: 100,
-        h: 100
-    };*/
-    /*viewRect = {
-        x: -150,
-        y: -150,
-        w: 300,
-        h: 300
-    };*/
-    /*
+
+   
     // Spica
     viewRect.x = 92.538 - 70;
     viewRect.y = -237.625 - 70;
+	/*
     // Stein's Folly
     viewRect.x = 159.739 - 70;
     viewRect.y = -200.359 - 70;
@@ -90,7 +80,8 @@ var main = function () {
     // Luthien
     viewRect.x = 167.621 - 70;
     viewRect.y = 250.493 - 70;
-    */
+	*/
+
     /*viewRect = {
         x: -650,
         y: -650,
@@ -146,7 +137,8 @@ var main = function () {
     };
 
     // for each era ...
-	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
+	for(var eraI = 15; eraI < 25; eraI++) {
+	//for(var eraI = 0; eraI < reader.eras.length; eraI++) {
 		curEra = reader.eras[eraI];
 		reservedPoints = [];
 		voronoiSystems = [];
@@ -196,9 +188,10 @@ var main = function () {
             glyphSettings,
             reader.factions
         );
+		
+		//console.log(labelMgr.objects.length);
 
 		// create an svg with a universe picture
-        //writer.writeNeighborhoodImage(dimensions, viewRect, curYear, labelMgr.objects, labelMgr.factions, vBorder);
         writer.writeSystemNeighborhoodSvg(dimensions, viewRect, curEra, labelMgr.objects, labelMgr.factions, vBorder.boundedBorderEdges);
 	}
 

@@ -521,7 +521,7 @@ module.exports = (function () {
         var tRect;
         var outsideEdgeIsFirst;
 
-        tolerance === undefined ? tolerance = 5 : false;
+        tolerance === undefined ? tolerance = 10 : false;
         tRect = {
             x: rect.x - tolerance,
             y: rect.y - tolerance,
@@ -543,9 +543,11 @@ module.exports = (function () {
             var p1, p2, p3;
             var newEdge;
 
-            if(!points || points.length < 2) {
+            if(!points || points.length < 1) {
                 return edges;
-            }
+            } else if(points.length === 1) {
+				points.push(Utils.deepCopy(points[0]));
+			}
 
             // Remove points one by one, while adding edges:
             // If the array's first three points are on a common line along the
@@ -608,6 +610,8 @@ module.exports = (function () {
 			curEdge = null;
 			curEdgeVisible = false;
 			curLoopVisible = false;
+			
+			var numLoops = 0;
 			for(var i = 0, len = this.borderEdges[col].length; i < len; i++) {
 				prevEdge = curEdge;
 				prevEdgeVisible = !!prevEdge && curEdgeVisible;

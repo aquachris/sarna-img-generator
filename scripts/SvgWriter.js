@@ -37,7 +37,6 @@ module.exports = (function () {
 		var borderEdges;
 		var stroke, fill, rgb;
 		var prevEdge, curEdge, curD;
-		var textShadowOffset, styles;
 
 		// initialize elements object
 		els = {
@@ -107,9 +106,11 @@ module.exports = (function () {
 			if(curD.length === 0) {
 				continue;
 			}
-			els.borders += '<path fill-rule="evenodd" d="'+curD+'" ';
+			els.borders += '<path fill-rule="evenodd" ';
+			els.borders += 'class="border '+faction+'" ';
 			els.borders += 'style="stroke:'+factions[faction].color + ';stroke-width:1px;';
-			els.borders += 'fill:'+factions[faction].fill+';" />\n';
+			els.borders += 'fill:'+factions[faction].fill+';" ';
+			els.borders += 'd="'+curD+'" />\n';
 		}
 
 		for(var i = 0, len = systems.length; i < len; i++) {
@@ -128,7 +129,8 @@ module.exports = (function () {
 			els.systems += ' cy="' + (-systems[i].centerY).toFixed(3) + '"';
 			els.systems += ' r="1" style="fill: '+fill+'" />\n';
 			els.systemLabels += '<text x="'+systems[i].label.x.toFixed(3) + '" ';
-			els.systemLabels += ' y="'+(-systems[i].label.y-systems[i].h*.25).toFixed(3)+'" class="system-label">';
+			els.systemLabels += ' y="'+(-systems[i].label.y-systems[i].h*.25).toFixed(3)+'" ';
+			els.systemLabels += '  filter="url(#sLblShd)" class="system-label">';
 			els.systemLabels += systems[i].name + '</text>';
 		}
 
@@ -151,15 +153,6 @@ module.exports = (function () {
 			elementsStr += '<g class="system-labels">'+els.systemLabels+'</g>\n';
 		}
 
-		styles = '';
-		textShadowOffset = 0.125 * dimensions.w / viewRect.w;
-		styles = 'text.system-label { text-shadow: ';
-		styles += textShadowOffset + 'px ' + textShadowOffset + 'px 0 #fff, ';
-		styles += -textShadowOffset + 'px ' + textShadowOffset + 'px 0 #fff, ';
-		styles += textShadowOffset + 'px ' + -textShadowOffset + 'px 0 #fff, ';
-		styles += -textShadowOffset + 'px ' + -textShadowOffset + 'px 0 #fff; ';
-		styles += ' }\n';
-
 		tpl = tpl.replace('{WIDTH}', dimensions.w);
 		tpl = tpl.replace('{HEIGHT}', dimensions.h);
 		// svg viewBox's y is top left, not bottom left
@@ -172,7 +165,6 @@ module.exports = (function () {
 		};
 		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);
 		tpl = tpl.replace('{ELEMENTS}', elementsStr);
-		tpl = tpl.replace('{STYLES}', styles);
 		// make filename safe
 		filename = filename.replace(/[\+\s\(\)]/g, '_');
 		// write file

@@ -124,7 +124,7 @@ module.exports = (function () {
         // column index map
 		for(var i = 0, len = curRow.length; i < len; i++) {
             if(i < 5) { // TODO magic number
-                columnIdxMap[curRow[i]+''] = i;
+                columnIdxMap[(curRow[i]+'').toLowerCase()] = i;
             } else {
                 columnIdxMap['era_'+this.eras.length] = i;
                 this.eras.push({
@@ -135,7 +135,7 @@ module.exports = (function () {
             }
 		}
 
-        console.log('reading ' + (systemsSheet.data.length - headerRowIdx) + ' systems');
+        //this.logger.log('reading ' + (systemsSheet.data.length - headerRowIdx) + ' systems');
 		for(var rowIdx = headerRowIdx + 1, endIdx = systemsSheet.data.length; rowIdx < endIdx; rowIdx++) {
 			curRow = systemsSheet.data[rowIdx];
 
@@ -148,11 +148,6 @@ module.exports = (function () {
 			if(curRow[columnIdxMap['status']].toLowerCase() === 'apocryphal') {
 				continue;
 			}
-
-			// skip systems without a 3025 affiliation for now (TODO)
-			/*if(curRow[columnIdxMap['3025']] === undefined) {
-				continue;
-			}*/
 
 			// read system
 			curSystem = {};
@@ -176,10 +171,11 @@ module.exports = (function () {
 			curSystem.y = curRow[columnIdxMap['y']];
 
             // era affiliations
-            for(var eraI = 0; eraI < this.eras.length; eraI++) {
-                curEra = this.eras[eraI];
+			curSystem.affiliations = [];
+            for(var eraIdx = 0; eraIdx < this.eras.length; eraIdx++) {
+                curEra = this.eras[eraIdx];
                 curAffiliation = curRow[columnIdxMap['era_'+eraIdx]] || '';//eras[eraI].idx] || '';
-                curSystem.affiliations[eraI] = curAffiliation;
+                curSystem.affiliations.push(curAffiliation);
             }
 
             //
