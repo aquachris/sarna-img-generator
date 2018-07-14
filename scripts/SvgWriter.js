@@ -174,8 +174,8 @@ module.exports = (function () {
 
 
 	SvgWriter.prototype.writeSystemNeighborhoodSvg = function (dimensions, viewRect, era, systems, factions, borders) {
-		var safeEraName = era.name.replace(/[\\\/]/g, '_');
-		var filename = this.baseDir + '/output/neighborhood_' +era.year + '_' + safeEraName + '.svg';
+		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
+		var filename = this.baseDir + '/output/Spica_' +era.year + '_' + safeEraName + '.svg';
 		this.writeSvg(filename, dimensions, viewRect, era, systems, factions, borders);
 	};
 
