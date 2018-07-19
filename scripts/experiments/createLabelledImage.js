@@ -42,7 +42,7 @@ var main = function () {
 
     // generate the voronoi diagram to find borders
 	vBorder = new VoronoiBorder(this.logger).init(filteredSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
-    filteredSystems = vBorder.generateBoundedObjects(viewRect);
+    filteredSystems = vBorder.generateBoundedObjects(viewRect, 1);
 
     var systemRadius = 1;
     var glyphSettings = {
@@ -71,7 +71,7 @@ var main = function () {
     labelMgr = new LabelManager().init(viewRect, filteredSystems, systemRadius, nodeToTextDistance, glyphSettings);
 
 	// create an svg with a universe picture
-    writer.writeLabelledImage(labelMgr, viewRect);
+    writer.writeLabelledImage2(labelMgr, viewRect);
 
     // finish by rendering out the logs
     logRenderer.render();

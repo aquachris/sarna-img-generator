@@ -165,6 +165,7 @@ module.exports = (function () {
      * Gets all overlapped items for a rectangular item
      *
      * @param o {Object} A rectangular object in the form {id: 'obj1', x: 0, y: 1, w: 2, h: 3}
+	 * @param idPrefixToIgnore {String} A prefix of object ids that should be ignored
      * @returns {Array} The overlapped items
      */
     RectangleGrid.prototype.getOverlaps = function (o, idPrefixToIgnore) {
@@ -190,31 +191,14 @@ module.exports = (function () {
     };
 
     /**
-     * Gets all overlapped items for a rectangular item
+     * Gets the number of overlapped items for a rectangular item
      *
      * @param o {Object} A rectangular object in the form {id: 'obj1', x: 0, y: 1, w: 2, h: 3}
+	 * @param idPrefixToIgnore {String} A prefix of object ids that should be ignored
      * @returns {Number} Number of overlapped items
      */
     RectangleGrid.prototype.getNumOverlaps = function (o, idPrefixToIgnore) {
-        var ret = 0;
-        var idMap = {};
-        var coords = this.gridCoordinatesForRect(o);
-        var occs;
-        for(var i = 0, len = coords.length; i < len; i++) {
-            occs = this.grid[coords[i].x][coords[i].y].occupants;
-            for(var j = 0, jlen = occs.length; j < jlen; j++) {
-                if(occs[j].id === o.id || occs[j].id.startsWith(idPrefixToIgnore)) {
-                    continue;
-                }
-                if(Utils.rectanglesOverlap(o, occs[j])) {
-                    if(!idMap.hasOwnProperty(occs[j].id)) {
-                        ret++;
-                        idMap[occs[j].id] = true;
-                    }
-                }
-            }
-        }
-        return ret;
+        return this.getOverlaps(o, idPrefixToIgnore).length;
     };
 
     /**
