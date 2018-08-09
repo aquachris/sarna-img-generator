@@ -34,6 +34,7 @@
 		circle.system { fill: #000; stroke: #000; stroke-width: .25 } /* default color */
 		circle.jump-radius { fill: transparent; stroke: #888; stroke-width: .25 }
 		text.system-label { font-size: 2.5px; } /* text-shadow: .2px .2px 0 #eee, -.2px .2px 0 #eee, .2px -.2px 0 #eee, -.2px -.2px 0 #eee; }*/
+		text.system-label.uninhabited { fill: #555; font-style: italic; }
 		text.faction-label { fill: #aaa; font-size: 6px; font-style: italic; font-weight: bold; text-shadow: .05em .05em 0 #eee, -.05em .05em 0 #eee, .05em -.05em 0 #eee, -.05em -.05em 0 #eee; }
 		path { stroke-linejoin: round; stroke-linecap: round; }
 	</style>

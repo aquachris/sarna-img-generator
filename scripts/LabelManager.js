@@ -98,21 +98,20 @@ module.exports = (function () {
             curObj.id = 'obj_'+i;
             curObj.label = generateLabelRect.call(this, curObj, i);
 
-            if(curObj.hasOwnProperty('col')) {
-                curFaction = this.factions[curObj.col];
-                if(!curFaction) {
-                    continue;
-                }
-                curFaction.centroidSums = curFaction.centroidSums || {x:0,y:0};
-                curFaction.centroidSums.x += curObj.centerX;
-                curFaction.centroidSums.y += curObj.centerY;
-                curFaction.numObj = (curFaction.numObj || 0) + 1;
-                curFaction.centerX = curFaction.centroidSums.x / curFaction.numObj;
-                curFaction.centerY = curFaction.centroidSums.y / curFaction.numObj;
-            }
-
             this.grid.placeObject(curObj);
             this.grid.placeObject(curObj.label);
+			
+			if(curObj.hasOwnProperty('col')) {
+                curFaction = this.factions[curObj.col];
+                if(curFaction) {
+                    curFaction.centroidSums = curFaction.centroidSums || {x:0,y:0};
+					curFaction.centroidSums.x += curObj.centerX;
+					curFaction.centroidSums.y += curObj.centerY;
+					curFaction.numObj = (curFaction.numObj || 0) + 1;
+					curFaction.centerX = curFaction.centroidSums.x / curFaction.numObj;
+					curFaction.centerY = curFaction.centroidSums.y / curFaction.numObj;
+				}
+            }
         }
     };
 

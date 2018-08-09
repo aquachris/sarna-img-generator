@@ -1,6 +1,7 @@
 var fs = require('fs');
 var Logger = require('./Logger.js');
 var LogRenderer = require('./LogRenderer.js');
+var Utils = require('./Utils.js');
 var SystemsReader = require('./SystemsReader.js');
 var PoissonDisc = require('./PoissonDisc.js');
 var VoronoiBorder = require('./VoronoiBorder.js');
@@ -53,8 +54,8 @@ var main = function () {
 
 
     // Spica
-    viewRect.x = 92.538 - 70;
-    viewRect.y = -237.625 - 70;
+    //viewRect.x = 92.538 - 70;
+    //viewRect.y = -237.625 - 70;
 	/*
     // Stein's Folly
     viewRect.x = 159.739 - 70;
@@ -124,6 +125,7 @@ var main = function () {
 		for(var i = 0; i < reader.systems.length; i++) {
 			curSys = reader.systems[i];
 			curAff = curSys.affiliations[eraI].split(',')[0].trim();
+			reader.systems[i].col = curAff;
 			if(curAff === '' || curAff === 'U' || curAff === 'A') {
 		          continue;
 			}
@@ -156,7 +158,8 @@ var main = function () {
 		// generate the voronoi diagram to find borders
 		vBorder = new VoronoiBorder(logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
         vBorder.generateBoundedBorders(viewRect);
-        filteredSystems = vBorder.generateBoundedObjects(viewRect, 1);
+        
+		filteredSystems = Utils.clampObjects(reader.systems, viewRect, 1);
 
         labelMgr = new LabelManager(logger).init(
             viewRect,

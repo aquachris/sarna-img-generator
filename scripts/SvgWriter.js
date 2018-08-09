@@ -36,6 +36,7 @@ module.exports = (function () {
 		var els;
 		var borderEdges;
 		var stroke, fill, rgb;
+		var labelCls;
 		var prevEdge, curEdge, curD;
 
 		// initialize elements object
@@ -122,6 +123,12 @@ module.exports = (function () {
 			if(factions.hasOwnProperty(systems[i].col)) {
 				fill = factions[systems[i].col].color;
 			}
+			labelCls = '';
+			if(systems[i].col === '' || systems[i].col === 'U' || systems[i].col === 'A') {
+				fill = '#aaa';
+				labelCls = 'uninhabited';
+			}
+			
 			els.systems += '<circle class="system '+systems[i].col+'" ';
 			els.systems += ' data-name="'+systems[i].name+'"';
 			//els.systems += ' data-aff="'+systems[i].col+'"';
@@ -130,7 +137,7 @@ module.exports = (function () {
 			els.systems += ' r="1" style="fill: '+fill+'" />\n';
 			els.systemLabels += '<text x="'+systems[i].label.x.toFixed(3) + '" ';
 			els.systemLabels += ' y="'+(-systems[i].label.y-systems[i].h*.25).toFixed(3)+'" ';
-			els.systemLabels += '  filter="url(#sLblShd)" class="system-label">';
+			els.systemLabels += '  filter="url(#sLblShd)" class="system-label '+labelCls+'">';
 			els.systemLabels += systems[i].name + '</text>';
 		}
 
@@ -175,7 +182,7 @@ module.exports = (function () {
 
 	SvgWriter.prototype.writeSystemNeighborhoodSvg = function (dimensions, viewRect, era, systems, factions, borders) {
 		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
-		var filename = this.baseDir + '/output/Spica_' +era.year + '_' + safeEraName + '.svg';
+		var filename = this.baseDir + '/output/Terra_' +era.year + '_' + safeEraName + '.svg';
 		this.writeSvg(filename, dimensions, viewRect, era, systems, factions, borders);
 	};
 

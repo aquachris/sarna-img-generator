@@ -201,6 +201,34 @@ module.exports = (function () {
     Utils.clampNumber = function (num, min, max) {
         return Math.max(min, Math.min(max, num));
     };
+	
+	/**
+	 * Filter the objects in a given array by whether the objects are within the bounding box or not.
+	 *
+	 * @param objects {Array} An array of objects that need to have numeric properties x and y
+	 * @param rect {Object} The bounding box (x, y, w, h)
+     * @param tolerance {Number} Bounding box tolerance, default is 5
+     * @returns {Array} The filtered objects array
+	 */
+    Utils.clampObjects = function (objects, rect, tolerance) {
+        var ret = [];
+        var tRect;
+
+        tolerance === undefined ? tolerance = 5 : false;
+        tRect = {
+            x: rect.x - tolerance,
+            y: rect.y - tolerance,
+            w: rect.w + tolerance * 2,
+            h: rect.h + tolerance * 2
+        };
+
+        for(var i = 0, len = objects.length; i < len; i++) {
+            if(Utils.pointInRectangle(objects[i], tRect)) {
+                ret.push(Utils.deepCopy(objects[i]));
+            }
+        }
+        return ret;
+    };
 
     return Utils;
 })();
