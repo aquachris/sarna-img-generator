@@ -24,8 +24,6 @@ module.exports = (function () {
         this.nodes = null;
         // map of border edges for each color
         this.borderEdges = null;
-		// map of bounded border edges for each color
-		this.boundedBorderEdges = null;
         // map of border node indices
         this.borderNodeIndices = null;
         // distance between border lines
@@ -68,7 +66,6 @@ module.exports = (function () {
         this.points = [];
         this.nodes = [];
         this.borderEdges = {};
-		this.boundedBorderEdges = {};
         this.borderNodeIndices = {};
 
         // Step 1: Iterate over all objects and generate a point array
@@ -509,6 +506,7 @@ module.exports = (function () {
 	 *
 	 * @param rect {Object} The bounding box (x, y, w, h in map space)
      * @param tolerance {Number} Bounding box tolerance, default is 5
+	 * @returns {Object} Map of bounded borders for each faction
 	 */
 	VoronoiBorder.prototype.generateBoundedBorders = function (rect, tolerance) {
 		var curColEdges;
@@ -520,6 +518,7 @@ module.exports = (function () {
 		var newEdge;
         var tRect;
         var outsideEdgeIsFirst;
+		var boundedBorderEdges = {}; // return map
 
         tolerance === undefined ? tolerance = 10 : false;
         tRect = {
@@ -597,8 +596,6 @@ module.exports = (function () {
             edges.push(newEdge);
             return edges;
         };
-
-		this.boundedBorderEdges = {};
 
 		for(var col in this.borderEdges) {
 			if(!this.borderEdges.hasOwnProperty(col)) {
@@ -682,38 +679,12 @@ module.exports = (function () {
 
 
 			if(curColEdges.length > 0) {
-				this.boundedBorderEdges[col] = curColEdges;
+				boundedBorderEdges[col] = curColEdges;
 			}
 		};
+		
+		return boundedBorderEdges;
 	};
-
-    /**
-	 * Filter the objects array by whether the objects are within the bounding box or not.
-	 * This is an optional step that reduces the amount of invisible objects in the result set.
-	 *
-	 * @param rect {Object} The bounding box (x, y, w, h in map space)
-     * @param tolerance {Number} Bounding box tolerance, default is 5
-     * @returns {Array} The filtered objects array
-	 */
-    VoronoiBorder.prototype.generateBoundedObjects = function (rect, tolerance) {
-        var ret = [];
-        var tRect;
-
-        tolerance === undefined ? tolerance = 5 : false;
-        tRect = {
-            x: rect.x - tolerance,
-            y: rect.y - tolerance,
-            w: rect.w + tolerance * 2,
-            h: rect.h + tolerance * 2
-        };
-
-        for(var i = 0, len = this.objects.length; i < len; i++) {
-            if(Utils.pointInRectangle(this.objects[i], tRect)) {
-                ret.push(Utils.deepCopy(this.objects[i]));
-            }
-        }
-        return ret;
-    };
 
     return VoronoiBorder;
 })();

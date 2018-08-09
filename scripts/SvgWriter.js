@@ -27,11 +27,13 @@ module.exports = (function () {
 	 * @param systems {Array} Array of all displayed systems
 	 * @param factions {Object} Key/value map of the displayed factions
 	 * @param borders {Object} Key/value map of faction borders
+	 * @param minimapSettings {Object} Settings for an optional minimap (dimensions, viewRect and borders)
 	 * @param additionalConfig {Object} Additional configuration options like jump radius circles or cutout rectangles
 	 */
-	SvgWriter.prototype.writeSvg = function (filename, dimensions, viewRect, era, systems, factions, borders, additionalConfig) {
+	SvgWriter.prototype.writeSvg = function (filename, dimensions, viewRect, era, systems, factions, borders, minimapSettings, additionalConfig) {
 		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf-8' });
 		var viewBox;
+		var defsStr = '';
 		var elementsStr;
 		var els;
 		var borderEdges;
@@ -46,7 +48,8 @@ module.exports = (function () {
 			jumpRadius : '',
 			cutout : '',
 			systems : '',
-			systemLabels : ''
+			systemLabels : '',
+			minimap : ''
 		};
 
 		// create a faction entry for disputed systems
@@ -142,6 +145,83 @@ module.exports = (function () {
 		}
 
 		els.jumpRadius = '<circle class="jump-radius" cx="'+(viewRect.x+viewRect.w*.5)+'" cy="'+(-viewRect.y-viewRect.h*.5)+'" r="30" />\n';
+		
+		// minimap rendering
+		if(minimapSettings) {
+			
+			var pxPerLy = dimensions.w / viewRect.w;
+			var pxPerLyMinimap = minimapSettings.dimensions.w / minimapSettings.viewRect.w;
+			
+			// add clip path for minimap content
+			defsStr += '<clipPath id="minimapClip">';
+			defsStr += '<path d="M'+minimapSettings.viewRect.x+','+minimapSettings.viewRect.y;
+			defsStr += ' l' + minimapSettings.viewRect.w + ',0';
+			defsStr += ' l0,' + minimapSettings.viewRect.h;
+			defsStr += ' l' + (-minimapSettings.viewRect.w) + ',0z" />';
+			defsStr += '</clipPath>\n';
+					
+			// paint minimap
+			var minimapScale = pxPerLyMinimap / pxPerLy;
+			
+			var minimapPos = {
+				x: viewRect.x + viewRect.w * .5 - minimapSettings.viewRect.w * .5 * minimapScale - 10 / pxPerLy,
+				y: viewRect.y + viewRect.h * .5 - minimapSettings.viewRect.h * .5 * minimapScale - 10 / pxPerLy
+			}
+			els.minimap = '<g transform="translate('+minimapPos.x+','+minimapPos.y+') scale('+minimapScale+')">\n';
+			
+			els.minimap += '<rect x="'+minimapSettings.viewRect.x+'" y="'+minimapSettings.viewRect.y+'" ';
+			els.minimap += 'width="'+minimapSettings.viewRect.w+'" ';
+			els.minimap += 'height="'+minimapSettings.viewRect.h+'" style="fill:#fff" />\n';
+			
+			els.minimap += '<g clip-path="url(#minimapClip)">\n';
+			
+			// iterate over factions
+			for(var faction in factions) {
+				borderEdges = minimapSettings.borders[faction];
+				if(!borderEdges || borderEdges.length === 0) {
+					continue;
+				}
+				// don't paint borders for independent planets
+				if(faction === 'I' || faction === 'D') {
+					continue;
+				}
+				rgb = this.hexToRgb(factions[faction].color) || {r: 0, g:0, b:0};
+				if(!factions[faction].fill) {
+					factions[faction].fill = 'rgba('+rgb.r+','+rgb.g+','+rgb.b+', .3)';
+				}
+
+				curD = '';
+				for(var i = 0, len = borderEdges.length; i < len; i++) {
+					prevEdge = curEdge;
+					curEdge = borderEdges[i];
+					if(curEdge.isFirstInLoop) {
+						curD += ' M'+curEdge.n1.x.toFixed(2)+','+(-curEdge.n1.y).toFixed(2);
+					}
+					curD += ' L' + borderEdges[i].n2.x.toFixed(2)+','+(-borderEdges[i].n2.y).toFixed(2);
+				}
+				if(curD.length === 0) {
+					continue;
+				}
+				els.minimap += '<path fill-rule="evenodd" ';
+				els.minimap += 'class="border '+faction+'" ';
+				els.minimap += 'style="stroke:'+factions[faction].color + ';stroke-width:2px;';
+				//els.minimap += 'style="stroke-width:0;';
+				els.minimap += 'fill:'+factions[faction].fill+';" ';
+				els.minimap += 'd="'+curD+'" />\n';
+			}
+			
+			els.minimap += '</g>\n';
+			
+			els.minimap += '<rect x="'+viewRect.x+'" y="'+viewRect.y+'" ';
+			els.minimap += 'width="'+viewRect.w+'" height="' + viewRect.h + '" ';
+			els.minimap += ' style="fill: transparent; stroke: #000; stroke-width: 1;" />\n';
+			
+			els.minimap += '<rect x="'+minimapSettings.viewRect.x+'" y="'+minimapSettings.viewRect.y+'" ';
+			els.minimap += 'width="'+minimapSettings.viewRect.w+'" ';
+			els.minimap += 'height="'+minimapSettings.viewRect.h+'" style="fill:transparent; stroke:#000; stroke-width: 10" />\n';
+		
+			els.minimap += '</g>';
+		}
 
 		elementsStr = '';
 		if(!!els.borders) {
@@ -159,6 +239,9 @@ module.exports = (function () {
 		if(!!els.systemLabels) {
 			elementsStr += '<g class="system-labels">'+els.systemLabels+'</g>\n';
 		}
+		if(!!els.minimap) {
+			elementsStr += '<g class="minimap">'+els.minimap+'</g>\n';
+		}
 
 		tpl = tpl.replace('{WIDTH}', dimensions.w);
 		tpl = tpl.replace('{HEIGHT}', dimensions.h);
@@ -171,6 +254,7 @@ module.exports = (function () {
 			h: viewRect.h
 		};
 		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);
+		tpl = tpl.replace('{DEFS}', defsStr);
 		tpl = tpl.replace('{ELEMENTS}', elementsStr);
 		// make filename safe
 		filename = filename.replace(/[\+\s\(\)]/g, '_');
@@ -180,10 +264,10 @@ module.exports = (function () {
 	};
 
 
-	SvgWriter.prototype.writeSystemNeighborhoodSvg = function (dimensions, viewRect, era, systems, factions, borders) {
+	SvgWriter.prototype.writeSystemNeighborhoodSvg = function (dimensions, viewRect, era, systems, factions, borders, minimapSettings) {
 		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
-		var filename = this.baseDir + '/output/Terra_' +era.year + '_' + safeEraName + '.svg';
-		this.writeSvg(filename, dimensions, viewRect, era, systems, factions, borders);
+		var filename = this.baseDir + '/output/Spica_' +era.year + '_' + safeEraName + '.svg';
+		this.writeSvg(filename, dimensions, viewRect, era, systems, factions, borders, minimapSettings);
 	};
 
 	/**

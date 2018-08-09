@@ -17,7 +17,8 @@ var main = function () {
     var labelMgr;
     var reservedPoints;
     var voronoiSystems;
-    var filteredSystems;
+    var clampedSystems;
+	var clampedBorders;
 	var curYear;
     var curSys, curAff, curP;
     var years = [];//['3025', '3030', '3052'];
@@ -51,11 +52,24 @@ var main = function () {
         w: 140,
         h: 140
     };
+	
+	var minimapDimensions = {
+		w: 300,
+		h: 150
+	};
+	var minimapViewRect = {
+		x: -600, 
+		y: -300,
+		w: 1200, 
+		h: 600
+	};
 
 
     // Spica
-    //viewRect.x = 92.538 - 70;
-    //viewRect.y = -237.625 - 70;
+    viewRect.x = 92.538 - 70;
+    viewRect.y = -237.625 - 70;
+	minimapViewRect.x = 92.538 - 600;
+	minimapViewRect.y = -237.625 - 300;
 	/*
     // Stein's Folly
     viewRect.x = 159.739 - 70;
@@ -157,23 +171,38 @@ var main = function () {
 
 		// generate the voronoi diagram to find borders
 		vBorder = new VoronoiBorder(logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
-        vBorder.generateBoundedBorders(viewRect);
         
-		filteredSystems = Utils.clampObjects(reader.systems, viewRect, 1);
+		// clamp the systems and borders to the image's viewBox
+		clampedSystems = Utils.clampObjects(reader.systems, viewRect, 1);
+		clampedBorders = vBorder.generateBoundedBorders(viewRect);
 
+		// initiate and execute the label manager
         labelMgr = new LabelManager(logger).init(
             viewRect,
-            filteredSystems,
+            clampedSystems,
             systemRadius,
             labelDist,
             glyphSettings,
             reader.factions
         );
-
-		//console.log(labelMgr.objects.length);
+		
+		// minimap borders
+		var minimapBorders = vBorder.generateBoundedBorders(minimapViewRect);
 
 		// create an svg with a universe picture
-        writer.writeSystemNeighborhoodSvg(dimensions, viewRect, curEra, labelMgr.objects, labelMgr.factions, vBorder.boundedBorderEdges);
+        writer.writeSystemNeighborhoodSvg(
+			dimensions, 
+			viewRect, 
+			curEra, 
+			labelMgr.objects, 
+			labelMgr.factions, 
+			clampedBorders, 
+			{
+				dimensions : minimapDimensions,
+				viewRect : minimapViewRect,
+				borders: minimapBorders
+			}
+		);
 	}
 
     // finish by rendering out the logs

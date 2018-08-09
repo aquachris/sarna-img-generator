@@ -27,6 +27,7 @@
 				<feMergeNode in="SourceGraphic"/>
 			</feMerge>
 		</filter>
+		{DEFS}
 	</defs>
 
 	<style>
