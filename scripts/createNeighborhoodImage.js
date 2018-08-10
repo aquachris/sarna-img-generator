@@ -92,10 +92,22 @@ var main = function () {
     // Sierra
     viewRect.x = -411.234 - 70;
     viewRect.y = -111.752 - 70;
+	*/
     // Luthien
     viewRect.x = 167.621 - 70;
     viewRect.y = 250.493 - 70;
-	*/
+	minimapViewRect.x = 167.621 - 600;
+	minimapViewRect.y = 250.493 - 300;
+	// Strana Mechty
+	viewRect.x = 32.300 - 70;
+	viewRect.y = 1767.809 - 70;
+	minimapViewRect.x = 32.300 - 600;
+	minimapViewRect.y = 1767.809 - 300;
+	// Tortuga Prime
+	viewRect.x = 664.72 - 70;
+	viewRect.y = -233.49 - 70;
+	minimapViewRect.x = 664.72 - 600;
+	minimapViewRect.y = -233.49 - 300;
 
     /*viewRect = {
         x: -650,
@@ -130,8 +142,8 @@ var main = function () {
     };
 
     // for each era ...
-	//for(var eraI = 15; eraI < 25; eraI++) {
-	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
+	for(var eraI = 16; eraI < 20; eraI++) {
+	//for(var eraI = 0; eraI < reader.eras.length; eraI++) {
 		curEra = reader.eras[eraI];
 		reservedPoints = [];
 		voronoiSystems = [];

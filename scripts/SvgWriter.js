@@ -154,26 +154,35 @@ module.exports = (function () {
 			
 			// add clip path for minimap content
 			defsStr += '<clipPath id="minimapClip">';
-			defsStr += '<path d="M'+minimapSettings.viewRect.x+','+minimapSettings.viewRect.y;
-			defsStr += ' l' + minimapSettings.viewRect.w + ',0';
-			defsStr += ' l0,' + minimapSettings.viewRect.h;
-			defsStr += ' l' + (-minimapSettings.viewRect.w) + ',0z" />';
+			defsStr += '<rect x="'+minimapSettings.viewRect.x+'" ';
+			defsStr += 'y="'+(-minimapSettings.viewRect.y-minimapSettings.viewRect.h)+'" ';
+			defsStr += 'width="'+minimapSettings.viewRect.w+'" ';
+			defsStr += 'height="'+minimapSettings.viewRect.h+'" />';
 			defsStr += '</clipPath>\n';
 					
 			// paint minimap
 			var minimapScale = pxPerLyMinimap / pxPerLy;
 			
-			var minimapPos = {
-				x: viewRect.x + viewRect.w * .5 - minimapSettings.viewRect.w * .5 * minimapScale - 10 / pxPerLy,
-				y: viewRect.y + viewRect.h * .5 - minimapSettings.viewRect.h * .5 * minimapScale - 10 / pxPerLy
-			}
-			els.minimap = '<g transform="translate('+minimapPos.x+','+minimapPos.y+') scale('+minimapScale+')">\n';
+			var minimapMargin = 10 / pxPerLy;
 			
-			els.minimap += '<rect x="'+minimapSettings.viewRect.x+'" y="'+minimapSettings.viewRect.y+'" ';
+			var minimapPos = {
+				x: viewRect.x + viewRect.w - minimapSettings.viewRect.w * minimapScale - minimapMargin,
+				y: -viewRect.y - minimapSettings.viewRect.h * minimapScale - minimapMargin
+				//y: -viewRect.y - viewRect.h * .25// + viewRect.h - minimapSettings.viewRect.h * .5 * minimapScale - 10 / pxPerLy
+			}
+			els.minimap = '<g class="minimap-outer" ';
+			els.minimap += 'transform="translate('+minimapPos.x+','+minimapPos.y+') ';
+			els.minimap += 'scale('+minimapScale+')">\n';
+			
+			//els.minimap += '<rect x="'+minimapSettings.viewRect.x+'" y="'+minimapSettings.viewRect.y+'" ';
+			els.minimap += '<rect x="0" y="0" ';
 			els.minimap += 'width="'+minimapSettings.viewRect.w+'" ';
 			els.minimap += 'height="'+minimapSettings.viewRect.h+'" style="fill:#fff" />\n';
 			
-			els.minimap += '<g clip-path="url(#minimapClip)">\n';
+			els.minimap += '<g class="minimap-inner" ';
+			els.minimap += 'transform="translate('+(-minimapSettings.viewRect.x)+',';
+			els.minimap += (minimapSettings.viewRect.y+minimapSettings.viewRect.h)+')" ';
+			els.minimap += ' clip-path="url(#minimapClip2)" >\n';
 			
 			// iterate over factions
 			for(var faction in factions) {
@@ -210,16 +219,91 @@ module.exports = (function () {
 				els.minimap += 'd="'+curD+'" />\n';
 			}
 			
+			// map cutout rectangle
+			els.minimap += '<rect x="'+viewRect.x+'" y="'+(-viewRect.y-viewRect.h)+'" ';
+			els.minimap += 'width="'+viewRect.w+'" height="' + viewRect.h + '" ';
+			els.minimap += ' style="fill: transparent; stroke: #fff; stroke-width: 10;" />\n';
+			els.minimap += '<rect x="'+viewRect.x+'" y="'+(-viewRect.y-viewRect.h)+'" ';
+			els.minimap += 'width="'+viewRect.w+'" height="' + viewRect.h + '" ';
+			els.minimap += ' style="fill: transparent; stroke: #a00; stroke-width: 3;" />\n';
+			
+			// line to origin
+			els.minimap += '<path d="M'+(viewRect.x+viewRect.w*.5)+','+(-viewRect.y-viewRect.h*.5)+' ';
+			els.minimap += 'L0,0z" ';
+			els.minimap += 'style="fill:#0f0;stroke-width:5;stroke:#0a0;" />\n';
+			
+			var lineToOrigin = Utils.lineFromPoints([viewRect.x+viewRect.w*.5,-viewRect.y-viewRect.h*.5], [0,0]);
+			
+			var p1, p2;
+			var rTop = -minimapSettings.viewRect.y - minimapSettings.viewRect.h;
+			var rRight = minimapSettings.viewRect.x + minimapSettings.viewRect.w;
+			var rBottom = -minimapSettings.viewRect.y;
+			var rLeft = minimapSettings.viewRect.x;
+			var iP;
+			for(var i = 0; i < 4; i++) {
+				// top
+				if(i === 0) {
+					p1 = [rLeft, rTop];
+					p2 = [rRight, rTop];
+					els.minimap += '<path d="M'+p1[0]+','+p1[1]+' ';
+					els.minimap += 'L'+p2[0]+','+p2[1]+'z" ';
+					els.minimap += 'style="fill:#0f0;stroke-width:5;stroke:#06c;" />\n';
+					iP = Utils.lineLineIntersection(Utils.lineFromPoints(p1, p2), lineToOrigin);
+					if(iP[0] !== Infinity) {
+						els.minimap += '<circle cx="'+iP[0]+'" cy="'+iP[1]+'" r="5" style="fill: #f00; stroke-width: 0" />';
+						break;
+					}
+					
+				// right
+				} else if(i === 1) {
+					p1 = [rRight, rTop];
+					p2 = [rRight, rBottom];
+					els.minimap += '<path d="M'+p1[0]+','+p1[1]+' ';
+					els.minimap += 'L'+p2[0]+','+p2[1]+'z" ';
+					els.minimap += 'style="fill:#0f0;stroke-width:5;stroke:#06c;" />\n';
+					iP = Utils.lineLineIntersection(Utils.lineFromPoints(p1, p2), lineToOrigin);
+					if(iP[0] !== Infinity) {
+						els.minimap += '<circle cx="'+iP[0]+'" cy="'+iP[1]+'" r="5" style="fill: #f00; stroke-width: 0" />';
+						break;
+					}
+					
+				// bottom
+				} else if(i === 2) {
+					p1 = [rRight, rBottom];
+					p2 = [rLeft, rBottom];
+					els.minimap += '<path d="M'+p1[0]+','+p1[1]+' ';
+					els.minimap += 'L'+p2[0]+','+p2[1]+'z" ';
+					els.minimap += 'style="fill:#0f0;stroke-width:5;stroke:#06c;" />\n';
+					iP = Utils.lineLineIntersection(Utils.lineFromPoints(p1, p2), lineToOrigin);
+					if(iP[0] !== Infinity) {
+						els.minimap += '<circle cx="'+iP[0]+'" cy="'+iP[1]+'" r="5" style="fill: #f00; stroke-width: 0" />';
+						break;
+					}
+				
+				// left
+				} else if(i === 3) {
+					p1 = [rLeft, rBottom];
+					p2 = [rLeft, rTop];
+					els.minimap += '<path d="M'+p1[0]+','+p1[1]+' ';
+					els.minimap += 'L'+p2[0]+','+p2[1]+'z" ';
+					els.minimap += 'style="fill:#0f0;stroke-width:5;stroke:#06c;" />\n';
+					iP = Utils.lineLineIntersection(Utils.lineFromPoints(p1, p2), lineToOrigin);
+					if(iP[0] !== Infinity) {
+						els.minimap += '<circle cx="'+iP[0]+'" cy="'+iP[1]+'" r="5" style="fill: #f00; stroke-width: 0" />';
+						break;
+					}
+				}
+			}
+			
+			// close minimap inner container
 			els.minimap += '</g>\n';
 			
-			els.minimap += '<rect x="'+viewRect.x+'" y="'+viewRect.y+'" ';
-			els.minimap += 'width="'+viewRect.w+'" height="' + viewRect.h + '" ';
-			els.minimap += ' style="fill: transparent; stroke: #000; stroke-width: 1;" />\n';
-			
-			els.minimap += '<rect x="'+minimapSettings.viewRect.x+'" y="'+minimapSettings.viewRect.y+'" ';
-			els.minimap += 'width="'+minimapSettings.viewRect.w+'" ';
-			els.minimap += 'height="'+minimapSettings.viewRect.h+'" style="fill:transparent; stroke:#000; stroke-width: 10" />\n';
+			// frame around the minimap
+			//els.minimap += '<rect x="0" y="0" ';//'+minimapSettings.viewRect.x+'" y="'+minimapSettings.viewRect.y+'" ';
+			//els.minimap += 'width="'+minimapSettings.viewRect.w+'" ';
+			//els.minimap += 'height="'+minimapSettings.viewRect.h+'" style="fill:transparent; stroke:#000; stroke-width: 10" />\n';
 		
+			// close minimap outer container
 			els.minimap += '</g>';
 		}
 
@@ -266,7 +350,7 @@ module.exports = (function () {
 
 	SvgWriter.prototype.writeSystemNeighborhoodSvg = function (dimensions, viewRect, era, systems, factions, borders, minimapSettings) {
 		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
-		var filename = this.baseDir + '/output/Spica_' +era.year + '_' + safeEraName + '.svg';
+		var filename = this.baseDir + '/output/Strana_Mechty_' +era.year + '_' + safeEraName + '.svg';
 		this.writeSvg(filename, dimensions, viewRect, era, systems, factions, borders, minimapSettings);
 	};
 
