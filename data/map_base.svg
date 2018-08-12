@@ -27,6 +27,24 @@
 				<feMergeNode in="SourceGraphic"/>
 			</feMerge>
 		</filter>
+		<filter id="sLblShdMM">
+			<feFlood flood-color="white" result="flood"/>
+			<feOffset dx="-3.43" dy="-3.43" in="SourceAlpha" result="offset5"/>
+			<feComposite operator="in" in="flood" in2="offset1" result="shadow5"/>
+			<feOffset dx="-3.43" dy="3.43" in="SourceAlpha" result="offset6"/>
+			<feComposite operator="in" in="flood" in2="offset2" result="shadow6"/>
+			<feOffset dx="3.43" dy="-3.43" in="SourceAlpha" result="offset7"/>
+			<feComposite operator="in" in="flood" in2="offset3" result="shadow7"/>
+			<feOffset dx="3.43" dy="3.43" in="SourceAlpha" result="offset8"/>
+			<feComposite operator="in" in="flood" in2="offset4" result="shadow8"/>
+			<feMerge>
+				<feMergeNode in="shadow5"/>
+				<feMergeNode in="shadow6"/>
+				<feMergeNode in="shadow7"/>
+				<feMergeNode in="shadow8"/>
+				<feMergeNode in="SourceGraphic"/>
+			</feMerge>
+		</filter>
 		{DEFS}
 	</defs>
 
@@ -37,6 +55,8 @@
 		text.system-label { font-size: 2.5px; } /* text-shadow: .2px .2px 0 #eee, -.2px .2px 0 #eee, .2px -.2px 0 #eee, -.2px -.2px 0 #eee; }*/
 		text.system-label.uninhabited { fill: #555; font-style: italic; }
 		text.faction-label { fill: #aaa; font-size: 6px; font-style: italic; font-weight: bold; text-shadow: .05em .05em 0 #eee, -.05em .05em 0 #eee, .05em -.05em 0 #eee, -.05em -.05em 0 #eee; }
+		.minimap-outer text { font-size: 60px; }
+		.minimap-outer text .smaller { font-size: 45px; }
 		path { stroke-linejoin: round; stroke-linecap: round; }
 	</style>
 

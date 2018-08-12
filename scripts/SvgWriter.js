@@ -256,7 +256,7 @@ module.exports = (function () {
 
 				var angle = Utils.angleBetweenVectors([1,0], [periPoint.x, periPoint.y]);
 				// differentiate whether the focused point lies below the y = 0 line to get the true 360° angle
-				if(focusedCoords[1] < 0) {
+				if(periPoint.y > 0) {
 					angle = Math.PI * 2 - angle;
 				}
 				//console.log('angle: ', angle, Utils.radToDeg(angle));
@@ -264,14 +264,27 @@ module.exports = (function () {
 				// arrow towards origin
 				els.minimap += '<g ';
 				els.minimap += 'transform="';
-				els.minimap += ' translate('+periPoint.x+','+(-periPoint.y)+') ';
-				els.minimap += ' rotate('+Utils.radToDeg(angle)+') ';
-				els.minimap += '">';
+				els.minimap += ' translate('+periPoint.x.toFixed(2)+','+(-periPoint.y).toFixed(2)+') ';
+				els.minimap += ' rotate('+Utils.radToDeg(angle).toFixed(2)+') ';
+				els.minimap += '">\n';
 				els.minimap += '<path d="M5,0 l50,20 l0,-40 z" ';
-				els.minimap += 'style="stroke-width: 3; stroke: #fff; fill: #a00;" />';
-				els.minimap += '</g>';
+				els.minimap += 'style="stroke-width: 4; stroke: #fff; fill: #a00;" />\n';
+				els.minimap += '</g>\n';
 
-
+				var textPoint = Utils.deepCopy(periPoint);
+				if(periPoint.x < minimapSettings.viewRect.x + 60) {
+					textPoint.x += 60;
+				} else if(periPoint.x < minimapSettings.viewRect.x + minimapSettings.viewRect.w - 150) {
+					textPoint.x += 30;
+				} else {
+					textPoint.x -= 200;
+				}
+				textPoint.y = Utils.clampNumber(periPoint.y, minimapSettings.viewRect.y + 60, minimapSettings.viewRect.y + minimapSettings.viewRect.h - 60);
+				els.minimap += '<text x="'+textPoint.x.toFixed(2)+'" y="'+(-textPoint.y).toFixed(2)+'" filter="url(#sLblShdMM)">\n';
+				els.minimap += '<tspan>Terra</tspan>\n';
+				els.minimap += '<tspan x="'+textPoint.x.toFixed(2)+'" dy="1.1em" class="smaller">'+Math.round(pPointDist)+' LY</tspan>\n';
+				els.minimap += '</text>\n';
+				//if()
 
 			}
 

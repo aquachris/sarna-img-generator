@@ -66,10 +66,10 @@ var main = function () {
 
 
     // Spica
-    viewRect.x = 92.538 - 70;
+    /*viewRect.x = 92.538 - 70;
     viewRect.y = -237.625 - 70;
 	minimapViewRect.x = 92.538 - 600;
-	minimapViewRect.y = -237.625 - 300;
+	minimapViewRect.y = -237.625 - 300;*/
 	/*
     // Stein's Folly
     viewRect.x = 159.739 - 70;
@@ -99,10 +99,10 @@ var main = function () {
 	minimapViewRect.x = 167.621 - 600;
 	minimapViewRect.y = 250.493 - 300;*/
 	// Strana Mechty
-	viewRect.x = 32.300 - 70;
+	/*viewRect.x = 32.300 - 70;
 	viewRect.y = 1767.809 - 70;
 	minimapViewRect.x = 32.300 - 600;
-	minimapViewRect.y = 1767.809 - 300;
+	minimapViewRect.y = 1767.809 - 300;*/
 	// Tortuga Prime
 	/*viewRect.x = 664.72 - 70;
 	viewRect.y = -233.49 - 70;
@@ -124,15 +124,25 @@ var main = function () {
     minimapViewRect.x = 412.98 - 600;
 	minimapViewRect.y = 443.52 - 300;*/
     // Algenib
-    viewRect.x = -438.6 - 70;
+    /*viewRect.x = -438.6 - 70;
     viewRect.y = -379.18 - 70;
     minimapViewRect.x = -438.6 - 600;
-	minimapViewRect.y = -379.18 - 300;
+	minimapViewRect.y = -379.18 - 300;*/
+    // Rockwellawan
+    /*viewRect.x = 67.08 - 70;
+    viewRect.y = -483.21 - 70;
+    minimapViewRect.x = 67.08 - 600;
+	minimapViewRect.y = -483.21 - 300;*/
+    // Taurus
+    viewRect.x = 191.38 - 70;
+    viewRect.y = -391 - 70;
+    minimapViewRect.x = 191.38 - 600;
+	minimapViewRect.y = -391 - 300;
     // Outer Space
-    viewRect.x = -700 - 70;
+    /*viewRect.x = -700 - 70;
     viewRect.y = -500 - 70;
     minimapViewRect.x = -700 - 600;
-	minimapViewRect.y = -500 - 300;
+	minimapViewRect.y = -500 - 300;*/
 
     /*viewRect = {
         x: -650,
