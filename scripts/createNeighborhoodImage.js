@@ -52,15 +52,15 @@ var main = function () {
         w: 140,
         h: 140
     };
-	
+
 	var minimapDimensions = {
 		w: 300,
 		h: 150
 	};
 	var minimapViewRect = {
-		x: -600, 
+		x: -600,
 		y: -300,
-		w: 1200, 
+		w: 1200,
 		h: 600
 	};
 
@@ -94,20 +94,45 @@ var main = function () {
     viewRect.y = -111.752 - 70;
 	*/
     // Luthien
-    viewRect.x = 167.621 - 70;
+    /*viewRect.x = 167.621 - 70;
     viewRect.y = 250.493 - 70;
 	minimapViewRect.x = 167.621 - 600;
-	minimapViewRect.y = 250.493 - 300;
+	minimapViewRect.y = 250.493 - 300;*/
 	// Strana Mechty
 	viewRect.x = 32.300 - 70;
 	viewRect.y = 1767.809 - 70;
 	minimapViewRect.x = 32.300 - 600;
 	minimapViewRect.y = 1767.809 - 300;
 	// Tortuga Prime
-	viewRect.x = 664.72 - 70;
+	/*viewRect.x = 664.72 - 70;
 	viewRect.y = -233.49 - 70;
 	minimapViewRect.x = 664.72 - 600;
-	minimapViewRect.y = -233.49 - 300;
+	minimapViewRect.y = -233.49 - 300;*/
+    // Tharkad
+    /*viewRect.x = -212.99 - 70;
+    viewRect.y = 151.77 - 70;
+    minimapViewRect.x = -212.99 - 600;
+	minimapViewRect.y = 151.77 - 300;*/
+    // Atreus
+    /*viewRect.x = -191.07 - 70;
+    viewRect.y = -163.78 - 70;
+    minimapViewRect.x = -191.07 - 600;
+	minimapViewRect.y = -163.78 - 300;*/
+    // Farstar
+    /*viewRect.x = 412.98 - 70;
+    viewRect.y = 443.52 - 70;
+    minimapViewRect.x = 412.98 - 600;
+	minimapViewRect.y = 443.52 - 300;*/
+    // Algenib
+    viewRect.x = -438.6 - 70;
+    viewRect.y = -379.18 - 70;
+    minimapViewRect.x = -438.6 - 600;
+	minimapViewRect.y = -379.18 - 300;
+    // Outer Space
+    viewRect.x = -700 - 70;
+    viewRect.y = -500 - 70;
+    minimapViewRect.x = -700 - 600;
+	minimapViewRect.y = -500 - 300;
 
     /*viewRect = {
         x: -650,
@@ -183,7 +208,7 @@ var main = function () {
 
 		// generate the voronoi diagram to find borders
 		vBorder = new VoronoiBorder(logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
-        
+
 		// clamp the systems and borders to the image's viewBox
 		clampedSystems = Utils.clampObjects(reader.systems, viewRect, 1);
 		clampedBorders = vBorder.generateBoundedBorders(viewRect);
@@ -197,18 +222,18 @@ var main = function () {
             glyphSettings,
             reader.factions
         );
-		
+
 		// minimap borders
 		var minimapBorders = vBorder.generateBoundedBorders(minimapViewRect);
 
 		// create an svg with a universe picture
         writer.writeSystemNeighborhoodSvg(
-			dimensions, 
-			viewRect, 
-			curEra, 
-			labelMgr.objects, 
-			labelMgr.factions, 
-			clampedBorders, 
+			dimensions,
+			viewRect,
+			curEra,
+			labelMgr.objects,
+			labelMgr.factions,
+			clampedBorders,
 			{
 				dimensions : minimapDimensions,
 				viewRect : minimapViewRect,

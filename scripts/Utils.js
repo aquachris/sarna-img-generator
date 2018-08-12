@@ -27,10 +27,37 @@ module.exports = (function () {
         var circumcenter = this.lineLineIntersection(abc, efg);
 
         if (circumcenter[0] === Infinity && circumcenter[1] === Infinity) {
-            this.logger.warn('parallel bisectors');
+            //this.logger.warn('parallel bisectors');
             return null;
         }
         return circumcenter;
+    };
+
+    /**
+     * Calculates the angle between two vectors.
+     *
+     * @param v1 {Array} a 2D vector
+     * @param v2 {Array} a 2D vector
+     * @returns {Number} The angle in radians (range is [0, PI] or [0°, 180°])
+     */
+    Utils.angleBetweenVectors = function (v1, v2) {
+        var nv1 = this.deepCopy(v1);
+        var nv2 = this.deepCopy(v2);
+        this.normalizeVector2d(nv1);
+        this.normalizeVector2d(nv2);
+        return this.angleBetweenNormalizedVectors(nv1, nv2);
+    };
+
+    /**
+     * Calculates the angle between two normalized vectors.
+     *
+     * @param v1 {Array} a 2D vector
+     * @param v2 {Array} a 2D vector
+     * @returns {Number} The angle in radians (range is [0, PI] or [0°, 180°])
+     */
+    Utils.angleBetweenNormalizedVectors = function (v1, v2) {
+        console.log('vectors', v1, v2);
+        return Math.acos(this.dotProduct2d(v1, v2));
     };
 
     /**
@@ -164,6 +191,62 @@ module.exports = (function () {
 	};
 
     /**
+     * Returns closest point to p on rectangle's perimeter
+     * https://stackoverflow.com/questions/20453545/how-to-find-the-nearest-point-in-the-perimeter-of-a-rectangle-to-a-given-point
+     *
+     * @param p {Object} The 2D point (an object with properties x and y)
+     * @param rect {Object} The rectangle (x, y, w, h)
+     * @param distFromCorner {Number} (optional) The minimum distance from a rectangle corner
+     * @returns {Object} The closest point
+     */
+     Utils.getClosestPointOnRectanglePerimeter = function (p, rect, distFromCorner) {
+         if(distFromCorner === undefined) {
+             distFromCorner = 0;
+         }
+
+         var left = rect.x;
+         var right = left + rect.w;
+         var bottom = rect.y;
+         var top = bottom + rect.h;
+
+         var x = this.clampNumber(p.x, left, right);
+         var y = this.clampNumber(p.y, bottom, top);
+
+         var dl = Math.abs(x - left);
+         var dr = Math.abs(x - right);
+         var db = Math.abs(y - bottom);
+         var dt = Math.abs(y - top);
+
+         var m = Math.min(dl, dr, dt, db);
+
+         var ret;
+         switch(m) {
+             case dt:
+                ret = { x: x, y: top };
+                break;
+             case db:
+                ret = { x: x, y: bottom };
+                break;
+             case dl:
+                ret = { x: left, y: y };
+                break;
+             case dr:
+                ret = { x: right, y: y };
+                break;
+             default:
+                ret = { x: left, y: top };
+          }
+
+          if(ret.x === left || ret.x === right) {
+              ret.y = this.clampNumber(ret.y, bottom + distFromCorner, top - distFromCorner);
+          } else if(ret.y === top || ret.y === bottom) {
+              ret.x = this.clampNumber(ret.x, left + distFromCorner, right - distFromCorner);
+          }
+
+          return ret;
+     };
+
+    /**
      * A rectangle is defined by its bottom left corner (x,y) and its
      * width and height (w,h).
      *
@@ -201,7 +284,7 @@ module.exports = (function () {
     Utils.clampNumber = function (num, min, max) {
         return Math.max(min, Math.min(max, num));
     };
-	
+
 	/**
 	 * Filter the objects in a given array by whether the objects are within the bounding box or not.
 	 *
@@ -228,6 +311,20 @@ module.exports = (function () {
             }
         }
         return ret;
+    };
+
+    /**
+     * Converts degrees to radians
+     */
+    Utils.degToRad = function (angleInDegrees) {
+        return angleInDegrees * Math.PI / 180;
+    };
+
+    /**
+     * Converts radians to degrees
+     */
+    Utils.radToDeg = function (angleInRadians) {
+        return angleInRadians * 180 / Math.PI;
     };
 
     return Utils;
