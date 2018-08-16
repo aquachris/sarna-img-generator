@@ -182,8 +182,50 @@ module.exports = (function () {
             }
         };
 
-        // initially place label centered to the right
-        minOverlap = Infinity;
+		minOverlap = Infinity;
+		
+		var bestPositions = {
+			"Hyades Cluster" : { labelPos: 'center right' },
+			"Ishtar": { labelPos: 'center left' },
+			"Jansen's Hold" : { labelPos: 'top center',  dx: -3 },
+			"MacLeod's Land" : { labelPos : 'top center' },
+			"Pinard" : { labelPos: 'center left', dy: -1.5 },
+			"Taurus" : { labelPos: 'bottom center', dx: 1 }
+		};
+		var forcePos, forceDx, forceDy;
+		
+        // initially place label at desired position, if one exists
+		if(bestPositions.hasOwnProperty(obj.name)) {
+			forcePos = bestPositions[obj.name].labelPos.split(' ');
+			forceDx = bestPositions[obj.name].dx;
+			forceDy = bestPositions[obj.name].dy;
+			if(forceDx === undefined) { forceDx = 0; }
+			if(forceDy === undefined) { forceDy = 0; }
+			if(forcePos[0] === 'top') {
+				label.y = obj.y + obj.h + dist * 0.5 + forceDy;
+			} else if(forcePos[0] === 'bottom') {
+				label.y = obj.y - label.h - dist * 0.5 + forceDy;
+			} else {
+				label.y = obj.centerY - label.h * .5 + forceDy;
+			}
+			if(forcePos[1] === 'left') {
+				label.x = obj.x - label.w - dist + forceDx;
+			} else if(forcePos[1] === 'right') {
+				label.x = obj.centerX + objRad + dist + forceDx;
+			} else {
+				label.x = obj.centerX - label.w * 0.5 + forceDx;
+			}
+			evaluateCurrentPos.call(this);
+			
+			if(curOverlap > 0) {
+				this.logger.log('overlapping label (forced placement): "'+obj.name+'" for ' + minOverlap + ' units.');
+			}
+			//if(curOverlap === 0) {
+				return curOverlap;
+			//}
+		}
+		
+		// check position centered to the right
         minOverlapX = label.x = obj.centerX + objRad + dist;
         minOverlapY = label.y = obj.centerY - label.h * .5;
         evaluateCurrentPos.call(this);
@@ -360,6 +402,8 @@ module.exports = (function () {
         // no overlap-free option found. Use option with minimal overlap.
         label.x = minOverlapX;
         label.y = minOverlapY;
+		
+		this.logger.log('overlapping label: "'+obj.name+'" for ' + minOverlap + ' units.');
         return minOverlap;
     };
 
