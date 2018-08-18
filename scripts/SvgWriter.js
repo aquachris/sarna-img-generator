@@ -27,10 +27,11 @@ module.exports = (function () {
 	 * @param systems {Array} Array of all displayed systems
 	 * @param factions {Object} Key/value map of the displayed factions
 	 * @param borders {Object} Key/value map of faction borders
+	 * @param nebulae {Array} Array of all displayed nebulae
 	 * @param minimapSettings {Object} Settings for an optional minimap (dimensions, viewRect and borders)
 	 * @param additionalConfig {Object} Additional configuration options like jump radius circles or cutout rectangles
 	 */
-	SvgWriter.prototype.writeSvg = function (filename, dimensions, viewRect, era, systems, factions, borders, minimapSettings, additionalConfig) {
+	SvgWriter.prototype.writeSvg = function (filename, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings, additionalConfig) {
 		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf-8' });
 		var viewBox;
 		var defsStr = '';
@@ -47,6 +48,7 @@ module.exports = (function () {
 			factionLabels : '',
 			jumpRadius : '',
 			cutout : '',
+			nebulae : '',
 			systems : '',
 			systemLabels : '',
 			minimap : ''
@@ -117,6 +119,16 @@ module.exports = (function () {
 			els.borders += 'd="'+curD+'" />\n';
 		}
 
+		for(var i = 0, len = nebulae.length; i < len; i++) {
+			els.nebulae += '<ellipse ';
+			els.nebulae += 'data-name="'+nebulae[i].name+'" ';
+			els.nebulae += 'cx="'+nebulae[i].x+'" ';
+			els.nebulae += 'cy="'+(-nebulae[i].y)+'" ';
+			els.nebulae += 'rx="'+(nebulae[i].w*.5)+'" ';
+			els.nebulae += 'ry="'+(nebulae[i].h*.5)+'" ';
+			els.nebulae += ' />\n';
+		}
+
 		for(var i = 0, len = systems.length; i < len; i++) {
 			if(systems[i].col === 'DUMMY') {
 				//!Utils.pointInRectangle(parsedSystems[i], viewRect)) {
@@ -141,7 +153,7 @@ module.exports = (function () {
 			els.systemLabels += '<text x="'+systems[i].label.x.toFixed(3) + '" ';
 			els.systemLabels += ' y="'+(-systems[i].label.y-systems[i].h*.25).toFixed(3)+'" ';
 			els.systemLabels += '  filter="url(#sLblShd)" class="system-label '+labelCls+'">';
-			els.systemLabels += systems[i].name + '</text>';
+			els.systemLabels += systems[i].name + '</text>\n';
 		}
 
 		els.jumpRadius = '<circle class="jump-radius" cx="'+(viewRect.x+viewRect.w*.5)+'" cy="'+(-viewRect.y-viewRect.h*.5)+'" r="30" />\n';
@@ -282,10 +294,10 @@ module.exports = (function () {
 				textPoint.y = Utils.clampNumber(periPoint.y, minimapSettings.viewRect.y + 60, minimapSettings.viewRect.y + minimapSettings.viewRect.h - 60);
 				els.minimap += '<text x="'+textPoint.x.toFixed(2)+'" y="'+(-textPoint.y).toFixed(2)+'" filter="url(#sLblShdMM)">\n';
 				els.minimap += '<tspan>Terra</tspan>\n';
-				els.minimap += '<tspan x="'+textPoint.x.toFixed(2)+'" dy="1.1em" class="smaller">'+Math.round(pPointDist)+' LY</tspan>\n';
+				if(pPointDist >= 3) {
+					els.minimap += '<tspan x="'+textPoint.x.toFixed(2)+'" dy="1.1em" class="smaller">'+(Math.round(pPointDist/5)*5)+' LY</tspan>\n';
+				}
 				els.minimap += '</text>\n';
-				//if()
-
 			}
 
 			// close minimap inner container
@@ -306,6 +318,9 @@ module.exports = (function () {
 		}
 		if(!!els.factionLabels) {
 			elementsStr += '<g class="faction-labels">'+els.factionLabels+'</g>\n';
+		}
+		if(!!els.nebulae) {
+			elementsStr += '<g class="nebulae">'+els.nebulae+'</g>\n';
 		}
 		if(!!els.jumpRadius) {
 			elementsStr += '<g class="jump-radius">'+els.jumpRadius+'</g>\n';
@@ -341,10 +356,10 @@ module.exports = (function () {
 	};
 
 
-	SvgWriter.prototype.writeSystemNeighborhoodSvg = function (dimensions, viewRect, era, systems, factions, borders, minimapSettings) {
+	SvgWriter.prototype.writeSystemNeighborhoodSvg = function (name, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings) {
 		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
-		var filename = this.baseDir + '/output/Strana_Mechty_' +era.year + '_' + safeEraName + '.svg';
-		this.writeSvg(filename, dimensions, viewRect, era, systems, factions, borders, minimapSettings);
+		var filename = this.baseDir + '/output/'+name.replace(/\s/g, '_')+'_' +era.year + '_' + safeEraName + '.svg';
+		this.writeSvg(filename, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings);
 	};
 
 	/**

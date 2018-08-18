@@ -19,6 +19,7 @@ var main = function () {
     var voronoiSystems;
     var clampedSystems;
 	var clampedBorders;
+    var clampedNebulae;
 	var curYear;
     var curSys, curAff, curP;
     var years = [];//['3025', '3030', '3052'];
@@ -28,6 +29,9 @@ var main = function () {
 
     // read factions from the xlsx
 	reader.readFactions();
+
+    // read nebulae from the xlsx
+    reader.readNebulae();
 
     // read planetary systems from the xlsx
     reader.readSystemsAndEras();
@@ -63,6 +67,17 @@ var main = function () {
 		w: 1200,
 		h: 600
 	};
+
+    var focusedSystemName = 'Taurus';
+    for(var i = 0, len = reader.systems.length; i < len; i++) {
+        if(reader.systems[i].name === focusedSystemName) {
+            viewRect.x = reader.systems[i].x - 70;
+            viewRect.y = reader.systems[i].y - 70;
+            minimapViewRect.x = reader.systems[i].x - 600;
+            minimapViewRect.y = reader.systems[i].y - 300;
+            break;
+        }
+    }
 
 
     // Spica
@@ -134,10 +149,10 @@ var main = function () {
     minimapViewRect.x = 67.08 - 600;
 	minimapViewRect.y = -483.21 - 300;*/
     // Taurus
-    viewRect.x = 191.38 - 70;
-    viewRect.y = -391 - 70;
-    minimapViewRect.x = 191.38 - 600;
-	minimapViewRect.y = -391 - 300;
+    //viewRect.x = 191.38 - 70;
+    //viewRect.y = -391 - 70;
+    //minimapViewRect.x = 191.38 - 600;
+	//minimapViewRect.y = -391 - 300;
     // Outer Space
     /*viewRect.x = -700 - 70;
     viewRect.y = -500 - 70;
@@ -222,6 +237,7 @@ var main = function () {
 		// clamp the systems and borders to the image's viewBox
 		clampedSystems = Utils.clampObjects(reader.systems, viewRect, 1);
 		clampedBorders = vBorder.generateBoundedBorders(viewRect);
+        clampedNebulae = Utils.deepCopy(reader.nebulae);
 
 		// initiate and execute the label manager
         labelMgr = new LabelManager(logger).init(
@@ -238,12 +254,14 @@ var main = function () {
 
 		// create an svg with a universe picture
         writer.writeSystemNeighborhoodSvg(
+            focusedSystemName,
 			dimensions,
 			viewRect,
 			curEra,
 			labelMgr.objects,
 			labelMgr.factions,
 			clampedBorders,
+            clampedNebulae,
 			{
 				dimensions : minimapDimensions,
 				viewRect : minimapViewRect,

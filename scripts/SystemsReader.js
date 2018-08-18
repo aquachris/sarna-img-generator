@@ -36,7 +36,7 @@ module.exports = (function () {
 	 */
 	SystemsReader.prototype.readWorkbook = function (forceReread) {
 		if(!forceReread && !!this.workbook) {
-			this.logger.log('No need to read SUCK file again - reference already exists');
+			//this.logger.log('No need to read SUCK file again - reference already exists');
 			return;
 		}
 		this.logger.log('Now reading SUCK file');
@@ -178,22 +178,6 @@ module.exports = (function () {
                 curSystem.affiliations.push(curAffiliation);
             }
 
-            //
-			// // 3025 affiliation
-			// curAffiliation = curRow[columnIdxMap['3025']] || '';
-			// curSystem['3025'] = curAffiliation.split(/\s*\,\s*/gi)[0];
-			// curSystem['3025_all'] = curAffiliation;
-            //
-			// // 3030 affiliation
-			// curAffiliation = curRow[columnIdxMap['3030']] || '';
-			// curSystem['3030'] = curAffiliation.split(/\s*\,\s*/gi)[0];
-			// curSystem['3030_all'] = curAffiliation;
-            //
-			// // 3052 affiliation
-			// curAffiliation = curRow[columnIdxMap['3052']] || '';
-			// curSystem['3052'] = curAffiliation.split(/\s*\,\s*/gi)[0];
-			// curSystem['3052_all'] = curAffiliation;
-
 			this.systems.push(curSystem);
 		}
 
@@ -214,7 +198,50 @@ module.exports = (function () {
     };
 
     /**
-     * Calculate the distance between two planetary systems (euclidean distance in LY)
+     * Reads the nebulae from the corresponding sheet.
+     */
+    SystemsReader.prototype.readNebulae = function () {
+        this.readWorkbook();
+
+        this.logger.log('Nebulae reader started');
+
+        var nebulaeSheet = this.workbook[3];
+
+		var curRow;
+		// sort out headers
+		var headerRowIdx = 0; // TODO magic number
+		var columnIdxMap = {}; // map of column titles (lowercase) to column indices
+
+        this.nebulae = [];
+
+		curRow = nebulaeSheet.data[headerRowIdx];
+
+        // column index map
+		for(var i = 0, len = curRow.length; i < len; i++) {
+            columnIdxMap[(curRow[i]+'').toLowerCase()] = i;
+		}
+
+		for(var rowIdx = headerRowIdx + 1, endIdx = nebulaeSheet.data.length; rowIdx < endIdx; rowIdx++) {
+			curRow = nebulaeSheet.data[rowIdx];
+
+			// skip rows without coordinates
+			if(curRow[columnIdxMap['x']] === undefined || curRow[columnIdxMap['y']] === undefined) {
+				continue;
+			}
+
+			// read nebula
+			this.nebulae.push({
+                name: curRow[columnIdxMap['nebula']],
+    			x: curRow[columnIdxMap['x']],
+                y: curRow[columnIdxMap['y']],
+                w: curRow[columnIdxMap['width']],
+                h: curRow[columnIdxMap['height']]
+            });
+		}
+    };
+
+    /**
+     * Calculates the distance between two planetary systems (euclidean distance in LY)
      * @private
      */
     SystemsReader.prototype.calcDistance = function(p1, p2) {

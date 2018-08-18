@@ -56,7 +56,6 @@ module.exports = (function () {
      * @returns {Number} The angle in radians (range is [0, PI] or [0°, 180°])
      */
     Utils.angleBetweenNormalizedVectors = function (v1, v2) {
-        console.log('vectors', v1, v2);
         return Math.acos(this.dotProduct2d(v1, v2));
     };
 
