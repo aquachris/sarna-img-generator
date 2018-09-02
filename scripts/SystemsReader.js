@@ -144,6 +144,11 @@ module.exports = (function () {
 				continue;
 			}
 
+            // skip Hyades Cluster (TODO) --> not a system
+            if(curRow[columnIdxMap['system']] === 'Hyades Cluster') {
+                continue;
+            }
+
 			// skip apocryphal systems for now (TODO)
 			if(curRow[columnIdxMap['status']].toLowerCase() === 'apocryphal') {
 				continue;
@@ -211,6 +216,7 @@ module.exports = (function () {
 		// sort out headers
 		var headerRowIdx = 0; // TODO magic number
 		var columnIdxMap = {}; // map of column titles (lowercase) to column indices
+        var curNeb;
 
         this.nebulae = [];
 
@@ -230,13 +236,16 @@ module.exports = (function () {
 			}
 
 			// read nebula
-			this.nebulae.push({
+            curNeb = {
                 name: curRow[columnIdxMap['nebula']],
-    			x: curRow[columnIdxMap['x']],
-                y: curRow[columnIdxMap['y']],
+    			centerX: curRow[columnIdxMap['x']],
+                centerY: curRow[columnIdxMap['y']],
                 w: curRow[columnIdxMap['width']],
                 h: curRow[columnIdxMap['height']]
-            });
+            };
+            curNeb.x = curNeb.centerX - curNeb.w * .5;
+            curNeb.y = curNeb.centerY - curNeb.h * .5;
+			this.nebulae.push(curNeb);
 		}
     };
 

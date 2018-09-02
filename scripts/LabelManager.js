@@ -30,15 +30,17 @@ module.exports = (function () {
      * @param viewRect {Object} The visible rectangle {x, y, w, h}
      * @param objects {Array} List of objects that need to be labelled. Required properties: x, y, name, col (=faction)
      * @param objectRadius {Number} Radius of a single object node
+     * @param ellipticalObjects {Array} List of non-standard, elliptical objects
      * @param objLabelDist {Number} Empty space between an object node and its text label
      * @param glyphSettings {Object} Several settings such as default width and height, and specific glyph widths
      * @param factions {Object} Key-value map of the available factions
      * @returns {LabelManager} this object
      */
-    LabelManager.prototype.init = function (viewRect, objects, objectRadius, objLabelDist, glyphSettings, factions) {
+    LabelManager.prototype.init = function (viewRect, objects, objectRadius, ellipticalObjects, objLabelDist, glyphSettings, factions) {
         this.viewRect = viewRect || {x: 0, y: 0, w: 0, h: 0};
         this.objects = Utils.deepCopy(objects || []);
         this.objectRadius = objectRadius || 1;
+        this.ellipticalObjects = Utils.deepCopy(ellipticalObjects || []);
         this.objLabelDist = objLabelDist || 0;
         this.glyphSettings = glyphSettings || {};
         this.glyphSettings.lineHeight = this.glyphSettings.lineHeight || 3;
@@ -62,26 +64,34 @@ module.exports = (function () {
         this.orderedObjIndices = [];
 
         // private helper function
-        var generateLabelRect = function (obj, objIdx) {
+        var generateLabelRect = function (obj, objIdx, isElliptical) {
             var objRad = this.objectRadius;
             var dist = this.objLabelDist;
             var lineH = this.glyphSettings.lineHeight;
             var defaultWidth = this.glyphSettings.widths.default;
             var labelWidth = 0;
+            var labelId;
 			var x, y;
             for(var i = 0; i < obj.name.length; i++) {
                 labelWidth += this.glyphSettings.widths[obj.name[i]] || defaultWidth;
             }
 
-			x = obj.centerX + objRad + dist;
-			y = obj.centerY - lineH * .5;
-			x = Math.max(this.viewRect.x, Math.min(x, this.viewRect.x + this.viewRect.w - labelWidth));
-			y = Math.max(this.viewRect.y + lineH, Math.min(y, this.viewRect.y + this.viewRect.h - lineH));
+            labelId = 'label_';
+            if(!isElliptical) {
+                x = obj.centerX + objRad + dist;
+            } else {
+                x = obj.centerX + obj.w * .5 + dist;
+                labelId += 'e_';
+            }
+            y = obj.centerY - lineH * .5;
+            // make sure label is in view rect
+			x = Utils.clampNumber(x, this.viewRect.x, this.viewRect.x + this.viewRect.w - labelWidth);
+			y = Utils.clampNumber(y, this.viewRect.y + lineH, this.viewRect.y + this.viewRect.h - lineH);
             return {
-                id: 'label_'+objIdx,
+                id: labelId + objIdx,
                 o: obj,
-                x: x,//obj.centerX + objRad + dist,
-                y: y,//obj.centerY - lineH * .5,
+                x: x,
+                y: y,
                 w: labelWidth,
                 h: lineH
             }
@@ -100,7 +110,7 @@ module.exports = (function () {
 
             this.grid.placeObject(curObj);
             this.grid.placeObject(curObj.label);
-			
+
 			if(curObj.hasOwnProperty('col')) {
                 curFaction = this.factions[curObj.col];
                 if(curFaction) {
@@ -112,6 +122,14 @@ module.exports = (function () {
 					curFaction.centerY = curFaction.centroidSums.y / curFaction.numObj;
 				}
             }
+        }
+
+        for(var i = 0, len = this.ellipticalObjects.length; i < len; i++) {
+            curObj = this.ellipticalObjects[i];
+            curObj.centerX = curObj.x + curObj.w * .5;
+            curObj.centerY = curObj.y + curObj.h * .5;
+            curObj.id = 'obj_e_' + i;
+            curObj.label = generateLabelRect.call(this, curObj, i, true);
         }
     };
 
@@ -183,7 +201,7 @@ module.exports = (function () {
         };
 
 		minOverlap = Infinity;
-		
+
 		var bestPositions = {
 			"Hyades Cluster" : { labelPos: 'center right' },
 			"Ishtar": { labelPos: 'center left' },
@@ -193,7 +211,7 @@ module.exports = (function () {
 			"Taurus" : { labelPos: 'bottom center', dx: 1 }
 		};
 		var forcePos, forceDx, forceDy;
-		
+
         // initially place label at desired position, if one exists
 		if(bestPositions.hasOwnProperty(obj.name)) {
 			forcePos = bestPositions[obj.name].labelPos.split(' ');
@@ -216,7 +234,7 @@ module.exports = (function () {
 				label.x = obj.centerX - label.w * 0.5 + forceDx;
 			}
 			evaluateCurrentPos.call(this);
-			
+
 			if(curOverlap > 0) {
 				this.logger.log('overlapping label (forced placement): "'+obj.name+'" for ' + minOverlap + ' units.');
 			}
@@ -224,7 +242,7 @@ module.exports = (function () {
 				return curOverlap;
 			//}
 		}
-		
+
 		// check position centered to the right
         minOverlapX = label.x = obj.centerX + objRad + dist;
         minOverlapY = label.y = obj.centerY - label.h * .5;
@@ -402,7 +420,101 @@ module.exports = (function () {
         // no overlap-free option found. Use option with minimal overlap.
         label.x = minOverlapX;
         label.y = minOverlapY;
-		
+
+		this.logger.log('overlapping label: "'+obj.name+'" for ' + minOverlap + ' units.');
+        return minOverlap;
+    };
+
+    /**
+     *
+     */
+    LabelManager.prototype.findBestLabelPositionForEllipticalObj = function (obj) {
+        var label = obj.label;
+        var dist = this.objLabelDist * 2;
+        var opt1, opt2, tmp;
+        var overlaps;
+        var curOverlap, minOverlap;
+        var minOverlapX, minOverlapY;
+        var ovData;
+
+        var evaluateCurrentPos = function () {
+            this.keepInViewRect(label);
+            ovData = this.getOverlapData(label);
+            curOverlap = ovData.area;
+            if(curOverlap < 0.1) {
+                curOverlap = 0;
+            }
+            if(curOverlap < minOverlap) {
+                minOverlap = curOverlap;
+                minOverlapX = label.x;
+                minOverlapY = label.y;
+            }
+        };
+
+        minOverlap = Infinity;
+
+		// check position centered to the right
+        minOverlapX = label.x = obj.x + obj.w + dist;
+        minOverlapY = label.y = obj.centerY - label.h * .5;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        /*
+        // if initial position overlaps, check alternatives on the right side, small tolerance
+        // push label up
+        opt1 = Math.min(ovData.maxY, obj.centerY) + dist;// + obj.h * 0.375);
+        // push label down
+        opt2 = Math.max(ovData.minY - label.h, obj.centerY - label.h) - dist; //- obj.h * 0.375 - label.h);
+
+        // if down direction is closer, swap options order
+        if(obj.centerY - ovData.minY < ovData.maxY - obj.centerY) {
+            tmp = opt1;
+            opt1 = opt2;
+            opt2 = tmp;
+        }
+
+        label.y = opt1;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        label.y = opt2;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }*/
+
+        // check position below
+        label.x = obj.centerX - label.w * 0.5;
+        label.y = obj.y - label.h - dist * .5;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check position above
+        label.x = obj.centerX - label.w * 0.5;
+        label.y = obj.y + obj.h + dist * .5;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // check position to the left
+        label.x = obj.x - label.w - dist;
+        label.y = obj.centerY - label.h * .5;
+        evaluateCurrentPos.call(this);
+        if(curOverlap === 0) {
+            return 0;
+        }
+
+        // no overlap-free option found. Use option with minimal overlap.
+        label.x = minOverlapX;
+        label.y = minOverlapY;
+
 		this.logger.log('overlapping label: "'+obj.name+'" for ' + minOverlap + ' units.');
         return minOverlap;
     };
@@ -429,6 +541,15 @@ module.exports = (function () {
             curObj = this.objects[this.orderedObjIndices[i]];
             this.grid.unplaceObject(curObj.label);
             this.findBestLabelPositionFor(curObj);
+            this.grid.placeObject(curObj.label);
+        }
+
+        // place elliptical objects (secondary pass, regular object labels should disregard these)
+        for(var i = 0, len = this.ellipticalObjects.length; i < len; i++) {
+            curObj = this.ellipticalObjects[i];
+
+            this.grid.placeObject(curObj);
+            this.findBestLabelPositionForEllipticalObj(curObj);
             this.grid.placeObject(curObj.label);
         }
     };

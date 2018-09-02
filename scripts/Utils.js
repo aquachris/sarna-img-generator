@@ -249,7 +249,6 @@ module.exports = (function () {
      * A rectangle is defined by its bottom left corner (x,y) and its
      * width and height (w,h).
      *
-     * @returns {boolean} true if rectangles overlap
      * @returns {Number} The two rectangles' overlapping area
      */
     Utils.rectanglesOverlap = function (rect1, rect2) {
@@ -264,6 +263,7 @@ module.exports = (function () {
             top = Math.min(rect1.y + rect1.h, rect2.y + rect2.h);
             return (right - left) * (top - bottom);
         }
+        return 0;
         /*return ( rect1.x < rect2.x + rect2.w
             && rect1.x + rect1.w > rect2.x
             && rect1.y < rect2.y + rect2.h
@@ -287,16 +287,22 @@ module.exports = (function () {
 	/**
 	 * Filter the objects in a given array by whether the objects are within the bounding box or not.
 	 *
-	 * @param objects {Array} An array of objects that need to have numeric properties x and y
+	 * @param objects {Array} An array of objects that need to have numeric properties x and y, optionally w and h
 	 * @param rect {Object} The bounding box (x, y, w, h)
      * @param tolerance {Number} Bounding box tolerance, default is 5
+     * @param defaultObjWidth {Number} Default object width, defaults to 1
+     * @param defaultObjHeight {Number} Default object height, defaults to 1
      * @returns {Array} The filtered objects array
 	 */
-    Utils.clampObjects = function (objects, rect, tolerance) {
+    Utils.clampObjects = function (objects, rect, tolerance, defaultObjWidth, defaultObjHeight) {
         var ret = [];
         var tRect;
+        var objRect;
 
         tolerance === undefined ? tolerance = 5 : false;
+        defaultObjWidth === undefined ? defaultObjWidth = 1 : false;
+        defaultObjHeight === undefined ? defaultObjHeight = 1 : false;
+
         tRect = {
             x: rect.x - tolerance,
             y: rect.y - tolerance,
@@ -305,8 +311,21 @@ module.exports = (function () {
         };
 
         for(var i = 0, len = objects.length; i < len; i++) {
-            if(Utils.pointInRectangle(objects[i], tRect)) {
-                ret.push(Utils.deepCopy(objects[i]));
+            objRect = {
+                x : objects[i].x,
+                y : objects[i].y,
+                w : objects[i].w || defaultObjWidth,
+                h : objects[i].h || defaultObjHeight
+            };
+            if(objects[i].w === undefined) {
+                objRect.x -= objRect.w *.5;
+            }
+            if(objects[i].h === undefined) {
+                objRect.y -= objRect.h * .5;
+            }
+
+            if(this.rectanglesOverlap(tRect, objRect) > 0) {
+                ret.push(this.deepCopy(objects[i]));
             }
         }
         return ret;

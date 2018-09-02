@@ -41,6 +41,7 @@ module.exports = (function () {
 		var stroke, fill, rgb;
 		var labelCls;
 		var prevEdge, curEdge, curD;
+		var pxPerLy = dimensions.w / viewRect.w;
 
 		// initialize elements object
 		els = {
@@ -49,9 +50,11 @@ module.exports = (function () {
 			jumpRadius : '',
 			cutout : '',
 			nebulae : '',
+			nebulaeLabels : '',
 			systems : '',
 			systemLabels : '',
-			minimap : ''
+			minimap : '',
+			scale : ''
 		};
 
 		// create a faction entry for disputed systems
@@ -122,11 +125,15 @@ module.exports = (function () {
 		for(var i = 0, len = nebulae.length; i < len; i++) {
 			els.nebulae += '<ellipse ';
 			els.nebulae += 'data-name="'+nebulae[i].name+'" ';
-			els.nebulae += 'cx="'+nebulae[i].x+'" ';
-			els.nebulae += 'cy="'+(-nebulae[i].y)+'" ';
+			els.nebulae += 'cx="'+nebulae[i].centerX+'" ';
+			els.nebulae += 'cy="'+(-nebulae[i].centerY)+'" ';
 			els.nebulae += 'rx="'+(nebulae[i].w*.5)+'" ';
 			els.nebulae += 'ry="'+(nebulae[i].h*.5)+'" ';
 			els.nebulae += ' />\n';
+			els.nebulaeLabels += '<text x="'+nebulae[i].label.x.toFixed(3) + '" ';
+			els.nebulaeLabels += ' y="'+(-nebulae[i].label.y).toFixed(3)+'" ';
+			els.nebulaeLabels += ' filter="url(#sLblShd)" class="nebulae-label">';
+			els.nebulaeLabels += nebulae[i].name + '</text>';
 		}
 
 		for(var i = 0, len = systems.length; i < len; i++) {
@@ -157,11 +164,11 @@ module.exports = (function () {
 		}
 
 		els.jumpRadius = '<circle class="jump-radius" cx="'+(viewRect.x+viewRect.w*.5)+'" cy="'+(-viewRect.y-viewRect.h*.5)+'" r="30" />\n';
+		els.jumpRadius += '<circle class="jump-radius" cx="'+(viewRect.x+viewRect.w*.5)+'" cy="'+(-viewRect.y-viewRect.h*.5)+'" r="60" />\n';
 
 		// minimap rendering
 		if(minimapSettings) {
 
-			var pxPerLy = dimensions.w / viewRect.w;
 			var pxPerLyMinimap = minimapSettings.dimensions.w / minimapSettings.viewRect.w;
 
 			// add clip path for minimap content
@@ -312,6 +319,23 @@ module.exports = (function () {
 			els.minimap += '</g>';
 		}
 
+		// scale
+		var scaleMargin = 10 / pxPerLy;
+		els.scale = '<g transform="translate('+(viewRect.x+scaleMargin)+','+(-viewRect.y - 1.5 - scaleMargin)+')">\n';
+		els.scale += '<rect x="0" y="0" width="50" height="1.5" class="black" />\n';
+		els.scale += '<rect x="10" y="0" width="10" height="1.5" class="white" />\n';
+		els.scale += '<rect x="30" y="0" width="10" height="1.5" class="white" />\n';
+		els.scale += '<rect x="0" y="0" width="50" height="1.5" class="frame" />\n';
+		els.scale += '<text x="-0.682" y="-1" filter="url(#sLblShd)">0</text>\n'
+		els.scale += '<text x="'+(10 - 1.365)+'" y="-1" filter="url(#sLblShd)">10</text>\n'; // 1.36474609375
+		els.scale += '<text x="'+(20 - 1.365)+'" y="-1" filter="url(#sLblShd)">20</text>\n';
+		els.scale += '<text x="'+(30 - 1.365)+'" y="-1" filter="url(#sLblShd)">30</text>\n';
+		els.scale += '<text x="'+(40 - 1.365)+'" y="-1" filter="url(#sLblShd)">40</text>\n';
+		els.scale += '<text x="'+(50 - 1.365)+'" y="-1" filter="url(#sLblShd)">50</text>\n';
+		els.scale += '<text x="51" y="1.85" filter="url(#sLblShd)">LY</text>\n';
+		//els.scale += '<text x="'+(25 - 3.0975341796875)+'" y="-1" filter="url(#sLblShd)">50 LY</text>'
+		els.scale += '</g>\n'
+
 		elementsStr = '';
 		if(!!els.borders) {
 			elementsStr += '<g class="borders">'+els.borders+'</g>\n';
@@ -321,6 +345,9 @@ module.exports = (function () {
 		}
 		if(!!els.nebulae) {
 			elementsStr += '<g class="nebulae">'+els.nebulae+'</g>\n';
+		}
+		if(!!els.nebulaeLabels) {
+			elementsStr += '<g class="nebulae-labels">'+els.nebulaeLabels+'</g>\n';
 		}
 		if(!!els.jumpRadius) {
 			elementsStr += '<g class="jump-radius">'+els.jumpRadius+'</g>\n';
@@ -333,6 +360,9 @@ module.exports = (function () {
 		}
 		if(!!els.minimap) {
 			elementsStr += '<g class="minimap">'+els.minimap+'</g>\n';
+		}
+		if(!!els.scale) {
+			elementsStr += '<g class="scale">'+els.scale+'</g>\n';
 		}
 
 		tpl = tpl.replace('{WIDTH}', dimensions.w);

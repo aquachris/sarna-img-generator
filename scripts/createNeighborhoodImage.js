@@ -68,7 +68,7 @@ var main = function () {
 		h: 600
 	};
 
-    var focusedSystemName = 'Zalzangor';
+    var focusedSystemName = 'Renfield';
     for(var i = 0, len = reader.systems.length; i < len; i++) {
         if(reader.systems[i].name === focusedSystemName) {
             viewRect.x = reader.systems[i].x - 70;
@@ -235,15 +235,16 @@ var main = function () {
 		vBorder = new VoronoiBorder(logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
 
 		// clamp the systems and borders to the image's viewBox
-		clampedSystems = Utils.clampObjects(reader.systems, viewRect, 1);
+		clampedSystems = Utils.clampObjects(reader.systems, viewRect, 0);
 		clampedBorders = vBorder.generateBoundedBorders(viewRect);
-        clampedNebulae = Utils.deepCopy(reader.nebulae);
+        clampedNebulae = Utils.clampObjects(reader.nebulae, viewRect, 0);
 
 		// initiate and execute the label manager
         labelMgr = new LabelManager(logger).init(
             viewRect,
             clampedSystems,
             systemRadius,
+            clampedNebulae,
             labelDist,
             glyphSettings,
             reader.factions
@@ -261,7 +262,7 @@ var main = function () {
 			labelMgr.objects,
 			labelMgr.factions,
 			clampedBorders,
-            clampedNebulae,
+            labelMgr.ellipticalObjects,
 			{
 				dimensions : minimapDimensions,
 				viewRect : minimapViewRect,
