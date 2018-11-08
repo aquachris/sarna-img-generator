@@ -144,18 +144,21 @@ module.exports = (function () {
 				continue;
 			}
 
-            // skip Hyades Cluster (TODO) --> not a system
-            if(curRow[columnIdxMap['system']] === 'Hyades Cluster') {
-                continue;
-            }
-
 			// skip apocryphal systems for now (TODO)
 			if(curRow[columnIdxMap['status']].toLowerCase() === 'apocryphal') {
 				continue;
 			}
 
 			// read system
-			curSystem = {};
+			curSystem = {
+				radiusX: 1.0,
+				radiusY: 1.0
+			};
+			// TODO read this from SUCS file
+            if(curRow[columnIdxMap['system']] === 'Hyades Cluster') {
+				curSystem.radiusX = 5.0;
+				curSystem.radiusY = 5.0;
+            }
 			// name and status
 			curSystem.name_full = curRow[columnIdxMap['system']];
             curSystem.name = curSystem.name_full;
@@ -185,6 +188,9 @@ module.exports = (function () {
 
 			this.systems.push(curSystem);
 		}
+		this.systems.sort(function (a, b) {
+			return (b.radiusX + b.radiusY) - (a.radiusX + a.radiusY);
+		});
 
         //this.findNeighbors([30, 60]);
 

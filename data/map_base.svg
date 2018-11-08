@@ -52,7 +52,7 @@
 		text { fill: #000; font-family: Tahoma, Arial, sans-serif; font-size: 2.75px; }
 		circle.system { fill: #000; stroke: #000; stroke-width: .25 } /* default color */
 		circle.jump-radius { fill: transparent; stroke: #444; stroke-width: .25 }
-		g.nebulae ellipse { fill: rgba(0, 0, 0, .25); stroke: rgba(0, 0, 0, .65); stroke-width: .25 }
+		g.nebulae ellipse { fill: rgba(0, 0, 0, .1); stroke: rgba(0, 0, 0, .3); stroke-width: .25 }
 		text.nebulae-label { font-size: 2.5px; fill: #888; }
 		text.system-label { font-size: 2.5px; } /* text-shadow: .2px .2px 0 #eee, -.2px .2px 0 #eee, .2px -.2px 0 #eee, -.2px -.2px 0 #eee; }*/
 		text.system-label.uninhabited { fill: #555; font-style: italic; }

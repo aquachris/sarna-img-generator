@@ -156,7 +156,7 @@ module.exports = (function () {
 			//els.systems += ' data-aff="'+systems[i].col+'"';
 			els.systems += ' cx="' + systems[i].centerX.toFixed(3) + '"';
 			els.systems += ' cy="' + (-systems[i].centerY).toFixed(3) + '"';
-			els.systems += ' r="1" style="fill: '+fill+'" />\n';
+			els.systems += ' r="' + systems[i].radiusX + '" style="fill: '+fill+'" />\n';
 			els.systemLabels += '<text x="'+systems[i].label.x.toFixed(3) + '" ';
 			els.systemLabels += ' y="'+(-systems[i].label.y-systems[i].h*.25).toFixed(3)+'" ';
 			els.systemLabels += '  filter="url(#sLblShd)" class="system-label '+labelCls+'">';
