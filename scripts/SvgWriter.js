@@ -138,7 +138,6 @@ module.exports = (function () {
 
 		for(var i = 0, len = systems.length; i < len; i++) {
 			if(systems[i].col === 'DUMMY') {
-				//!Utils.pointInRectangle(parsedSystems[i], viewRect)) {
 				continue;
 			}
 			fill = '#aaa';
@@ -150,17 +149,35 @@ module.exports = (function () {
 				fill = '#aaa';
 				labelCls = 'uninhabited';
 			}
-
-			els.systems += '<circle class="system '+systems[i].col+'" ';
-			els.systems += ' data-name="'+systems[i].name+'"';
-			//els.systems += ' data-aff="'+systems[i].col+'"';
-			els.systems += ' cx="' + systems[i].centerX.toFixed(3) + '"';
-			els.systems += ' cy="' + (-systems[i].centerY).toFixed(3) + '"';
-			els.systems += ' r="' + systems[i].radiusX + '" style="fill: '+fill+'" />\n';
-			els.systemLabels += '<text x="'+systems[i].label.x.toFixed(3) + '" ';
-			els.systemLabels += ' y="'+(-systems[i].label.y-systems[i].h*.25).toFixed(3)+'" ';
-			els.systemLabels += '  filter="url(#sLblShd)" class="system-label '+labelCls+'">';
-			els.systemLabels += systems[i].name + '</text>\n';
+			
+			if(systems[i].isCluster) {
+				fill += '55';
+				els.systems += '<ellipse class="cluster '+systems[i].col+'" ';
+				els.systems += ' data-name="'+systems[i].name+'"';
+				els.systems += ' cx="' + systems[i].centerX.toFixed(3) + '"';
+				els.systems += ' cy="' + (-systems[i].centerY).toFixed(3) + '"';
+				els.systems += ' rx="' + systems[i].radiusX + '"';
+				els.systems += ' ry="' + systems[i].radiusY + '"';
+				els.systems += ' transform="rotate(' + systems[i].rotation + ', ';
+				els.systems += 		systems[i].centerX.toFixed(3) + ', ';
+				els.systems += 		(-systems[i].centerY.toFixed(3)) + ')"';
+				els.systems += ' style="fill: '+fill+'" />\n';
+				els.systemLabels += '<text x="'+systems[i].label.x.toFixed(3) + '" ';
+				els.systemLabels += ' y="'+(-systems[i].label.y-systems[i].h*.25).toFixed(3)+'" ';
+				els.systemLabels += '  filter="url(#sLblShd)" class="system-label '+labelCls+'">';
+				els.systemLabels += systems[i].name + '</text>\n';
+			} else {
+				els.systems += '<circle class="system '+systems[i].col+'" ';
+				els.systems += ' data-name="'+systems[i].name+'"';
+				//els.systems += ' data-aff="'+systems[i].col+'"';
+				els.systems += ' cx="' + systems[i].centerX.toFixed(3) + '"';
+				els.systems += ' cy="' + (-systems[i].centerY).toFixed(3) + '"';
+				els.systems += ' r="' + systems[i].radiusX + '" style="fill: '+fill+'" />\n';
+				els.systemLabels += '<text x="'+systems[i].label.x.toFixed(3) + '" ';
+				els.systemLabels += ' y="'+(-systems[i].label.y-systems[i].h*.25).toFixed(3)+'" ';
+				els.systemLabels += '  filter="url(#sLblShd)" class="system-label '+labelCls+'">';
+				els.systemLabels += systems[i].name + '</text>\n';
+			}
 		}
 
 		els.jumpRadius = '<circle class="jump-radius" cx="'+(viewRect.x+viewRect.w*.5)+'" cy="'+(-viewRect.y-viewRect.h*.5)+'" r="30" />\n';

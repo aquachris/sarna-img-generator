@@ -158,7 +158,14 @@ module.exports = (function () {
             if(curRow[columnIdxMap['system']] === 'Hyades Cluster') {
 				curSystem.radiusX = 5.0;
 				curSystem.radiusY = 5.0;
-            }
+				curSystem.rotation = 0.0;
+            } else if(curRow[columnIdxMap['system']] === 'Pleiades Cluster') {
+				curSystem.radiusX = 2.6;
+				curSystem.radiusY = 5.0;
+				curSystem.rotation = 52;
+				curRow[columnIdxMap['x']] = 214;
+				curRow[columnIdxMap['y']] = -323;
+			}
 			// name and status
 			curSystem.name_full = curRow[columnIdxMap['system']];
             curSystem.name = curSystem.name_full;
@@ -177,6 +184,8 @@ module.exports = (function () {
 			// coordinates
 			curSystem.x = curRow[columnIdxMap['x']];
 			curSystem.y = curRow[columnIdxMap['y']];
+			curSystem.rotation = curSystem.rotation || 0;
+			curSystem.isCluster = curSystem.radiusX !== 1.0 || curSystem.radiusY !== 1.0;
 
             // era affiliations
 			curSystem.affiliations = [];

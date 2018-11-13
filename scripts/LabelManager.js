@@ -9,7 +9,7 @@ module.exports = (function () {
      * on a canvas with minimal overlap.
 	 *
 	 * Algorithm idea:
-	 * - While going from right to left and greedily picking the first 0-collision label position:
+	 * While going from right to left and greedily picking the first 0-collision label position:
 	 * - try label positions directly right, above, below, left of the system, with r/1.5 units of tolerance (adjust for detected collision)
 	 * - try collision-adjusted positions right, above, below, left beyond tolerance up to maximum adjustment range
 	 * - if none of the position options can be used without collision, choose option with lowest collision value
