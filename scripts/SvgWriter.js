@@ -42,6 +42,7 @@ module.exports = (function () {
 		var labelCls;
 		var prevEdge, curEdge, curD;
 		var pxPerLy = dimensions.w / viewRect.w;
+		var htmlTpl, tplObj;
 
 		// initialize elements object
 		els = {
@@ -115,110 +116,160 @@ module.exports = (function () {
 			if(curD.length === 0) {
 				continue;
 			}
-			els.borders += '<path fill-rule="evenodd" ';
-			els.borders += 'class="border '+faction+'" ';
-			els.borders += 'style="stroke:'+factions[faction].color + ';stroke-width:1px;';
-			els.borders += 'fill:'+factions[faction].fill+';" ';
-			els.borders += 'd="'+curD+'" />\n';
+			tplObj = {
+				faction : faction,
+				stroke : factions[faction].color,
+				fill : factions[faction].fill,
+				d : curD
+			};
+			els.borders += `<path fill-rule="evenodd" class="border ${tplObj.faction}" 
+						style="stroke: ${tplObj.stroke}; stroke-width: 1px; fill: ${tplObj.fill};" 
+						d="${tplObj.d}" />\n`;
 		}
 
 		for(var i = 0, len = nebulae.length; i < len; i++) {
-			els.nebulae += '<ellipse ';
-			els.nebulae += 'data-name="'+nebulae[i].name+'" ';
-			els.nebulae += 'cx="'+nebulae[i].centerX+'" ';
-			els.nebulae += 'cy="'+(-nebulae[i].centerY)+'" ';
-			els.nebulae += 'rx="'+(nebulae[i].w*.5)+'" ';
-			els.nebulae += 'ry="'+(nebulae[i].h*.5)+'" ';
-			els.nebulae += ' />\n';
-			els.nebulaeLabels += '<text x="'+nebulae[i].label.x.toFixed(3) + '" ';
-			els.nebulaeLabels += ' y="'+(-nebulae[i].label.y).toFixed(3)+'" ';
-			els.nebulaeLabels += ' filter="url(#sLblShd)" class="nebulae-label">';
-			els.nebulaeLabels += nebulae[i].name + '</text>';
+			// nebula ellipse
+			tplObj = {
+				name : nebulae[i].name, 
+				x : nebulae[i].centerX.toFixed(3),
+				y : (-nebulae[i].centerY).toFixed(3),
+				rx : nebulae[i].w*.5,
+				ry : nebulae[i].h*.5
+			};
+			els.nebulae += `<ellipse data-name="${tplObj.name}" 
+						cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.rx}" ry="${tplObj.ry}" />\n`;
+			
+			// nebula label
+			tplObj = {
+				x : nebulae[i].label.x.toFixed(3),
+				y : (-nebulae[i].label.y).toFixed(3),
+				name : nebulae[i].name
+			};
+			els.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.y}" filter="url(#sLblShd)" class="nebulae-label">
+				${tplObj.name}</text>\n`;
 		}
 
 		for(var i = 0, len = systems.length; i < len; i++) {
 			if(systems[i].col === 'DUMMY') {
 				continue;
 			}
-			fill = '#aaa';
+			fill = '#aaaaaa';
 			if(factions.hasOwnProperty(systems[i].col)) {
 				fill = factions[systems[i].col].color;
 			}
 			labelCls = '';
 			if(systems[i].col === '' || systems[i].col === 'U' || systems[i].col === 'A') {
-				fill = '#aaa';
+				fill = '#aaaaaa';
 				labelCls = 'uninhabited';
 			}
 			
 			if(systems[i].isCluster) {
-				fill += '55';
-				els.systems += '<ellipse class="cluster '+systems[i].col+'" ';
-				els.systems += ' data-name="'+systems[i].name+'"';
-				els.systems += ' cx="' + systems[i].centerX.toFixed(3) + '"';
-				els.systems += ' cy="' + (-systems[i].centerY).toFixed(3) + '"';
-				els.systems += ' rx="' + systems[i].radiusX + '"';
-				els.systems += ' ry="' + systems[i].radiusY + '"';
-				els.systems += ' transform="rotate(' + systems[i].rotation + ', ';
-				els.systems += 		systems[i].centerX.toFixed(3) + ', ';
-				els.systems += 		(-systems[i].centerY.toFixed(3)) + ')"';
-				els.systems += ' style="fill: '+fill+'" />\n';
-				els.systemLabels += '<text x="'+systems[i].label.x.toFixed(3) + '" ';
-				els.systemLabels += ' y="'+(-systems[i].label.y-systems[i].h*.25).toFixed(3)+'" ';
-				els.systemLabels += '  filter="url(#sLblShd)" class="system-label '+labelCls+'">';
-				els.systemLabels += systems[i].name + '</text>\n';
+				// cluster ellipse
+				fill += '55'; // TODO this will not work on current IE browsers. Use rgba(r, g, b, a) syntax.
+				tplObj = {
+					faction : systems[i].col,
+					name : systems[i].name,
+					x : systems[i].centerX.toFixed(3),
+					y : (-systems[i].centerY).toFixed(3),
+					radiusX : systems[i].radiusX,
+					radiusY : systems[i].radiusY,
+					angle : systems[i].rotation,
+					fill : fill
+				};
+				els.systems += `<ellipse class="cluster ${tplObj.faction}" data-name="${tplObj.name}" 
+							cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.radiusX}" ry="${tplObj.radiusY}" 
+							transform="rotate(${tplObj.angle}, ${tplObj.x}, ${tplObj.y})" style="fill: ${tplObj.fill};" />\n`;					
+				
+				// cluster label
+				tplObj = {
+					x : systems[i].label.x.toFixed(3),
+					y : (-systems[i].label.y - systems[i].h * .25).toFixed(3),
+					labelClass : labelCls,
+					name : systems[i].name
+				};
+				els.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}" filter="url(#sLblShd)" 
+										class="system-label ${tplObj.labelClass}" >
+							${tplObj.name}
+							</text>\n`;
 			} else {
-				els.systems += '<circle class="system '+systems[i].col+'" ';
-				els.systems += ' data-name="'+systems[i].name+'"';
-				//els.systems += ' data-aff="'+systems[i].col+'"';
-				els.systems += ' cx="' + systems[i].centerX.toFixed(3) + '"';
-				els.systems += ' cy="' + (-systems[i].centerY).toFixed(3) + '"';
-				els.systems += ' r="' + systems[i].radiusX + '" style="fill: '+fill+'" />\n';
-				els.systemLabels += '<text x="'+systems[i].label.x.toFixed(3) + '" ';
-				els.systemLabels += ' y="'+(-systems[i].label.y-systems[i].h*.25).toFixed(3)+'" ';
-				els.systemLabels += '  filter="url(#sLblShd)" class="system-label '+labelCls+'">';
-				els.systemLabels += systems[i].name + '</text>\n';
+				// system circle
+				tplObj = {
+					faction : systems[i].col,
+					name : systems[i].name,
+					x : systems[i].centerX.toFixed(3),
+					y : (-systems[i].centerY).toFixed(3),
+					r : systems[i].radiusX,
+					fill : fill
+				};
+				els.systems += `<circle class="system ${tplObj.faction}" 
+							data-name="${tplObj.name}" cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r}"
+							style="fill: ${tplObj.fill}" />\n`;
+				
+				// system label
+				tplObj = {
+					x : systems[i].label.x.toFixed(3),
+					y : (-systems[i].label.y - systems[i].h*.25).toFixed(3),
+					labelClass : labelCls,
+					name : systems[i].name
+				};
+				els.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}" filter="url(#sLblShd)" 
+										class="system-label ${tplObj.labelClass}">
+							${tplObj.name}</text>\n`;
 			}
 		}
 
-		els.jumpRadius = '<circle class="jump-radius" cx="'+(viewRect.x+viewRect.w*.5)+'" cy="'+(-viewRect.y-viewRect.h*.5)+'" r="30" />\n';
-		els.jumpRadius += '<circle class="jump-radius" cx="'+(viewRect.x+viewRect.w*.5)+'" cy="'+(-viewRect.y-viewRect.h*.5)+'" r="60" />\n';
-
+		// jump radius circles
+		tplObj = {
+			x: viewRect.x + viewRect.w * .5,
+			y: -viewRect.y - viewRect.h * .5,
+			r: 30
+		};
+		els.jumpRadius = `<circle class="jump-radius" cx="${tplObj.x}" 
+					cy="${tplObj.y}" r="${tplObj.r}" />\n`;
+		tplObj.r = 60;
+		els.jumpRadius += `<circle class="jump-radius" cx="${tplObj.x}" 
+					cy="${tplObj.y}" r="${tplObj.r}" />\n`;
+		
 		// minimap rendering
 		if(minimapSettings) {
 
 			var pxPerLyMinimap = minimapSettings.dimensions.w / minimapSettings.viewRect.w;
 
 			// add clip path for minimap content
-			defsStr += '<clipPath id="minimapClip">';
-			defsStr += '<rect x="'+minimapSettings.viewRect.x+'" ';
-			defsStr += 'y="'+(-minimapSettings.viewRect.y-minimapSettings.viewRect.h)+'" ';
-			defsStr += 'width="'+minimapSettings.viewRect.w+'" ';
-			defsStr += 'height="'+minimapSettings.viewRect.h+'" />';
-			defsStr += '</clipPath>\n';
+			tplObj = {
+				x : minimapSettings.viewRect.x,
+				y : -minimapSettings.viewRect.y - minimapSettings.viewRect.h,
+				w : minimapSettings.viewRect.w,
+				h : minimapSettings.viewRect.h
+			};
+			defsStr += `<clipPath id="minimapClip">
+						<rect x="${tplObj.x}" y="${tplObj.y}" 
+								width="${tplObj.w}" height="${tplObj.h}" />
+						</clipPath>\n`;
 
 			// paint minimap
 			var minimapScale = pxPerLyMinimap / pxPerLy;
 
 			var minimapMargin = 10 / pxPerLy;
 
-			var minimapPos = {
+			tplObj = {
 				x: viewRect.x + viewRect.w - minimapSettings.viewRect.w * minimapScale - minimapMargin,
 				y: -viewRect.y - minimapSettings.viewRect.h * minimapScale - minimapMargin
 				//y: -viewRect.y - viewRect.h * .25// + viewRect.h - minimapSettings.viewRect.h * .5 * minimapScale - 10 / pxPerLy
 			}
-			els.minimap = '<g class="minimap-outer" ';
-			els.minimap += 'transform="translate('+minimapPos.x+','+minimapPos.y+') ';
-			els.minimap += 'scale('+minimapScale+')">\n';
-
+			els.minimap = `<g class="minimap-outer" transform="translate(${tplObj.x}, ${tplObj.y}) scale(${minimapScale})">\n`;
+			
 			//els.minimap += '<rect x="'+minimapSettings.viewRect.x+'" y="'+minimapSettings.viewRect.y+'" ';
-			els.minimap += '<rect x="0" y="0" ';
-			els.minimap += 'width="'+minimapSettings.viewRect.w+'" ';
-			els.minimap += 'height="'+minimapSettings.viewRect.h+'" style="fill:#fff" />\n';
-
-			els.minimap += '<g class="minimap-inner" ';
-			els.minimap += 'transform="translate('+(-minimapSettings.viewRect.x)+',';
-			els.minimap += (minimapSettings.viewRect.y+minimapSettings.viewRect.h)+')" ';
-			els.minimap += ' clip-path="url(#minimapClip)" >\n';
+			els.minimap += `<rect x="0" y="0" 
+							width="${minimapSettings.viewRect.w}" height="${minimapSettings.viewRect.h}"
+							style="fill: #fff" />\n`;
+			
+			tplObj = {
+				tX : -minimapSettings.viewRect.x,
+				tY : minimapSettings.viewRect.y + minimapSettings.viewRect.h
+			};
+			els.minimap += `<g class="minimap-inner" clip-path="url(#minimapClip)" 
+								transform="translate(${tplObj.tX}, ${tplObj.tY})">\n`;
 
 			// iterate over factions
 			for(var faction in factions) {
@@ -247,21 +298,26 @@ module.exports = (function () {
 				if(curD.length === 0) {
 					continue;
 				}
-				els.minimap += '<path fill-rule="evenodd" ';
-				els.minimap += 'class="border '+faction+'" ';
-				els.minimap += 'style="stroke:'+factions[faction].color + ';stroke-width:2px;';
-				//els.minimap += 'style="stroke-width:0;';
-				els.minimap += 'fill:'+factions[faction].fill+';" ';
-				els.minimap += 'd="'+curD+'" />\n';
+				tplObj = {
+					stroke : factions[faction].color,
+					fill : factions[faction].fill
+				};
+				els.minimap += `<path fill-rule="evenodd" class="border ${faction}" 
+								style="stroke: ${tplObj.stroke}; stroke-width:2px; fill:${tplObj.fill};"
+								d="${curD}" />\n`;
 			}
 
 			// map cutout rectangle
-			els.minimap += '<rect x="'+viewRect.x+'" y="'+(-viewRect.y-viewRect.h)+'" ';
-			els.minimap += 'width="'+viewRect.w+'" height="' + viewRect.h + '" ';
-			els.minimap += ' style="fill: none; stroke: #fff; stroke-width: 10;" />\n';
-			els.minimap += '<rect x="'+viewRect.x+'" y="'+(-viewRect.y-viewRect.h)+'" ';
-			els.minimap += 'width="'+viewRect.w+'" height="' + viewRect.h + '" ';
-			els.minimap += ' style="fill: none; stroke: #a00; stroke-width: 3;" />\n';
+			tplObj = {
+				x: viewRect.x,
+				y: -viewRect.y - viewRect.h,
+				w: viewRect.w,
+				h: viewRect.h
+			};
+			els.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}" 
+								style="fill: none; stroke: #fff; stroke-width: 10;" />\n`;
+			els.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}" 
+								style="fill: none; stroke: #a00; stroke-width: 3;" />\n`;
 
 			var focusedCoords = [viewRect.x+viewRect.w*.5,-viewRect.y-viewRect.h*.5];
 
@@ -298,14 +354,14 @@ module.exports = (function () {
 				//console.log('angle: ', angle, Utils.radToDeg(angle));
 
 				// arrow towards origin
-				els.minimap += '<g ';
-				els.minimap += 'transform="';
-				els.minimap += ' translate('+periPoint.x.toFixed(2)+','+(-periPoint.y).toFixed(2)+') ';
-				els.minimap += ' rotate('+Utils.radToDeg(angle).toFixed(2)+') ';
-				els.minimap += '">\n';
-				els.minimap += '<path d="M5,0 l50,20 l0,-40 z" ';
-				els.minimap += 'style="stroke-width: 4; stroke: #fff; fill: #a00;" />\n';
-				els.minimap += '</g>\n';
+				tplObj = {
+					tX : periPoint.x.toFixed(2),
+					tY : (-periPoint.y).toFixed(2),
+					rot : Utils.radToDeg(angle).toFixed(2)
+				};
+				els.minimap += `<g transform="translate(${tplObj.tX}, ${tplObj.tY}) rotate(${tplObj.rot})">
+									<path d="M5,0 l50,20 l0,-40z" style="stroke-width: 4; stroke: #fff; fill: #a00;" />
+								</g>`;
 
 				var textPoint = Utils.deepCopy(periPoint);
 				if(periPoint.x < minimapSettings.viewRect.x + 60) {
@@ -316,70 +372,89 @@ module.exports = (function () {
 					textPoint.x -= 200;
 				}
 				textPoint.y = Utils.clampNumber(periPoint.y, minimapSettings.viewRect.y + 60, minimapSettings.viewRect.y + minimapSettings.viewRect.h - 60);
-				els.minimap += '<text x="'+textPoint.x.toFixed(2)+'" y="'+(-textPoint.y).toFixed(2)+'" filter="url(#sLblShdMM)">\n';
-				els.minimap += '<tspan>Terra</tspan>\n';
+				tplObj = {
+					x : textPoint.x.toFixed(2),
+					y : (-textPoint.y).toFixed(2),
+					roundedDist : Math.round(pPointDist / 5) * 5,
+					distStr : ''
+				};
 				if(pPointDist >= 3) {
-					els.minimap += '<tspan x="'+textPoint.x.toFixed(2)+'" dy="1.1em" class="smaller">'+(Math.round(pPointDist/5)*5)+' LY</tspan>\n';
+					tplObj.distStr = `<tspan x="${tplObj.x}" dy="1.1em" class="smaller">${tplObj.roundedDist} LY</tspan>`;
 				}
-				els.minimap += '</text>\n';
+				
+				els.minimap += `<text x="${tplObj.x}" y="${tplObj.y}" filter="url(#sLblShdMM)">
+									<tspan>Terra</tspan>
+									${tplObj.distStr}
+								</text>\n`;
 			}
 
 			// close minimap inner container
-			els.minimap += '</g>\n';
+			els.minimap += `</g>\n`;
 
 			// frame around the minimap
-			els.minimap += '<rect x="-5" y="-5" ';//'+minimapSettings.viewRect.x+'" y="'+minimapSettings.viewRect.y+'" ';
-			els.minimap += 'width="'+(minimapSettings.viewRect.w+10)+'" ';
-			els.minimap += 'height="'+(minimapSettings.viewRect.h+10)+'" style="fill:none; stroke:rgba(0,0,0,1); stroke-width: 10" />\n';
+			tplObj = {
+				w : minimapSettings.viewRect.w + 10,
+				h : minimapSettings.viewRect.h + 10
+			};
+			els.minimap += `<rect x="-5" y="-5" width="${tplObj.w}" height="${tplObj.h}" 
+							style="fill: none; stroke: #000; stroke-width: 10;" />\n`;
 
 			// close minimap outer container
-			els.minimap += '</g>';
+			els.minimap += `</g>`;
 		}
 
 		// scale
 		var scaleMargin = 10 / pxPerLy;
-		els.scale = '<g transform="translate('+(viewRect.x+scaleMargin)+','+(-viewRect.y - 1.5 - scaleMargin)+')">\n';
-		els.scale += '<rect x="0" y="0" width="50" height="1.5" class="black" />\n';
-		els.scale += '<rect x="10" y="0" width="10" height="1.5" class="white" />\n';
-		els.scale += '<rect x="30" y="0" width="10" height="1.5" class="white" />\n';
-		els.scale += '<rect x="0" y="0" width="50" height="1.5" class="frame" />\n';
-		els.scale += '<text x="-0.682" y="-1" filter="url(#sLblShd)">0</text>\n'
-		els.scale += '<text x="'+(10 - 1.365)+'" y="-1" filter="url(#sLblShd)">10</text>\n'; // 1.36474609375
-		els.scale += '<text x="'+(20 - 1.365)+'" y="-1" filter="url(#sLblShd)">20</text>\n';
-		els.scale += '<text x="'+(30 - 1.365)+'" y="-1" filter="url(#sLblShd)">30</text>\n';
-		els.scale += '<text x="'+(40 - 1.365)+'" y="-1" filter="url(#sLblShd)">40</text>\n';
-		els.scale += '<text x="'+(50 - 1.365)+'" y="-1" filter="url(#sLblShd)">50</text>\n';
-		els.scale += '<text x="51" y="1.85" filter="url(#sLblShd)">LY</text>\n';
-		//els.scale += '<text x="'+(25 - 3.0975341796875)+'" y="-1" filter="url(#sLblShd)">50 LY</text>'
-		els.scale += '</g>\n'
+		tplObj = {
+			tX  : viewRect.x + scaleMargin,
+			tY  : -viewRect.y - 1.5 - scaleMargin,
+			t10 : 10 - 1.365,
+			t20 : 20 - 1.365,
+			t30 : 30 - 1.365,
+			t40 : 40 - 1.365,
+			t50 : 50 - 1.365
+		};
+		els.scale = `<g transform="translate(${tplObj.tX}, ${tplObj.tY})">
+						<rect x="0" y="0" width="50" height="1.5" class="black" />
+						<rect x="10" y="0" width="10" height="1.5" class="white" />
+						<rect x="30" y="0" width="10" height="1.5" class="white" />
+						<rect x="0" y="0" width="50" height="1.5" class="frame" />
+						<text x="-0.682" y="-1" filter="(#sLblShd)">0</text>
+						<text x="${tplObj.t10}" y="-1" filter="url(#sLblShd)">10</text>
+						<text x="${tplObj.t20}" y="-1" filter="url(#sLblShd)">20</text>
+						<text x="${tplObj.t30}" y="-1" filter="url(#sLblShd)">30</text>
+						<text x="${tplObj.t40}" y="-1" filter="url(#sLblShd)">40</text>
+						<text x="${tplObj.t50}" y="-1" filter="url(#sLblShd)">50</text>
+						<text x="51" y="1.85" filter="url(#sLblShd)">LY</text>
+					</g>\n`;
 
 		elementsStr = '';
 		if(!!els.borders) {
-			elementsStr += '<g class="borders">'+els.borders+'</g>\n';
+			elementsStr += `<g class="borders">${els.borders}</g>\n`;
 		}
 		if(!!els.factionLabels) {
-			elementsStr += '<g class="faction-labels">'+els.factionLabels+'</g>\n';
+			elementsStr += `<g class="faction-labels">${els.factionLabels}</g>\n`;
 		}
 		if(!!els.nebulae) {
-			elementsStr += '<g class="nebulae">'+els.nebulae+'</g>\n';
+		elementsStr += `<g class="nebulae">${els.nebulae}</g>\n`;
 		}
 		if(!!els.nebulaeLabels) {
-			elementsStr += '<g class="nebulae-labels">'+els.nebulaeLabels+'</g>\n';
+			elementsStr += `<g class="nebulae-labels">${els.nebulaeLabels}</g>\n`;
 		}
 		if(!!els.jumpRadius) {
-			elementsStr += '<g class="jump-radius">'+els.jumpRadius+'</g>\n';
+			elementsStr += `<g class="jump-radius">${els.jumpRadius}</g>\n`;
 		}
 		if(!!els.systems) {
-			elementsStr += '<g class="systems">'+els.systems+'</g>\n';
+			elementsStr += `<g class="systems">${els.systems}</g>\n`;
 		}
 		if(!!els.systemLabels) {
-			elementsStr += '<g class="system-labels">'+els.systemLabels+'</g>\n';
+			elementsStr += `<g class="system-labels">${els.systemLabels}</g>\n`;
 		}
 		if(!!els.minimap) {
-			elementsStr += '<g class="minimap">'+els.minimap+'</g>\n';
+			elementsStr += `<g class="minimap">${els.minimap}</g>\n`;
 		}
 		if(!!els.scale) {
-			elementsStr += '<g class="scale">'+els.scale+'</g>\n';
+			elementsStr += `<g class="scale">${els.scale}</g>\n`;
 		}
 
 		tpl = tpl.replace('{WIDTH}', dimensions.w);

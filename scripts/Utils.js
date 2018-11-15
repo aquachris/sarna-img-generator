@@ -93,7 +93,8 @@ module.exports = (function () {
     /**
      * Returns the intersection point of two lines.
      *
-	 * @param abc {Array} a line, represented as ret[0]
+	 * @param abc {Array} the first line, represented as a*x + b*y = c
+	 * @param efg {Array} the second line, represented as a*x + b*y = c
      * @returns {Array} The intersection point
      */
     Utils.lineLineIntersection = function (abc, efg) {
@@ -271,7 +272,8 @@ module.exports = (function () {
     };
 
 	/**
-	 * @returns o {Object} Deep copy of the provided object
+	 * @param o {Object} A JS object
+	 * @returns {Object} Deep copy of the provided object
 	 */
 	Utils.deepCopy = function (o) {
 		return JSON.parse(JSON.stringify(o));
