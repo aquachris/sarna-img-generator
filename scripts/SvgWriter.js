@@ -71,7 +71,7 @@ module.exports = (function () {
 		// change independent systems' primary color to black (from white)
 		factions['I'].color = '#000000';
 
-		// iterate over factions
+		// iterate over factions and render borders / state areas
 		for(var faction in factions) {
 			// add faction labels (if faction centroids have been set)
 			/*if(factions[faction].centerX !== undefined && factions[faction].centerY !== undefined) {
@@ -127,6 +127,7 @@ module.exports = (function () {
 						d="${tplObj.d}" />\n`;
 		}
 
+		// render nebulae
 		for(var i = 0, len = nebulae.length; i < len; i++) {
 			// nebula ellipse
 			tplObj = {
@@ -149,6 +150,7 @@ module.exports = (function () {
 				${tplObj.name}</text>\n`;
 		}
 
+		// render clusters and planetary systems
 		for(var i = 0, len = systems.length; i < len; i++) {
 			if(systems[i].col === 'DUMMY') {
 				continue;
@@ -218,7 +220,7 @@ module.exports = (function () {
 			}
 		}
 
-		// jump radius circles
+		// render jump radius circles
 		tplObj = {
 			x: viewRect.x + viewRect.w * .5,
 			y: -viewRect.y - viewRect.h * .5,
@@ -230,7 +232,7 @@ module.exports = (function () {
 		els.jumpRadius += `<circle class="jump-radius" cx="${tplObj.x}" 
 					cy="${tplObj.y}" r="${tplObj.r}" />\n`;
 		
-		// minimap rendering
+		// render the minimap
 		if(minimapSettings) {
 
 			var pxPerLyMinimap = minimapSettings.dimensions.w / minimapSettings.viewRect.w;

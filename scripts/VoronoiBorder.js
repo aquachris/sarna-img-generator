@@ -505,13 +505,13 @@ module.exports = (function () {
 	 * displayed, and also adds connecting "off-screen" lines to maintain shape closure.
 	 *
 	 * @param rect {Object} The bounding box (x, y, w, h in map space)
-     * @param tolerance {Number} Bounding box tolerance, default is 5
+     * @param tolerance {Number} Bounding box tolerance, default is 10
 	 * @returns {Object} Map of bounded borders for each faction
 	 */
 	VoronoiBorder.prototype.generateBoundedBorders = function (rect, tolerance) {
 		var curColEdges;
 		var outsideEdgePoints, outsideEdges;
-		var prevEdge, curEdge;
+		var prevEdge, curEdge, outsideEdge;
 		var prevEdgeVisible, curEdgeVisible;
 		var curLoopStartIdx;
 		var curLoopVisible;
@@ -587,7 +587,8 @@ module.exports = (function () {
                 n1: points[0],
                 n2: points[1],
                 p1: points[0],
-                p2: points[1]
+                p2: points[1],
+				isOutside: true
             };
             if(markAsFirst) {
                 newEdge.isFirstInLoop = true;
@@ -610,12 +611,15 @@ module.exports = (function () {
 			
 			var numLoops = 0;
 			for(var i = 0, len = this.borderEdges[col].length; i < len; i++) {
+				//if(i >= 31) break;
 				prevEdge = curEdge;
 				prevEdgeVisible = !!prevEdge && curEdgeVisible;
 
                 curEdge = this.borderEdges[col][i];
 				curEdgeVisible = Utils.pointInRectangle(curEdge.n1, tRect) || Utils.pointInRectangle(curEdge.n2, tRect);
-
+				
+				//if(col === 'TC' && i === 31) console.log(this.borderEdges[col][i], curEdgeVisible);
+				
 				if(curEdge.isFirstInLoop) {
                     // add 'dangling' outside edges from the previous loop
                     if(outsideEdgePoints.length > 0) {
@@ -649,6 +653,12 @@ module.exports = (function () {
                         outsideEdgeIsFirst = false;
                     }
 					newEdge = Utils.deepCopy(curEdge);
+					if(!prevEdgeVisible && curColEdges.length > 0 
+						&& !!curColEdges[curColEdges.length - 1].isOutside) {
+							outsideEdge = curColEdges[curColEdges.length - 1];
+							outsideEdge.n2 = newEdge.n1;
+							outsideEdge.p2 = newEdge.p2;
+					}
                     curColEdges.push(newEdge);
                     if(!curLoopVisible) {
 						curLoopVisible = true;

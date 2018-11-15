@@ -73,8 +73,8 @@ var main = function () {
 	//focusedSystemName = 'Ridgebrook';
     for(var i = 0, len = reader.systems.length; i < len; i++) {
         if(reader.systems[i].name === focusedSystemName) {
-            viewRect.x = reader.systems[i].x - 70;
-            viewRect.y = reader.systems[i].y - 70;
+            viewRect.x = reader.systems[i].x - viewRect.w * .5;
+            viewRect.y = reader.systems[i].y - viewRect.h * .5;
             minimapViewRect.x = reader.systems[i].x - 600;
             minimapViewRect.y = reader.systems[i].y - 300;
             break;
@@ -194,7 +194,7 @@ var main = function () {
     };
 
     // for each era ...
-	for(var eraI = 16; eraI < 20; eraI++) {
+	for(var eraI = 16; eraI < 17; eraI++) {
 	//for(var eraI = 0; eraI < reader.eras.length; eraI++) {
 		curEra = reader.eras[eraI];
 		reservedPoints = [];
