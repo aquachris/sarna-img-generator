@@ -354,7 +354,7 @@ module.exports = (function () {
                 continue;
             }
             curLoopStartIdx = -1;
-			oriEdges = JSON.parse(JSON.stringify(this.borderEdges[col]));
+			oriEdges = Utils.deepCopy(this.borderEdges[col]);
             for(var i = 0, len = this.borderEdges[col].length; i < len; i++) {
                 curEdge = this.borderEdges[col][i];
                 if(curEdge.isFirstInLoop) {
@@ -406,12 +406,13 @@ module.exports = (function () {
 
 				// case 2: the angle between the two vectors is > 90°
 				} else {
-					// case 2a: the angle between curEdge and nextEdge is < 90*
+					// case 2a: the angle between curEdge and nextEdge is < 90°
                     // TODO there must be a more elegant way to determine this
 					if(Utils.distance(curO.x, curO.y, centerPoint.x, centerPoint.y) < Utils.distance(curO.x, curO.y, centerPoint.x + perp2[0], centerPoint.y + perp2[1])) {
-						adjVector = [p2.x - p1.x + p2.x - p3.x, p2.y - p1.y + p2.y - p3.y];
+						//adjVector = [p2.x - p1.x + p2.x - p3.x, p2.y - p1.y + p2.y - p3.y];
+						adjVector = [perp1[0] + perp2[0], perp1[1] + perp2[1]];
 
-					// case 2b: the angle between curEdge and nextEdge is > 180*
+					// case 2b: the angle between curEdge and nextEdge is > 180°
 					} else {
 						adjVector = [p1.x - p2.x + p3.x - p2.x, p1.y - p2.y + p3.y - p2.y];
 					}
@@ -419,7 +420,7 @@ module.exports = (function () {
 				}
 				// scale the vector to be pullDist units long
 				//Utils.normalizeVector2d(adjVector);
-				Utils.scaleVector2d(adjVector, pullDist * extFactor);
+				Utils.scaleVector2d(adjVector, pullDist /* *extFactor */);
 
 				// move the point in question
 				curEdge.n2.x = nextEdge.n1.x = oriEdges[i].n2.x + adjVector[0];
@@ -617,9 +618,7 @@ module.exports = (function () {
 
                 curEdge = this.borderEdges[col][i];
 				curEdgeVisible = Utils.pointInRectangle(curEdge.n1, tRect) || Utils.pointInRectangle(curEdge.n2, tRect);
-				
-				//if(col === 'TC' && i === 31) console.log(this.borderEdges[col][i], curEdgeVisible);
-				
+
 				if(curEdge.isFirstInLoop) {
                     // add 'dangling' outside edges from the previous loop
                     if(outsideEdgePoints.length > 0) {
@@ -654,7 +653,8 @@ module.exports = (function () {
                     }
 					newEdge = Utils.deepCopy(curEdge);
 					if(!prevEdgeVisible && curColEdges.length > 0 
-						&& !!curColEdges[curColEdges.length - 1].isOutside) {
+						&& !!curColEdges[curColEdges.length - 1].isOutside
+						&& !curEdge.isFirstInLoop) {
 							outsideEdge = curColEdges[curColEdges.length - 1];
 							outsideEdge.n2 = newEdge.n1;
 							outsideEdge.p2 = newEdge.p2;

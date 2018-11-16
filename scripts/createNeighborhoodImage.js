@@ -70,6 +70,7 @@ var main = function () {
 
     var focusedSystemName = 'Janina';
 	focusedSystemName = 'Desolate Plains';
+	//focusedSystemName = 'Terra';
 	//focusedSystemName = 'Ridgebrook';
     for(var i = 0, len = reader.systems.length; i < len; i++) {
         if(reader.systems[i].name === focusedSystemName) {
@@ -80,93 +81,6 @@ var main = function () {
             break;
         }
     }
-
-
-    // Spica
-    /*viewRect.x = 92.538 - 70;
-    viewRect.y = -237.625 - 70;
-	minimapViewRect.x = 92.538 - 600;
-	minimapViewRect.y = -237.625 - 300;*/
-	/*
-    // Stein's Folly
-    viewRect.x = 159.739 - 70;
-    viewRect.y = -200.359 - 70;
-    // Victoria
-    viewRect.x = 225.660 - 70;
-    viewRect.y = -176.869 - 70;
-    // Torrence
-    viewRect.x = 289.510 - 70;
-    viewRect.y = -130.880 - 70;
-    // Covington
-    viewRect.x = 360.339 - 70;
-    viewRect.y = -149.712 - 70;
-    // Waipahu
-    viewRect.x = 426.507 - 70;
-    viewRect.y = -187.968 - 70;
-    // Jaboatao
-    viewRect.x = 481.307 - 70;
-    viewRect.y = -212.055 - 70;
-    // Sierra
-    viewRect.x = -411.234 - 70;
-    viewRect.y = -111.752 - 70;
-	*/
-    // Luthien
-    /*viewRect.x = 167.621 - 70;
-    viewRect.y = 250.493 - 70;
-	minimapViewRect.x = 167.621 - 600;
-	minimapViewRect.y = 250.493 - 300;*/
-	// Strana Mechty
-	/*viewRect.x = 32.300 - 70;
-	viewRect.y = 1767.809 - 70;
-	minimapViewRect.x = 32.300 - 600;
-	minimapViewRect.y = 1767.809 - 300;*/
-	// Tortuga Prime
-	/*viewRect.x = 664.72 - 70;
-	viewRect.y = -233.49 - 70;
-	minimapViewRect.x = 664.72 - 600;
-	minimapViewRect.y = -233.49 - 300;*/
-    // Tharkad
-    /*viewRect.x = -212.99 - 70;
-    viewRect.y = 151.77 - 70;
-    minimapViewRect.x = -212.99 - 600;
-	minimapViewRect.y = 151.77 - 300;*/
-    // Atreus
-    /*viewRect.x = -191.07 - 70;
-    viewRect.y = -163.78 - 70;
-    minimapViewRect.x = -191.07 - 600;
-	minimapViewRect.y = -163.78 - 300;*/
-    // Farstar
-    /*viewRect.x = 412.98 - 70;
-    viewRect.y = 443.52 - 70;
-    minimapViewRect.x = 412.98 - 600;
-	minimapViewRect.y = 443.52 - 300;*/
-    // Algenib
-    /*viewRect.x = -438.6 - 70;
-    viewRect.y = -379.18 - 70;
-    minimapViewRect.x = -438.6 - 600;
-	minimapViewRect.y = -379.18 - 300;*/
-    // Rockwellawan
-    /*viewRect.x = 67.08 - 70;
-    viewRect.y = -483.21 - 70;
-    minimapViewRect.x = 67.08 - 600;
-	minimapViewRect.y = -483.21 - 300;*/
-    // Taurus
-    //viewRect.x = 191.38 - 70;
-    //viewRect.y = -391 - 70;
-    //minimapViewRect.x = 191.38 - 600;
-	//minimapViewRect.y = -391 - 300;
-    // Outer Space
-    /*viewRect.x = -700 - 70;
-    viewRect.y = -500 - 70;
-    minimapViewRect.x = -700 - 600;
-	minimapViewRect.y = -500 - 300;*/
-
-    /*viewRect = {
-        x: -650,
-        y: -650,
-        w: 1300,
-        h: 1300
-    };*/
 
     // generate additional points randomly
     var pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
