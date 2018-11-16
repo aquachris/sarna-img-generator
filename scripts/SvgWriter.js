@@ -122,8 +122,8 @@ module.exports = (function () {
 				fill : factions[faction].fill,
 				d : curD
 			};
-			els.borders += `<path fill-rule="evenodd" class="border ${tplObj.faction}" 
-						style="stroke: ${tplObj.stroke}; stroke-width: 1px; fill: ${tplObj.fill};" 
+			els.borders += `<path fill-rule="evenodd" class="border ${tplObj.faction}"
+						style="stroke: ${tplObj.stroke}; stroke-width: 1px; fill: ${tplObj.fill};"
 						d="${tplObj.d}" />\n`;
 		}
 
@@ -131,15 +131,29 @@ module.exports = (function () {
 		for(var i = 0, len = nebulae.length; i < len; i++) {
 			// nebula ellipse
 			tplObj = {
-				name : nebulae[i].name, 
+				name : nebulae[i].name,
 				x : nebulae[i].centerX.toFixed(3),
 				y : (-nebulae[i].centerY).toFixed(3),
 				rx : nebulae[i].w*.5,
 				ry : nebulae[i].h*.5
 			};
-			els.nebulae += `<ellipse data-name="${tplObj.name}" 
-						cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.rx}" ry="${tplObj.ry}" />\n`;
-			
+			/*els.nebulae += `<ellipse data-name="${tplObj.name}"
+						cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.rx}" ry="${tplObj.ry}" />\n`;*/
+
+			for(var j = 0; j < nebulae[i].points.length; j++) {
+				if(j === 0) {
+					curD = 'M';
+				} else {
+					curD += ' L';
+				}
+				curD += nebulae[i].points[j][0].toFixed(3) + ',';
+				curD += (-nebulae[i].points[j][1]).toFixed(3);
+			}
+			curD += 'z';
+			els.nebulae += `<path fill-rule="evenodd" class="nebula"
+						data-name="${tplObj.name}" style="stroke: #000; stroke-width: 0.25px; fill: #0007;"
+						d="${curD}" />\n`;
+
 			// nebula label
 			tplObj = {
 				x : nebulae[i].label.x.toFixed(3),
@@ -164,7 +178,7 @@ module.exports = (function () {
 				fill = '#aaaaaa';
 				labelCls = 'uninhabited';
 			}
-			
+
 			if(systems[i].isCluster) {
 				// cluster ellipse
 				fill += '55'; // TODO this will not work on current IE browsers. Use rgba(r, g, b, a) syntax.
@@ -178,10 +192,10 @@ module.exports = (function () {
 					angle : systems[i].rotation,
 					fill : fill
 				};
-				els.systems += `<ellipse class="cluster ${tplObj.faction}" data-name="${tplObj.name}" 
-							cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.radiusX}" ry="${tplObj.radiusY}" 
-							transform="rotate(${tplObj.angle}, ${tplObj.x}, ${tplObj.y})" style="fill: ${tplObj.fill};" />\n`;					
-				
+				els.systems += `<ellipse class="cluster ${tplObj.faction}" data-name="${tplObj.name}"
+							cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.radiusX}" ry="${tplObj.radiusY}"
+							transform="rotate(${tplObj.angle}, ${tplObj.x}, ${tplObj.y})" style="fill: ${tplObj.fill};" />\n`;
+
 				// cluster label
 				tplObj = {
 					x : systems[i].label.x.toFixed(3),
@@ -189,7 +203,7 @@ module.exports = (function () {
 					labelClass : labelCls,
 					name : systems[i].name
 				};
-				els.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}" filter="url(#sLblShd)" 
+				els.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}" filter="url(#sLblShd)"
 										class="system-label ${tplObj.labelClass}" >
 							${tplObj.name}
 							</text>\n`;
@@ -203,10 +217,10 @@ module.exports = (function () {
 					r : systems[i].radiusX,
 					fill : fill
 				};
-				els.systems += `<circle class="system ${tplObj.faction}" 
+				els.systems += `<circle class="system ${tplObj.faction}"
 							data-name="${tplObj.name}" cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r}"
 							style="fill: ${tplObj.fill}" />\n`;
-				
+
 				// system label
 				tplObj = {
 					x : systems[i].label.x.toFixed(3),
@@ -214,7 +228,7 @@ module.exports = (function () {
 					labelClass : labelCls,
 					name : systems[i].name
 				};
-				els.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}" filter="url(#sLblShd)" 
+				els.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}" filter="url(#sLblShd)"
 										class="system-label ${tplObj.labelClass}">
 							${tplObj.name}</text>\n`;
 			}
@@ -226,12 +240,12 @@ module.exports = (function () {
 			y: -viewRect.y - viewRect.h * .5,
 			r: 30
 		};
-		els.jumpRadius = `<circle class="jump-radius" cx="${tplObj.x}" 
+		els.jumpRadius = `<circle class="jump-radius" cx="${tplObj.x}"
 					cy="${tplObj.y}" r="${tplObj.r}" />\n`;
 		tplObj.r = 60;
-		els.jumpRadius += `<circle class="jump-radius" cx="${tplObj.x}" 
+		els.jumpRadius += `<circle class="jump-radius" cx="${tplObj.x}"
 					cy="${tplObj.y}" r="${tplObj.r}" />\n`;
-		
+
 		// render the minimap
 		if(minimapSettings) {
 
@@ -245,7 +259,7 @@ module.exports = (function () {
 				h : minimapSettings.viewRect.h
 			};
 			defsStr += `<clipPath id="minimapClip">
-						<rect x="${tplObj.x}" y="${tplObj.y}" 
+						<rect x="${tplObj.x}" y="${tplObj.y}"
 								width="${tplObj.w}" height="${tplObj.h}" />
 						</clipPath>\n`;
 
@@ -260,17 +274,17 @@ module.exports = (function () {
 				//y: -viewRect.y - viewRect.h * .25// + viewRect.h - minimapSettings.viewRect.h * .5 * minimapScale - 10 / pxPerLy
 			}
 			els.minimap = `<g class="minimap-outer" transform="translate(${tplObj.x}, ${tplObj.y}) scale(${minimapScale})">\n`;
-			
+
 			//els.minimap += '<rect x="'+minimapSettings.viewRect.x+'" y="'+minimapSettings.viewRect.y+'" ';
-			els.minimap += `<rect x="0" y="0" 
+			els.minimap += `<rect x="0" y="0"
 							width="${minimapSettings.viewRect.w}" height="${minimapSettings.viewRect.h}"
 							style="fill: #fff" />\n`;
-			
+
 			tplObj = {
 				tX : -minimapSettings.viewRect.x,
 				tY : minimapSettings.viewRect.y + minimapSettings.viewRect.h
 			};
-			els.minimap += `<g class="minimap-inner" clip-path="url(#minimapClip)" 
+			els.minimap += `<g class="minimap-inner" clip-path="url(#minimapClip)"
 								transform="translate(${tplObj.tX}, ${tplObj.tY})">\n`;
 
 			// iterate over factions
@@ -304,7 +318,7 @@ module.exports = (function () {
 					stroke : factions[faction].color,
 					fill : factions[faction].fill
 				};
-				els.minimap += `<path fill-rule="evenodd" class="border ${faction}" 
+				els.minimap += `<path fill-rule="evenodd" class="border ${faction}"
 								style="stroke: ${tplObj.stroke}; stroke-width:2px; fill:${tplObj.fill};"
 								d="${curD}" />\n`;
 			}
@@ -316,9 +330,9 @@ module.exports = (function () {
 				w: viewRect.w,
 				h: viewRect.h
 			};
-			els.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}" 
+			els.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}"
 								style="fill: none; stroke: #fff; stroke-width: 10;" />\n`;
-			els.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}" 
+			els.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}"
 								style="fill: none; stroke: #a00; stroke-width: 3;" />\n`;
 
 			var focusedCoords = [viewRect.x+viewRect.w*.5,-viewRect.y-viewRect.h*.5];
@@ -383,7 +397,7 @@ module.exports = (function () {
 				if(pPointDist >= 3) {
 					tplObj.distStr = `<tspan x="${tplObj.x}" dy="1.1em" class="smaller">${tplObj.roundedDist} LY</tspan>`;
 				}
-				
+
 				els.minimap += `<text x="${tplObj.x}" y="${tplObj.y}" filter="url(#sLblShdMM)">
 									<tspan>Terra</tspan>
 									${tplObj.distStr}
@@ -398,7 +412,7 @@ module.exports = (function () {
 				w : minimapSettings.viewRect.w + 10,
 				h : minimapSettings.viewRect.h + 10
 			};
-			els.minimap += `<rect x="-5" y="-5" width="${tplObj.w}" height="${tplObj.h}" 
+			els.minimap += `<rect x="-5" y="-5" width="${tplObj.w}" height="${tplObj.h}"
 							style="fill: none; stroke: #000; stroke-width: 10;" />\n`;
 
 			// close minimap outer container

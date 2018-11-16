@@ -34,6 +34,54 @@ module.exports = (function () {
     };
 
     /**
+     * Calculate an approximation for the perimeter (or "circumference") of
+     * an ellipse.
+     * The calculation is done using Ramanujan's approximation #2
+     * @see https://www.mathsisfun.com/geometry/ellipse-perimeter.html
+     *
+     * @param {ellipse} The ellipse in the format { w: <width>, h: <height> }
+     * @returns {Number} The approximated perimeter length
+     */
+    Utils.ellipseCircumference = function (ellipse) {
+        var a, b;
+        a = Math.max(ellipse.w*.5, ellipse.h*.5);
+        b = Math.min(ellipse.w*.5, ellipse.h*.5);
+        return Math.PI * (3 * (a + b) - Math.sqrt((3*a + b) * (a + 3*b)) );
+    };
+
+    /**
+     * Get the point of an ellipse at a given angle.
+     * @see https://math.stackexchange.com/questions/22064/calculating-a-point-that-lies-on-an-ellipse-given-an-angle
+     *
+     * @param {ellipse} The ellipse
+     * @param {angle} The angle in radians
+     * @returns {Array} The point on the ellipse at the given angle
+     */
+    Utils.pointOnEllipseWithAngle = function (ellipse, angle) {
+        var a = ellipse.w * .5;
+        var b = ellipse.h * .5;
+        var p = [0,0];
+        var tanPhi = Math.tan(angle);
+
+        if(angle === Math.PI *.5) { // 90°
+            p[1] = b;
+        } else if(angle === Math.PI * 1.5) { // 270°
+            p[1] = -b;
+        } else if(angle > Math.PI * .5 && angle < Math.PI * 1.5) {
+            p[0] = -(a*b) / Math.sqrt(b*b + a*a * tanPhi*tanPhi);
+            p[1] = -(a*b*tanPhi) / Math.sqrt(b*b + a*a * tanPhi*tanPhi);
+        } else {
+            p[0] = a*b / Math.sqrt(b*b + a*a * tanPhi*tanPhi);
+            p[1] = a*b*tanPhi / Math.sqrt(b*b + a*a * tanPhi*tanPhi);
+        }
+
+        p[0] += ellipse.centerX;
+        p[1] += ellipse.centerY;
+
+        return p;
+    };
+
+    /**
      * Calculates the angle between two vectors.
      *
      * @param v1 {Array} a 2D vector

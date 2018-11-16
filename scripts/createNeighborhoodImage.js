@@ -5,6 +5,7 @@ var Utils = require('./Utils.js');
 var SystemsReader = require('./SystemsReader.js');
 var PoissonDisc = require('./PoissonDisc.js');
 var VoronoiBorder = require('./VoronoiBorder.js');
+var NebulaRandomizer = require('./NebulaRandomizer.js');
 var LabelManager = require('./LabelManager.js');
 var SvgWriter = require('./SvgWriter.js');
 
@@ -147,13 +148,16 @@ var main = function () {
             }
 		}
 
+        // randomize nebulae
+        var nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
+
 		// generate the voronoi diagram to find borders
-		vBorder = new VoronoiBorder(logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
+		var vBorder = new VoronoiBorder(logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
 
 		// clamp the systems and borders to the image's viewBox
 		clampedSystems = Utils.clampObjects(reader.systems, viewRect, 0);
 		clampedBorders = vBorder.generateBoundedBorders(viewRect);
-        clampedNebulae = Utils.clampObjects(reader.nebulae, viewRect, 0);
+        clampedNebulae = Utils.clampObjects(nebulaeRandomizer.nebulae, viewRect, 0);
 
 		// initiate and execute the label manager
         labelMgr = new LabelManager(logger).init(
