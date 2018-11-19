@@ -128,6 +128,7 @@ module.exports = (function () {
 		}
 
 		// render nebulae
+		var prevPoint, curPoint;
 		for(var i = 0, len = nebulae.length; i < len; i++) {
 			// nebula ellipse
 			tplObj = {
@@ -140,19 +141,28 @@ module.exports = (function () {
 			/*els.nebulae += `<ellipse data-name="${tplObj.name}"
 						cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.rx}" ry="${tplObj.ry}" />\n`;*/
 
-			for(var j = 0; j < nebulae[i].points.length; j++) {
+			curD = '';
+			for(var j = 0, jlen = nebulae[i].points.length; j <= jlen; j++) {
+				curPoint = nebulae[i].points[j % jlen];
 				if(j === 0) {
-					curD = 'M';
+					curD += 'M' + curPoint.x.toFixed(2) + ',' + (-curPoint.y).toFixed(2);
 				} else {
-					curD += ' L';
+					prevPoint = nebulae[i].points[j-1];
+					curD += ' C' + prevPoint.c2.x.toFixed(2) + ',' + (-prevPoint.c2.y).toFixed(2);
+					curD += ' ' + curPoint.c1.x.toFixed(2) + ',' + (-curPoint.c1.y).toFixed(2);
+					curD += ' ' + curPoint.x.toFixed(2) + ',' + (-curPoint.y).toFixed(2);
 				}
-				curD += nebulae[i].points[j][0].toFixed(3) + ',';
-				curD += (-nebulae[i].points[j][1]).toFixed(3);
+				//curD += nebulae[i].points[j].x.toFixed(3) + ',';
+				//curD += (-nebulae[i].points[j].y).toFixed(3);
 			}
-			curD += 'z';
+			
 			els.nebulae += `<path fill-rule="evenodd" class="nebula"
-						data-name="${tplObj.name}" style="stroke: #000; stroke-width: 0.25px; fill: #0007;"
+						data-name="${tplObj.name}"
 						d="${curD}" />\n`;
+						
+			// style="stroke: #000; stroke-width: 0.25px; fill: #0007;"
+			/*els.nebulae += `<ellipse data-name="${tplObj.name}"
+						cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.rx}" ry="${tplObj.ry}" />\n`;*/
 
 			// nebula label
 			tplObj = {
@@ -160,7 +170,7 @@ module.exports = (function () {
 				y : (-nebulae[i].label.y).toFixed(3),
 				name : nebulae[i].name
 			};
-			els.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.y}" filter="url(#sLblShd)" class="nebulae-label">
+			els.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.y}" class="nebulae-label">
 				${tplObj.name}</text>\n`;
 		}
 
@@ -203,7 +213,7 @@ module.exports = (function () {
 					labelClass : labelCls,
 					name : systems[i].name
 				};
-				els.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}" filter="url(#sLblShd)"
+				els.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
 										class="system-label ${tplObj.labelClass}" >
 							${tplObj.name}
 							</text>\n`;
@@ -228,7 +238,7 @@ module.exports = (function () {
 					labelClass : labelCls,
 					name : systems[i].name
 				};
-				els.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}" filter="url(#sLblShd)"
+				els.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}" 
 										class="system-label ${tplObj.labelClass}">
 							${tplObj.name}</text>\n`;
 			}
@@ -398,7 +408,7 @@ module.exports = (function () {
 					tplObj.distStr = `<tspan x="${tplObj.x}" dy="1.1em" class="smaller">${tplObj.roundedDist} LY</tspan>`;
 				}
 
-				els.minimap += `<text x="${tplObj.x}" y="${tplObj.y}" filter="url(#sLblShdMM)">
+				els.minimap += `<text x="${tplObj.x}" y="${tplObj.y}">
 									<tspan>Terra</tspan>
 									${tplObj.distStr}
 								</text>\n`;
@@ -435,13 +445,13 @@ module.exports = (function () {
 						<rect x="10" y="0" width="10" height="1.5" class="white" />
 						<rect x="30" y="0" width="10" height="1.5" class="white" />
 						<rect x="0" y="0" width="50" height="1.5" class="frame" />
-						<text x="-0.682" y="-1" filter="(#sLblShd)">0</text>
-						<text x="${tplObj.t10}" y="-1" filter="url(#sLblShd)">10</text>
-						<text x="${tplObj.t20}" y="-1" filter="url(#sLblShd)">20</text>
-						<text x="${tplObj.t30}" y="-1" filter="url(#sLblShd)">30</text>
-						<text x="${tplObj.t40}" y="-1" filter="url(#sLblShd)">40</text>
-						<text x="${tplObj.t50}" y="-1" filter="url(#sLblShd)">50</text>
-						<text x="51" y="1.85" filter="url(#sLblShd)">LY</text>
+						<text x="-0.682" y="-1">0</text>
+						<text x="${tplObj.t10}" y="-1">10</text>
+						<text x="${tplObj.t20}" y="-1">20</text>
+						<text x="${tplObj.t30}" y="-1">30</text>
+						<text x="${tplObj.t40}" y="-1">40</text>
+						<text x="${tplObj.t50}" y="-1">50</text>
+						<text x="51" y="1.85">LY</text>
 					</g>\n`;
 
 		elementsStr = '';

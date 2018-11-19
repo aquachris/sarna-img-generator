@@ -52,18 +52,42 @@
 		text { fill: #000; font-family: Tahoma, Arial, sans-serif; font-size: 2.75px; }
 		circle.system { fill: #000; stroke: #000; stroke-width: .25 } /* default color */
 		ellipse.cluster { fill: #000; stroke: #888; stroke-width: .1 } /* default color */
-		circle.jump-radius { fill: transparent; stroke: #444; stroke-width: .25 }
+		circle.jump-radius { fill: transparent; stroke: rgba(80,80,80,.5); stroke-width: .25 }
 		g.nebulae ellipse { fill: rgba(0, 0, 0, .1); stroke: rgba(0, 0, 0, .3); stroke-width: .25 }
+		g.nebulae path { fill: rgba(0, 0, 0, .1); stroke: rgba(0, 0, 0, .3); stroke-width: .25 }
 		text.nebulae-label { font-size: 2.5px; fill: #888; }
-		text.system-label { font-size: 2.5px; } /* text-shadow: .2px .2px 0 #eee, -.2px .2px 0 #eee, .2px -.2px 0 #eee, -.2px -.2px 0 #eee; }*/
+		text.system-label { font-size: 2.5px; text-shadow: 1px 1px 0 #fff, -1px 1px 0 #fff, 1px -1px 0 #fff, -1px -1px 0 #fff; }
 		text.system-label.uninhabited { fill: #555; font-style: italic; }
 		text.faction-label { fill: #aaa; font-size: 6px; font-style: italic; font-weight: bold; text-shadow: .05em .05em 0 #eee, -.05em .05em 0 #eee, .05em -.05em 0 #eee, -.05em -.05em 0 #eee; }
-		.minimap-outer text { font-size: 60px; }
+		.minimap-outer text { font-size: 60px; text-shadow: 1px 1px 0 #fff, -1px 1px 0 #fff, 1px -1px 0 #fff, -1px -1px 0 #fff; }
 		.minimap-outer text .smaller { font-size: 45px; }
 		path { stroke-linejoin: round; stroke-linecap: round; }
 		.scale rect.black { stroke-width: 0; fill: #000; }
 		.scale rect.white { stroke-width: 0; fill: #fff; }
 		.scale rect.frame { stroke: #000; stroke-width: 0.4375; fill: none; }
+		.scale text { text-shadow: 1px 1px 0 #fff, -1px 1px 0 #fff, 1px -1px 0 #fff, -1px -1px 0 #fff; }
+		
+		/* IE10+ specific styles */
+		@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+			text.system-label, 
+			text.nebulae-label, 
+			.minimap-outer text,
+			.scale text { filter: url('#sLblShd') }
+		}
+		
+		/* IE Edge specific styles */
+		@supports (-ms-ime-align:auto) {
+			text.system-label, 
+			text.nebulae-label, 
+			.minimap-outer text,
+			.scale text { filter: url('#sLblShd') }
+		}
+		@supports (-ms-accelerator:true) {
+			text.system-label, 
+			text.nebulae-label, 
+			.minimap-outer text,
+			.scale text { filter: url('#sLblShd') }
+		}
 	</style>
 
 	{ELEMENTS}
