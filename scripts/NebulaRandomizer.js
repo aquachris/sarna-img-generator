@@ -2,7 +2,8 @@ module.exports = (function () {
     'use strict';
 
     var Utils = require('./Utils.js');
-
+	var seedrandom = require('seedrandom');
+	
     /**
      * An instance of this class generates a set of randomized points around the circumference
 	 * of an elliptical (nebula) object in order to generate a cloud-like object to display.
@@ -30,10 +31,12 @@ module.exports = (function () {
         var startAngle;
         var angleInDeg, angleInRad;
 		var distToCenter;
+		var rng;
 
         for(var i = 0, len = this.nebulae.length; i < len; i++) {
             curNebula = this.nebulae[i];
             curNebula.points = [];
+			rng = seedrandom(curNebula.name);
             // calculate approximated ellipse circumference
 			curNebula.circumference = Utils.ellipseCircumference(curNebula);
 			
@@ -45,7 +48,7 @@ module.exports = (function () {
 			//numPoints = 20;
 			//numPoints = 30;
 
-            startAngle = Math.floor(Math.random()*360);
+            startAngle = Math.floor(rng()*360);
             angleInDeg = 0;
             angleInRad = 0;
             for(var j = 0; j < numPoints; j++) {
@@ -59,12 +62,12 @@ module.exports = (function () {
 				});
             }
 			
-			this.randomizePoints(curNebula);
+			this.randomizePoints(curNebula, rng);
 			this.generateControlPoints(curNebula);
         }
 	};
 	
-	NebulaRandomizer.prototype.randomizePoints = function (nebula) {
+	NebulaRandomizer.prototype.randomizePoints = function (nebula, rng) {
 		var prevI, nextI;
 		var p1, p2, p3;
 		var dist;
@@ -91,10 +94,10 @@ module.exports = (function () {
 							Utils.distance(p2.x, p2.y, p3.x, p3.y));
 			
 			// deviate in a random x and y direction
-			deviation = [Math.random(), Math.random()];
+			deviation = [rng(), rng()];
 			
 			// scale deviation
-			Utils.scaleVector2d(deviation, (Math.random() - 0.5) * dist * .75);
+			Utils.scaleVector2d(deviation, (rng() - 0.5) * dist * .975);
 			
 			nebula.points.push({
 				x: p2.x + deviation[0],
@@ -116,7 +119,6 @@ module.exports = (function () {
         var tension = .35;//.65;
 		
 		
-		// visit each point
 		for(var i = 0, len = nebula.points.length; i < len; i++) {
 			prevI = i - 1;
 			if(prevI < 0) {
@@ -150,12 +152,6 @@ module.exports = (function () {
 				x: p2.x + fb * w,
 				y: p2.y + fb * h
 			};
-			
-			// randomize
-			/*p2.c1.x += Math.random() * dist12 * .25 - dist12 * .125;
-			p2.c1.y += Math.random() * dist12 * .25 - dist12 * .125;
-			p2.c2.x += Math.random() * dist23 * .25 - dist23 * .125;
-			p2.c2.y += Math.random() * dist23 * .25 - dist23 * .125;*/
 		}
     };
 

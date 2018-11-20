@@ -203,7 +203,7 @@ module.exports = (function () {
 		minOverlap = Infinity;
 
 		var bestPositions = {
-			"Hyades Cluster" : { labelPos: 'center right' },
+			"Hyades Cluster" : { labelPos: 'center right', dx: 15, dy: -4, connector: true },
 			"Ishtar": { labelPos: 'center left' },
 			"Jansen's Hold" : { labelPos: 'top center',  dx: -3 },
 			"MacLeod's Land" : { labelPos : 'top center' },
@@ -233,6 +233,7 @@ module.exports = (function () {
 			} else {
 				label.x = obj.centerX - label.w * 0.5 + forceDx;
 			}
+			label.connector = !!bestPositions[obj.name].connector;
 			evaluateCurrentPos.call(this);
 
 			if(curOverlap > 0) {

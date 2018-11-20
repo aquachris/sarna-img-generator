@@ -110,7 +110,7 @@ module.exports = (function () {
 		var systemsSheet = this.workbook[1];
         //var nebulaeSheet = this.workbook[3];
 
-		var curRow, curSystem, curAffiliation;
+		var curRow, curSystem, curAffiliation, curScale;
 		// sort out headers
 		var headerRowIdx = 2; // TODO magic number
 		var columnIdxMap = {}; // map of column titles (lowercase) to column indices
@@ -123,7 +123,7 @@ module.exports = (function () {
 
         // column index map
 		for(var i = 0, len = curRow.length; i < len; i++) {
-            if(i < 5) { // TODO magic number
+            if(i < 8) { // TODO magic number
                 columnIdxMap[(curRow[i]+'').toLowerCase()] = i;
             } else {
                 columnIdxMap['era_'+this.eras.length] = i;
@@ -160,11 +160,11 @@ module.exports = (function () {
 				curSystem.radiusY = 5.0;
 				curSystem.rotation = 0.0;
             } else if(curRow[columnIdxMap['system']] === 'Pleiades Cluster') {
-				curSystem.radiusX = 2.6;
+				/*curSystem.radiusX = 2.6;
 				curSystem.radiusY = 5.0;
 				curSystem.rotation = 52;
 				curRow[columnIdxMap['x']] = 214;
-				curRow[columnIdxMap['y']] = -323;
+				curRow[columnIdxMap['y']] = -323;*/
 			}
 			// name and status
 			curSystem.name_full = curRow[columnIdxMap['system']];
@@ -184,7 +184,18 @@ module.exports = (function () {
 			// coordinates
 			curSystem.x = curRow[columnIdxMap['x']];
 			curSystem.y = curRow[columnIdxMap['y']];
-			curSystem.rotation = curSystem.rotation || 0;
+			// scale and rotation
+			curScale = (curRow[columnIdxMap['scale']] || '1,1,0').split(',');
+			if(curScale.length === 0 || curScale[0].trim() === '') {
+				curScale = [1, 1, 0];
+			} else if(curScale.length === 1) {
+				curScale = [curScale[0], curScale[0], 0];
+			} else if(curScale.length === 2) {
+				curScale = [curScale[0], curScale[1], 0];
+			}
+			curSystem.radiusX = parseInt(curScale[0], 10);
+			curSystem.radiusY = parseInt(curScale[1], 10);
+			curSystem.rotation = parseInt(curScale[2], 10);
 			curSystem.isCluster = curSystem.radiusX !== 1.0 || curSystem.radiusY !== 1.0;
 
             // era affiliations
@@ -255,7 +266,6 @@ module.exports = (function () {
                 name: curRow[columnIdxMap['nebula']],
     			centerX: curRow[columnIdxMap['x']],
                 centerY: curRow[columnIdxMap['y']],
-                //w: 50, // TODO
                 w: curRow[columnIdxMap['width']],
                 h: curRow[columnIdxMap['height']]
             };

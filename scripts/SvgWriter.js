@@ -38,11 +38,12 @@ module.exports = (function () {
 		var elementsStr;
 		var els;
 		var borderEdges;
-		var stroke, fill, rgb;
+		var stroke, fill, rgba;
 		var labelCls;
 		var prevEdge, curEdge, curD;
 		var pxPerLy = dimensions.w / viewRect.w;
 		var htmlTpl, tplObj;
+		var isec1, isec2;
 
 		// initialize elements object
 		els = {
@@ -92,9 +93,9 @@ module.exports = (function () {
 			if(faction === 'I' || faction === 'D') {
 				continue;
 			}
-			rgb = this.hexToRgb(factions[faction].color) || {r: 0, g:0, b:0};
+			rgba = this.hexToRgba(factions[faction].color) || {r: 0, g:0, b:0};
 			if(!factions[faction].fill) {
-				factions[faction].fill = 'rgba('+rgb.r+','+rgb.g+','+rgb.b+', .3)';
+				factions[faction].fill = 'rgba('+rgba.r+','+rgba.g+','+rgba.b+', .3)';
 			}
 
 			curD = '';
@@ -173,6 +174,14 @@ module.exports = (function () {
 			els.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.y}" class="nebulae-label">
 				${tplObj.name}</text>\n`;
 		}
+		
+		/*console.log(Utils.lineEllipseIntersection({
+			x1: 5, y1: 5, 
+			x2: 0, y2: 0
+		}, {
+			centerX: -2, centerY: -1,
+			radiusX: 3, radiusY: 3
+		}));*/
 
 		// render clusters and planetary systems
 		for(var i = 0, len = systems.length; i < len; i++) {
@@ -191,7 +200,10 @@ module.exports = (function () {
 
 			if(systems[i].isCluster) {
 				// cluster ellipse
-				fill += '55'; // TODO this will not work on current IE browsers. Use rgba(r, g, b, a) syntax.
+				fill += '88';
+				// Microsoft browsers do not support the hexadecimal rgba notation (#000000ff)
+				// use rgba(r, g, b, a) syntax instead
+				rgba = this.hexToRgba(fill); 
 				tplObj = {
 					faction : systems[i].col,
 					name : systems[i].name,
@@ -200,13 +212,24 @@ module.exports = (function () {
 					radiusX : systems[i].radiusX,
 					radiusY : systems[i].radiusY,
 					angle : systems[i].rotation,
-					fill : fill
+					fill : `rgba(${rgba.r},${rgba.g},${rgba.b},${rgba.a})`
 				};
 				els.systems += `<ellipse class="cluster ${tplObj.faction}" data-name="${tplObj.name}"
 							cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.radiusX}" ry="${tplObj.radiusY}"
 							transform="rotate(${tplObj.angle}, ${tplObj.x}, ${tplObj.y})" style="fill: ${tplObj.fill};" />\n`;
 
 				// cluster label
+				if(systems[i].label.connector) {
+					isec1 = Utils.getClosestPointOnRectanglePerimeter(systems[i], systems[i].label);
+					tplObj.x = isec1.x.toFixed(2);
+					tplObj.y = (-isec1.y).toFixed(2);
+					isec2 = Utils.getClosestPointOnEllipsePerimeter(isec1, systems[i]);
+					tplObj.intX = isec2.x.toFixed(2);
+					tplObj.intY = (-isec2.y).toFixed(2);
+					els.systems += `<line x1="${tplObj.x}" y1="${tplObj.y}" 
+											x2="${tplObj.intX}" y2="${tplObj.intY}" 
+											stroke="${tplObj.fill}" stroke-width=".25" />\n`;
+				}
 				tplObj = {
 					x : systems[i].label.x.toFixed(3),
 					y : (-systems[i].label.y - systems[i].h * .25).toFixed(3),
@@ -217,6 +240,7 @@ module.exports = (function () {
 										class="system-label ${tplObj.labelClass}" >
 							${tplObj.name}
 							</text>\n`;
+				
 			} else {
 				// system circle
 				tplObj = {
@@ -307,9 +331,9 @@ module.exports = (function () {
 				if(faction === 'I' || faction === 'D') {
 					continue;
 				}
-				rgb = this.hexToRgb(factions[faction].color) || {r: 0, g:0, b:0};
+				rgba = this.hexToRgba(factions[faction].color) || {r: 0, g:0, b:0};
 				if(!factions[faction].fill) {
-					factions[faction].fill = 'rgba('+rgb.r+','+rgb.g+','+rgb.b+', .3)';
+					factions[faction].fill = 'rgba('+rgba.r+','+rgba.g+','+rgba.b+', .3)';
 				}
 
 				curD = '';
@@ -527,17 +551,30 @@ module.exports = (function () {
     	return "#" + this.componentToHex(r) + this.componentToHex(g) + this.componentToHex(b);
 	};
 
-	/**
-	 * @see https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
-	 * @private
-	 */
-	SvgWriter.prototype.hexToRgb = function (hex) {
+	/*SvgWriter.prototype.hexToRgb = function (hex) {
 	    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
 	    return result ? {
 	        r: parseInt(result[1], 16),
 	        g: parseInt(result[2], 16),
 	        b: parseInt(result[3], 16)
 	    } : null;
+	};*/
+	
+	/**
+	 * @see https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+	 * @private
+	 */
+	SvgWriter.prototype.hexToRgba = function (hex) {
+		var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i.exec(hex);
+		var a = result && result[4] ? parseInt(result[4], 16) / 255 : 1; 
+		// round opacity to two decimals
+		a = Math.round(a*100)/100;
+		return result ? {
+			r: parseInt(result[1], 16),
+			g: parseInt(result[2], 16),
+			b: parseInt(result[3], 16),
+			a: a
+		} : null;
 	};
 
 	return SvgWriter;

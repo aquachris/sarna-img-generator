@@ -71,10 +71,10 @@ var main = function () {
 
     var focusedSystemName = 'Janina';
 	focusedSystemName = 'Desolate Plains';
-	focusedSystemName = 'Ferihegy';
-	focusedSystemName = 'Apollo';
-	focusedSystemName = 'Butler';
-	focusedSystemName = 'Babaeski';
+	//focusedSystemName = 'Ferihegy';
+	//focusedSystemName = 'Apollo';
+	//focusedSystemName = 'Butler';
+	//focusedSystemName = 'Babaeski';
 	//focusedSystemName = 'Terra';
 	//focusedSystemName = 'Ridgebrook';
     for(var i = 0, len = reader.systems.length; i < len; i++) {
@@ -113,7 +113,7 @@ var main = function () {
     };
 
     // for each era ...
-	for(var eraI = 19; eraI < 20; eraI++) {
+	for(var eraI = 16; eraI < 17; eraI++) {
 	//for(var eraI = 0; eraI < reader.eras.length; eraI++) {
 		curEra = reader.eras[eraI];
 		reservedPoints = [];
@@ -162,7 +162,6 @@ var main = function () {
 		clampedSystems = Utils.clampObjects(reader.systems, viewRect, 0);
 		clampedBorders = vBorder.generateBoundedBorders(viewRect);
         clampedNebulae = Utils.clampObjects(nebulaeRandomizer.nebulae, viewRect, 0);
-		console.log(clampedNebulae);
 
 		// initiate and execute the label manager
         labelMgr = new LabelManager(logger).init(

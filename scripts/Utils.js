@@ -53,7 +53,7 @@ module.exports = (function () {
      * Get the point of an ellipse at a given angle.
      * @see https://math.stackexchange.com/questions/22064/calculating-a-point-that-lies-on-an-ellipse-given-an-angle
      *
-     * @param {ellipse} The ellipse
+     * @param {ellipse} The ellipse, e.g. { centerX: 1, centerY: 5.4, w: 10, h: 5 }
      * @param {angle} The angle in radians
      * @returns {Array} The point on the ellipse at the given angle
      */
@@ -247,52 +247,127 @@ module.exports = (function () {
      * @param distFromCorner {Number} (optional) The minimum distance from a rectangle corner
      * @returns {Object} The closest point
      */
-     Utils.getClosestPointOnRectanglePerimeter = function (p, rect, distFromCorner) {
-         if(distFromCorner === undefined) {
-             distFromCorner = 0;
-         }
+	Utils.getClosestPointOnRectanglePerimeter = function (p, rect, distFromCorner) {
+		if(distFromCorner === undefined) {
+			distFromCorner = 0;
+		}
 
-         var left = rect.x;
-         var right = left + rect.w;
-         var bottom = rect.y;
-         var top = bottom + rect.h;
+		var left = rect.x;
+		var right = left + rect.w;
+		var bottom = rect.y;
+		var top = bottom + rect.h;
 
-         var x = this.clampNumber(p.x, left, right);
-         var y = this.clampNumber(p.y, bottom, top);
+		var x = this.clampNumber(p.x, left, right);
+		var y = this.clampNumber(p.y, bottom, top);
 
-         var dl = Math.abs(x - left);
-         var dr = Math.abs(x - right);
-         var db = Math.abs(y - bottom);
-         var dt = Math.abs(y - top);
+		var dl = Math.abs(x - left);
+		var dr = Math.abs(x - right);
+		var db = Math.abs(y - bottom);
+		var dt = Math.abs(y - top);
 
-         var m = Math.min(dl, dr, dt, db);
+		var m = Math.min(dl, dr, dt, db);
 
-         var ret;
-         switch(m) {
-             case dt:
-                ret = { x: x, y: top };
-                break;
-             case db:
-                ret = { x: x, y: bottom };
-                break;
-             case dl:
-                ret = { x: left, y: y };
-                break;
-             case dr:
-                ret = { x: right, y: y };
-                break;
-             default:
-                ret = { x: left, y: top };
-          }
+		var ret;
+		switch(m) {
+			case dt:
+				ret = { x: x, y: top };
+				break;
+			case db:
+				ret = { x: x, y: bottom };
+				break;
+			case dl:
+				ret = { x: left, y: y };
+				break;
+			case dr:
+				ret = { x: right, y: y };
+				break;
+			default:
+				ret = { x: left, y: top };
+		}
 
-          if(ret.x === left || ret.x === right) {
-              ret.y = this.clampNumber(ret.y, bottom + distFromCorner, top - distFromCorner);
-          } else if(ret.y === top || ret.y === bottom) {
-              ret.x = this.clampNumber(ret.x, left + distFromCorner, right - distFromCorner);
-          }
+		if(ret.x === left || ret.x === right) {
+			ret.y = this.clampNumber(ret.y, bottom + distFromCorner, top - distFromCorner);
+		} else if(ret.y === top || ret.y === bottom) {
+			ret.x = this.clampNumber(ret.x, left + distFromCorner, right - distFromCorner);
+		}
 
-          return ret;
-     };
+		return ret;
+	};
+	 
+	/**
+	 * Returns intersection points of a line with an ellipse.
+	 * http://csharphelper.com/blog/2017/08/calculate-where-a-line-segment-and-an-ellipse-intersect-in-c/
+	 *
+	 * @param line {Object} The line (an object with properties x1, y1, x2 and y2)
+	 * @param ellipse {Object} The ellipse (centerX, centerY, radiusX, radiusY)
+	 * @returns {Array} List of intersection points (x, y)
+	 */
+	Utils.lineEllipseIntersection = function (line, ellipse) {
+		// consider the ellipse to be centered at origin for now
+		var p1 = { x: line.x1 - ellipse.centerX, y: line.y1 - ellipse.centerY };
+		var p2 = { x: line.x2 - ellipse.centerX, y: line.y2 - ellipse.centerY };
+		var ts = [];
+		var ret = [];
+		
+		// semimajor and semiminor axes
+		var a = ellipse.radiusX;
+		var b = ellipse.radiusY;
+		
+		// calculate quadratic parameters
+		var quadA = Math.pow((p2.x - p1.x), 2) / (a * a) + Math.pow(p2.y - p1.y, 2) / (b * b);
+		var quadB = 2 * p1.x * (p2.x - p1.x) / (a * a) + 2 * p1.y * (p2.y - p1.y) / (b * b);
+		var quadC = Math.pow(p1.x, 2) / (a * a) + Math.pow(p1.y, 2) / (b * b) - 1;
+		
+		// calculate discriminant
+		var discriminant = quadB * quadB - 4 * quadA * quadC;
+		if(discriminant === 0) {
+			// one real solution
+			ts.push(-quadB / (2 * quadA));
+		} else if(discriminant > 0) {
+			// two real solutions
+			ts.push((-quadB + Math.sqrt(discriminant)) / (2 * quadA));
+			ts.push((-quadB - Math.sqrt(discriminant)) / (2 * quadA));
+		} else {
+			// no intersection
+		}
+		
+		// convert t values into points and translate to actual ellipse location
+		for(var i = 0, len = ts.length; i < len; i++) {
+			ret.push({
+				x: p1.x + (p2.x - p1.x) * ts[i] + ellipse.centerX,
+				y: p1.y + (p2.y - p1.y) * ts[i] + ellipse.centerY
+			});
+		}
+		return ret;
+	};
+	 
+	/**
+     * Returns closest point to p on ellipse's perimeter
+	 *
+     * @param p {Object} The 2D point (an object with properties x and y)
+     * @param ellipse {Object} The ellipse (centerX, centerY, radiusX, radiusY)
+     * @returns {Object} The closest point
+     */
+	Utils.getClosestPointOnEllipsePerimeter = function (p, ellipse) {
+		var iPoints = this.lineEllipseIntersection({
+			x1: p.x, y1: p.y,
+			x2: ellipse.centerX, y2: ellipse.centerY
+		}, ellipse);
+		
+		if(iPoints.length === 0) {
+			return null;
+		} else if(iPoints.length === 1) {
+			return iPoints[0];
+		} else {
+			var d0 = this.distance(p.x, p.y, iPoints[0].x, iPoints[0].y);
+			var d1 = this.distance(p.x, p.y, iPoints[1].x, iPoints[1].y);
+			if(d0 < d1) {
+				return iPoints[0];
+			} else {
+				return iPoints[1];
+			}
+		}
+	};
 
     /**
      * A rectangle is defined by its bottom left corner (x,y) and its
