@@ -3,7 +3,7 @@ module.exports = (function () {
 
     var Utils = require('./Utils.js');
 	var seedrandom = require('seedrandom');
-	
+
     /**
      * An instance of this class generates a set of randomized points around the circumference
 	 * of an elliptical (nebula) object in order to generate a cloud-like object to display.
@@ -39,14 +39,13 @@ module.exports = (function () {
 			rng = seedrandom(curNebula.name);
             // calculate approximated ellipse circumference
 			curNebula.circumference = Utils.ellipseCircumference(curNebula);
-			
+
 			// ellipse's width to height ratio
 			widthToHeight = curNebula.w / curNebula.h;
 
-			numPoints = Math.max(3, Math.round(curNebula.circumference / 5)); // 5
-            //numPoints = 11;
-			//numPoints = 20;
-			//numPoints = 30;
+            numPoints = curNebula.circumference / 5;
+            numPoints *= 0.9 + rng() * .25;
+			numPoints = Math.max(3, Math.round(numPoints));
 
             startAngle = Math.floor(rng()*360);
             angleInDeg = 0;
@@ -61,21 +60,21 @@ module.exports = (function () {
 					y: curPoint[1]
 				});
             }
-			
+
 			this.randomizePoints(curNebula, rng);
 			this.generateControlPoints(curNebula);
         }
 	};
-	
+
 	NebulaRandomizer.prototype.randomizePoints = function (nebula, rng) {
 		var prevI, nextI;
 		var p1, p2, p3;
 		var dist;
 		var deviation;
-		
+
 		nebula.originalPoints = nebula.points;
 		nebula.points = [];
-		
+
 		for(var i = 0, len = nebula.originalPoints.length; i < len; i++) {
 			prevI = i - 1;
 			if(prevI < 0) {
@@ -85,29 +84,29 @@ module.exports = (function () {
 			if(nextI >= len) {
 				nextI = 0;
 			}
-			
+
 			p1 = nebula.originalPoints[prevI];
 			p2 = nebula.originalPoints[i];
 			p3 = nebula.originalPoints[nextI];
-			
-			dist = Math.min(Utils.distance(p2.x, p2.y, p1.x, p1.y), 
+
+			dist = Math.min(Utils.distance(p2.x, p2.y, p1.x, p1.y),
 							Utils.distance(p2.x, p2.y, p3.x, p3.y));
-			
+
 			// deviate in a random x and y direction
 			deviation = [rng(), rng()];
-			
+
 			// scale deviation
 			Utils.scaleVector2d(deviation, (rng() - 0.5) * dist * .975);
-			
+
 			nebula.points.push({
 				x: p2.x + deviation[0],
 				y: p2.y + deviation[1]
 			});
 		}
 	};
-	
+
 	/**
-     * For each nebula point, generate two bezier control points. 
+     * For each nebula point, generate two bezier control points.
 	 * The goal is to make the nebula look "natural", if that is even possible in 2D.
 	 *
 	 * @param nebula {Object} The nebula object
@@ -117,8 +116,8 @@ module.exports = (function () {
         var p1, p2, p3, dist12, dist23, w, h;
         var fa, fb;
         var tension = .35;//.65;
-		
-		
+
+
 		for(var i = 0, len = nebula.points.length; i < len; i++) {
 			prevI = i - 1;
 			if(prevI < 0) {
@@ -128,22 +127,22 @@ module.exports = (function () {
 			if(nextI >= nebula.points.length) {
 				nextI = 0;
 			}
-			
+
 			p1 = nebula.points[prevI];
 			p2 = nebula.points[i];
 			p3 = nebula.points[nextI];
-			
+
 			dist12 = Utils.distance(p1.x, p1.y, p2.x, p2.y);
 			dist23 = Utils.distance(p2.x, p2.y, p3.x, p3.y);
-			
+
 			// generate two control points for the looked at point (p2)
 			// see http://walter.bislins.ch/blog/index.asp?page=JavaScript%3A+Bezier%2DSegmente+f%FCr+Spline+berechnen
 			fa = tension * dist12 / (dist12 + dist23);
 			fb = tension * dist23 / (dist12 + dist23);
-			
+
 			w = p3.x - p1.x;
 			h = p3.y - p1.y;
-			
+
 			p2.c1 = {
 				x: p2.x - fa * w,
 				y: p2.y - fa * h

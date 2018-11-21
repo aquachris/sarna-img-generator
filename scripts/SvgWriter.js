@@ -156,11 +156,11 @@ module.exports = (function () {
 				//curD += nebulae[i].points[j].x.toFixed(3) + ',';
 				//curD += (-nebulae[i].points[j].y).toFixed(3);
 			}
-			
+
 			els.nebulae += `<path fill-rule="evenodd" class="nebula"
 						data-name="${tplObj.name}"
 						d="${curD}" />\n`;
-						
+
 			// style="stroke: #000; stroke-width: 0.25px; fill: #0007;"
 			/*els.nebulae += `<ellipse data-name="${tplObj.name}"
 						cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.rx}" ry="${tplObj.ry}" />\n`;*/
@@ -174,9 +174,9 @@ module.exports = (function () {
 			els.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.y}" class="nebulae-label">
 				${tplObj.name}</text>\n`;
 		}
-		
+
 		/*console.log(Utils.lineEllipseIntersection({
-			x1: 5, y1: 5, 
+			x1: 5, y1: 5,
 			x2: 0, y2: 0
 		}, {
 			centerX: -2, centerY: -1,
@@ -200,10 +200,9 @@ module.exports = (function () {
 
 			if(systems[i].isCluster) {
 				// cluster ellipse
-				fill += '88';
 				// Microsoft browsers do not support the hexadecimal rgba notation (#000000ff)
 				// use rgba(r, g, b, a) syntax instead
-				rgba = this.hexToRgba(fill); 
+				rgba = this.hexToRgba(fill + '88');
 				tplObj = {
 					faction : systems[i].col,
 					name : systems[i].name,
@@ -212,24 +211,14 @@ module.exports = (function () {
 					radiusX : systems[i].radiusX,
 					radiusY : systems[i].radiusY,
 					angle : systems[i].rotation,
+					stroke : fill,
 					fill : `rgba(${rgba.r},${rgba.g},${rgba.b},${rgba.a})`
 				};
 				els.systems += `<ellipse class="cluster ${tplObj.faction}" data-name="${tplObj.name}"
 							cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.radiusX}" ry="${tplObj.radiusY}"
-							transform="rotate(${tplObj.angle}, ${tplObj.x}, ${tplObj.y})" style="fill: ${tplObj.fill};" />\n`;
+							transform="rotate(${tplObj.angle}, ${tplObj.x}, ${tplObj.y})"
+							style="fill: ${tplObj.fill};"  />\n`;
 
-				// cluster label
-				/*if(systems[i].label.connector) {
-					isec1 = Utils.getClosestPointOnRectanglePerimeter(systems[i], systems[i].label);
-					tplObj.x = isec1.x.toFixed(2);
-					tplObj.y = (-isec1.y).toFixed(2);
-					isec2 = Utils.getClosestPointOnEllipsePerimeter(isec1, systems[i]);
-					tplObj.intX = isec2.x.toFixed(2);
-					tplObj.intY = (-isec2.y).toFixed(2);
-					els.systems += `<line x1="${tplObj.x}" y1="${tplObj.y}" 
-											x2="${tplObj.intX}" y2="${tplObj.intY}" 
-											stroke="${tplObj.fill}" stroke-width=".25" />\n`;
-				}*/
 				// connector
 				if(systems[i].label.connector) {
 					curD = 'M' + systems[i].label.connector.p1.x.toFixed(2);
@@ -238,12 +227,13 @@ module.exports = (function () {
 					curD += ',' + (-systems[i].label.connector.p2.y).toFixed(2);
 					curD += ' L' + systems[i].label.connector.p3.x.toFixed(2);
 					curD += ',' + (-systems[i].label.connector.p3.y).toFixed(2);
-					els.systems += `<path d="${curD}" stroke="${tplObj.fill}" stroke-width=".25" fill="none" />\n`;
+					els.systems += `<path d="${curD}" class="label-connector" />\n`;
 				}
-				
+
 				tplObj = {
 					x : systems[i].label.x.toFixed(3),
-					y : (-systems[i].label.y - systems[i].h * .25).toFixed(3),
+					//y : (-systems[i].label.y - systems[i].h * .25).toFixed(3),
+					y: (-systems[i].label.y).toFixed(3),
 					labelClass : labelCls,
 					name : systems[i].name
 				};
@@ -251,7 +241,7 @@ module.exports = (function () {
 										class="system-label ${tplObj.labelClass}" >
 							${tplObj.name}
 							</text>\n`;
-				
+
 			} else {
 				// system circle
 				tplObj = {
@@ -269,11 +259,11 @@ module.exports = (function () {
 				// system label
 				tplObj = {
 					x : systems[i].label.x.toFixed(3),
-					y : (-systems[i].label.y - systems[i].h*.25).toFixed(3),
+					y : (-systems[i].label.y).toFixed(3),// - systems[i].h*.25).toFixed(3),
 					labelClass : labelCls,
 					name : systems[i].name
 				};
-				els.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}" 
+				els.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
 										class="system-label ${tplObj.labelClass}">
 							${tplObj.name}</text>\n`;
 			}
@@ -570,14 +560,14 @@ module.exports = (function () {
 	        b: parseInt(result[3], 16)
 	    } : null;
 	};*/
-	
+
 	/**
 	 * @see https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 	 * @private
 	 */
 	SvgWriter.prototype.hexToRgba = function (hex) {
 		var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i.exec(hex);
-		var a = result && result[4] ? parseInt(result[4], 16) / 255 : 1; 
+		var a = result && result[4] ? parseInt(result[4], 16) / 255 : 1;
 		// round opacity to two decimals
 		a = Math.round(a*100)/100;
 		return result ? {

@@ -1,18 +1,18 @@
 {
 	"Hyades Cluster" : [{
 		"anchor": {
-			"x" : "left", 
+			"x" : "left",
 			"y" : "center"
 		},
-		"position": { 
+		"position": {
 			"x": "center",
 			"y": "center",
-			"dx": 14,
-			"dy": -5
+			"dx": 15,
+			"dy": -3.5
 		},
 		"connector": {
 			"dx" : 7,
-			"dy" : -3.6
+			"dy" : -3.7
 		}
 	}],
 	"Ishtar": [{
@@ -25,11 +25,11 @@
 			"y" : "center"
 		}
 	}],
-	"Jansen's Hold" : [{ 
+	"Jansen's Hold" : [{
 		"anchor": {
 			"x" : "center",
 			"y" : "bottom"
-		}, 
+		},
 		"position": {
 			"x" : "center",
 			"y" : "top",
@@ -40,7 +40,7 @@
 		"anchor": {
 			"x" : "center",
 			"y" : "bottom"
-		}, 
+		},
 		"position": {
 			"x" : "center",
 			"y" : "top"
@@ -50,13 +50,13 @@
 		"anchor": {
 			"x": "right",
 			"y": "center"
-		}, 
+		},
 		"position": {
 			"x" : "left",
 			"y" : "center",
 			"dy": -1.5
 		}
-	}], 
+	}],
 	"Taurus": [{
 		"position": {
 			"x" : "center",

@@ -37,7 +37,7 @@ module.exports = (function () {
 	 * @param labelConfig {Object} Config object for manual label placement
      * @returns {LabelManager} this object
      */
-    LabelManager.prototype.init = function (viewRect, objects, objectRadius, ellipticalObjects, objLabelDist, 
+    LabelManager.prototype.init = function (viewRect, objects, objectRadius, ellipticalObjects, objLabelDist,
 			glyphSettings, factions, labelConfig) {
         this.viewRect = viewRect || {x: 0, y: 0, w: 0, h: 0};
         this.objects = Utils.deepCopy(objects || []);
@@ -49,6 +49,9 @@ module.exports = (function () {
         this.glyphSettings.widths = this.glyphSettings.widths || { default: 1.6 };
         this.factions = Utils.deepCopy(factions);
 		this.labelConfig = labelConfig || {};
+        // cannot really determine why, but there seems to be a .5 shift required
+        // for the labels to be at the correct position
+        this.defaultDelta = { x: 0, y: .5 };
 
         this.grid = new RectangleGrid().init(viewRect);
         this.setInitialState();
@@ -110,7 +113,7 @@ module.exports = (function () {
             curObj.w = curObj.h = this.objectRadius * curObj.radiusY * 2;
             curObj.id = 'obj_'+i;
             curObj.label = generateLabelRect.call(this, curObj, i);
-			
+
 			if(!curObj.isCluster) {
 				this.grid.placeObject(curObj);
 			}
@@ -172,31 +175,39 @@ module.exports = (function () {
 
         return ret;
     };
-	
+
+    /**
+     * Places an object's label, either according to a manual configuration
+     * or automatically.
+     *
+     * @param obj {Object} The object whose label to place
+     */
 	LabelManager.prototype.determineLabelPositionFor = function (obj) {
 		var manualArr = this.labelConfig[obj.name];
-		if(!manualArr || manualArr.length === 0) {
-			this.logger.error('cannot place label: no manual config for ' + obj.name);
-			return;
-		}
-		
-		for(var i = 0; i < manualArr.length; i++) {
-			this.applyManualConfig(obj, manualArr[i]);
-			if(true) {
-				break;
-			}
-		}
+
+        if(manualArr && manualArr.length > 0) {
+    		for(var i = 0; i < manualArr.length; i++) {
+    			this.applyManualConfig(obj, manualArr[i]);
+    			if(true) {
+    				break;
+    			}
+    		}
+            return;
+        } else {
+            this.applyAutomaticPlacement(obj);
+        }
 	};
-	
+
 	/**
+     * Places a label according to the passed manual configuration object.
 	 * @private
 	 */
 	LabelManager.prototype.applyManualConfig = function (obj, config) {
 		var dist = this.objLabelDist;
 		var position = Utils.deepCopy(config.position);
 		var anchor = config.anchor;
-		var connPoint, isecPoint1, isecPoint2;
-		
+		var connPoint, isecPoint, labelEdgePoint;
+
 		// position shorthands
 		if(typeof position.x === 'string') {
 			if(position.x === 'left') {
@@ -235,27 +246,45 @@ module.exports = (function () {
 				position.y -= obj.label.h;
 			}
 		}
-		
-		obj.label.x = position.x + position.dx;
-		obj.label.y = position.y + position.dy;
-		
+
+		obj.label.x = position.x + position.dx + this.defaultDelta.x;
+		obj.label.y = position.y + position.dy + this.defaultDelta.y;
+
 		// connector
 		if(config.connector) {
 			connPoint = {
 				x: obj.centerX + config.connector.dx || 0,
 				y: obj.centerY + config.connector.dy || 0
 			};
-			isecPoint1 = Utils.getClosestPointOnRectanglePerimeter(connPoint, obj.label);
-			isecPoint2 = Utils.getClosestPointOnEllipsePerimeter(connPoint, obj);
-			
+			isecPoint = Utils.getClosestPointOnEllipsePerimeter(connPoint, obj);
+
+            if(obj.label.y <= connPoint.y && obj.label.y + obj.label.h >= connPoint.y) {
+                labelEdgePoint = {
+                    x: obj.label.x + obj.label.w + dist,
+                    y: connPoint.y
+                };
+                if(obj.label.x > connPoint.x) {
+                    labelEdgePoint.x = obj.label.x - dist;
+                }
+            } else if(obj.label.x <= connPoint.x && obj.label.x + obj.label.w >= connPoint.x) {
+                labelEdgePoint = {
+                    x: connPoint.x,
+                    y: obj.label.y + obj.label.h + dist * .5
+                };
+                if(obj.label.y > connPoint.y) {
+                    labelEdgePoint.y = obj.label.y - dist * .5;
+                }
+            } else {
+                labelEdgePoint = Utils.getClosestPointOnRectanglePerimeter(connPoint, obj.label);
+            }
+
+
 			obj.label.connector = {
-				p1: isecPoint1,
+				p1: labelEdgePoint,
 				p2: connPoint,
-				p3: isecPoint2
+				p3: isecPoint
 			};
 		}
-		
-		
 	};
 
     /**
@@ -292,51 +321,9 @@ module.exports = (function () {
 
 		minOverlap = Infinity;
 
-		var bestPositions = {
-			"Hyades Cluster" : { labelPos: 'center right', dx: 15, dy: -4, connector: true },
-			"Ishtar": { labelPos: 'center left' },
-			"Jansen's Hold" : { labelPos: 'top center',  dx: -3 },
-			"MacLeod's Land" : { labelPos : 'top center' },
-			"Pinard" : { labelPos: 'center left', dy: -1.5 },
-			"Taurus" : { labelPos: 'bottom center', dx: 1 }
-		};
-		var forcePos, forceDx, forceDy;
-
-        // initially place label at desired position, if one exists
-		if(bestPositions.hasOwnProperty(obj.name)) {
-			forcePos = bestPositions[obj.name].labelPos.split(' ');
-			forceDx = bestPositions[obj.name].dx;
-			forceDy = bestPositions[obj.name].dy;
-			if(forceDx === undefined) { forceDx = 0; }
-			if(forceDy === undefined) { forceDy = 0; }
-			if(forcePos[0] === 'top') {
-				label.y = obj.y + obj.h + dist * 0.5 + forceDy;
-			} else if(forcePos[0] === 'bottom') {
-				label.y = obj.y - label.h - dist * 0.5 + forceDy;
-			} else {
-				label.y = obj.centerY - label.h * .5 + forceDy;
-			}
-			if(forcePos[1] === 'left') {
-				label.x = obj.x - label.w - dist + forceDx;
-			} else if(forcePos[1] === 'right') {
-				label.x = obj.centerX + objRad + dist + forceDx;
-			} else {
-				label.x = obj.centerX - label.w * 0.5 + forceDx;
-			}
-			label.connector = !!bestPositions[obj.name].connector;
-			evaluateCurrentPos.call(this);
-
-			if(curOverlap > 0) {
-				this.logger.log('overlapping label (forced placement): "'+obj.name+'" for ' + minOverlap + ' units.');
-			}
-			//if(curOverlap === 0) {
-				return curOverlap;
-			//}
-		}
-
 		// check position centered to the right
-        minOverlapX = label.x = obj.centerX + objRad + dist;
-        minOverlapY = label.y = obj.centerY - label.h * .5;
+        minOverlapX = label.x = obj.centerX + objRad + dist + this.defaultDelta.x;
+        minOverlapY = label.y = obj.centerY - label.h * .5 + this.defaultDelta.y;
         evaluateCurrentPos.call(this);
         if(curOverlap === 0) {
             return 0;
@@ -368,8 +355,8 @@ module.exports = (function () {
         }
 
         // check position above
-        label.x = obj.centerX - label.w * 0.5;
-        label.y = obj.y + obj.h + dist * 0.5;
+        label.x = obj.centerX - label.w * 0.5 + this.defaultDelta.x;
+        label.y = obj.y + obj.h + dist * 0.5 + this.defaultDelta.y;
         evaluateCurrentPos.call(this);
         if(curOverlap === 0) {
             return 0;
@@ -393,8 +380,8 @@ module.exports = (function () {
         }
 
         // check position below
-        label.x = obj.centerX - label.w * 0.5;
-        label.y = obj.y - label.h - dist * 0.5;
+        label.x = obj.centerX - label.w * 0.5 + this.defaultDelta.x;
+        label.y = obj.y - label.h - dist * 0.5 + this.defaultDelta.y;
         evaluateCurrentPos.call(this);
         if(curOverlap === 0) {
             return 0;
@@ -418,8 +405,8 @@ module.exports = (function () {
         }
 
         // check left side
-        label.x = obj.x - label.w - dist;// * 0.25;
-        label.y = obj.centerY - label.h * 0.5;
+        label.x = obj.x - label.w - dist * 1.5 + this.defaultDelta.x;// * 0.25;
+        label.y = obj.centerY - label.h * 0.5 + this.defaultDelta.y;
         evaluateCurrentPos.call(this);
         if(curOverlap === 0) {
             return 0;
@@ -451,8 +438,8 @@ module.exports = (function () {
         }
 
         // check alternatives on the right side, large tolerance
-        label.x = obj.centerX + objRad + dist;
-        label.y = obj.centerY - label.h * .5;
+        label.x = obj.centerX + objRad + dist + this.defaultDelta.x;
+        label.y = obj.centerY - label.h * .5 + this.defaultDelta.y;
         evaluateCurrentPos.call(this);
 
         // push label up
@@ -480,8 +467,8 @@ module.exports = (function () {
         }
 
         // check alternatives on the left side, large tolerance
-        label.x = obj.x - label.w - dist;
-        label.y = obj.centerY - label.h * .5;
+        label.x = obj.x - label.w - dist + this.defaultDelta.x;
+        label.y = obj.centerY - label.h * .5 + this.defaultDelta.y;
         evaluateCurrentPos.call(this);
 
         // push label up
