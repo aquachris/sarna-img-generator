@@ -219,7 +219,7 @@ module.exports = (function () {
 							transform="rotate(${tplObj.angle}, ${tplObj.x}, ${tplObj.y})" style="fill: ${tplObj.fill};" />\n`;
 
 				// cluster label
-				if(systems[i].label.connector) {
+				/*if(systems[i].label.connector) {
 					isec1 = Utils.getClosestPointOnRectanglePerimeter(systems[i], systems[i].label);
 					tplObj.x = isec1.x.toFixed(2);
 					tplObj.y = (-isec1.y).toFixed(2);
@@ -229,7 +229,18 @@ module.exports = (function () {
 					els.systems += `<line x1="${tplObj.x}" y1="${tplObj.y}" 
 											x2="${tplObj.intX}" y2="${tplObj.intY}" 
 											stroke="${tplObj.fill}" stroke-width=".25" />\n`;
+				}*/
+				// connector
+				if(systems[i].label.connector) {
+					curD = 'M' + systems[i].label.connector.p1.x.toFixed(2);
+					curD += ',' + (-systems[i].label.connector.p1.y).toFixed(2);
+					curD += ' L' + systems[i].label.connector.p2.x.toFixed(2);
+					curD += ',' + (-systems[i].label.connector.p2.y).toFixed(2);
+					curD += ' L' + systems[i].label.connector.p3.x.toFixed(2);
+					curD += ',' + (-systems[i].label.connector.p3.y).toFixed(2);
+					els.systems += `<path d="${curD}" stroke="${tplObj.fill}" stroke-width=".25" fill="none" />\n`;
 				}
+				
 				tplObj = {
 					x : systems[i].label.x.toFixed(3),
 					y : (-systems[i].label.y - systems[i].h * .25).toFixed(3),

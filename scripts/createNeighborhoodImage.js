@@ -36,11 +36,14 @@ var main = function () {
 
     // read planetary systems from the xlsx
     reader.readSystemsAndEras();
+	
+	// read label settings from the config file
+	reader.readLabelConfig();
 
     // image dimensions in pixels
     var dimensions = {
-        w: 800,
-        h: 800
+        w: 1000,
+        h: 1000
     };
 
     // the visible rectangle, in map space:
@@ -59,8 +62,8 @@ var main = function () {
     };
 
 	var minimapDimensions = {
-		w: 300,
-		h: 150
+		w: 400,
+		h: 200
 	};
 	var minimapViewRect = {
 		x: -600,
@@ -171,7 +174,8 @@ var main = function () {
             clampedNebulae,
             labelDist,
             glyphSettings,
-            reader.factions
+            reader.factions,
+			reader.labelConfig
         );
 
 		// minimap borders

@@ -19,6 +19,7 @@ module.exports = (function () {
         this.eras = undefined;
 		this.systems = undefined;
 		this.nebulae = undefined;
+		this.labelConfig = undefined;
         this.addEventTopics('systemsRead');
     };
 
@@ -274,6 +275,78 @@ module.exports = (function () {
 			this.nebulae.push(curNeb);
 		}
     };
+	
+	/**
+	 * Reads and parses the json label config file
+	 */
+	SystemsReader.prototype.readLabelConfig = function () {
+		this.logger.log('Label config reader started');
+		
+		var fileContent = fs.readFileSync(__dirname + '/../data/labelConfig.json', 'utf8');
+		var arr;
+		try {
+			this.labelConfig = JSON.parse(fileContent);
+		} catch (e) {
+			this.labelConfig = {};
+			console.error(e);
+			return;
+		}
+		for(var name in this.labelConfig) {
+			if(!this.labelConfig.hasOwnProperty(name)) {
+				return;
+			}
+			arr = this.labelConfig[name];
+			for(var i = 0; i < arr.length; i++) {
+				if(!arr[i].position) {
+					arr[i].position = {
+						x: 'right', 
+						y: 'center'
+					}
+				}
+				if(typeof arr[i].position.x === 'string') {
+					arr[i].position.x = arr[i].position.x.toLowerCase();
+				}
+				if(typeof arr[i].position.y === 'string') {
+					arr[i].position.y = arr[i].position.y.toLowerCase();
+				}
+				
+				if(!arr[i].position.dx) {
+					arr[i].position.dx = 0;
+				}
+				if(!arr[i].position.dy) {
+					arr[i].position.dy = 0;
+				}
+				
+				if(!arr[i].anchor) {
+					arr[i].anchor = {};
+				}
+				if(!arr[i].anchor.hasOwnProperty('x')) {
+					if(typeof arr[i].anchor.x === 'string'){
+						arr[i].anchor.x = arr[i].anchor.x.toLowerCase();
+					}
+					if(arr[i].position.x === 'left') {
+						arr[i].anchor.x = 'right';
+					} else if(arr[i].position.x === 'center') {
+						arr[i].anchor.x = 'center';
+					} else {
+						arr[i].anchor.x = 'left';
+					}
+				}
+				if(!arr[i].anchor.hasOwnProperty('y')) {
+					if(typeof arr[i].anchor.y === 'string'){
+						arr[i].anchor.y = arr[i].anchor.y.toLowerCase();
+					}
+					if(arr[i].position.y === 'top') {
+						arr[i].anchor.y = 'bottom';
+					} else if(arr[i].position.y === 'bottom') {
+						arr[i].anchor.y = 'top';
+					} else {
+						arr[i].anchor.y = 'center';
+					}
+				}
+			}
+		}
+	};
 
     /**
      * Calculates the distance between two planetary systems (euclidean distance in LY)

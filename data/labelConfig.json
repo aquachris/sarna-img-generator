@@ -1,0 +1,67 @@
+{
+	"Hyades Cluster" : [{
+		"anchor": {
+			"x" : "left", 
+			"y" : "center"
+		},
+		"position": { 
+			"x": "center",
+			"y": "center",
+			"dx": 14,
+			"dy": -5
+		},
+		"connector": {
+			"dx" : 7,
+			"dy" : -3.6
+		}
+	}],
+	"Ishtar": [{
+		"anchor": {
+			"x" : "right",
+			"y" : "center"
+		},
+		"position": {
+			"x" : "left",
+			"y" : "center"
+		}
+	}],
+	"Jansen's Hold" : [{ 
+		"anchor": {
+			"x" : "center",
+			"y" : "bottom"
+		}, 
+		"position": {
+			"x" : "center",
+			"y" : "top",
+			"dx": -3
+		}
+	}],
+	"MacLeod's Land" : [{
+		"anchor": {
+			"x" : "center",
+			"y" : "bottom"
+		}, 
+		"position": {
+			"x" : "center",
+			"y" : "top"
+		}
+	}],
+	"Pinard": [{
+		"anchor": {
+			"x": "right",
+			"y": "center"
+		}, 
+		"position": {
+			"x" : "left",
+			"y" : "center",
+			"dy": -1.5
+		}
+	}], 
+	"Taurus": [{
+		"position": {
+			"x" : "center",
+			"y" : "bottom",
+			"dx": 1
+		}
+	}]
+}

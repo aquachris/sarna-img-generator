@@ -34,9 +34,11 @@ module.exports = (function () {
      * @param objLabelDist {Number} Empty space between an object node and its text label
      * @param glyphSettings {Object} Several settings such as default width and height, and specific glyph widths
      * @param factions {Object} Key-value map of the available factions
+	 * @param labelConfig {Object} Config object for manual label placement
      * @returns {LabelManager} this object
      */
-    LabelManager.prototype.init = function (viewRect, objects, objectRadius, ellipticalObjects, objLabelDist, glyphSettings, factions) {
+    LabelManager.prototype.init = function (viewRect, objects, objectRadius, ellipticalObjects, objLabelDist, 
+			glyphSettings, factions, labelConfig) {
         this.viewRect = viewRect || {x: 0, y: 0, w: 0, h: 0};
         this.objects = Utils.deepCopy(objects || []);
         this.objectRadius = objectRadius || 1;
@@ -46,6 +48,7 @@ module.exports = (function () {
         this.glyphSettings.lineHeight = this.glyphSettings.lineHeight || 3;
         this.glyphSettings.widths = this.glyphSettings.widths || { default: 1.6 };
         this.factions = Utils.deepCopy(factions);
+		this.labelConfig = labelConfig || {};
 
         this.grid = new RectangleGrid().init(viewRect);
         this.setInitialState();
@@ -63,7 +66,7 @@ module.exports = (function () {
         var curFaction;
         this.orderedObjIndices = [];
 
-        // private helper function
+        // private helper function that generates a label object
         var generateLabelRect = function (obj, objIdx, isElliptical) {
             var objRad = this.objectRadius;
             var dist = this.objLabelDist;
@@ -102,13 +105,15 @@ module.exports = (function () {
             curObj = this.objects[i];
             curObj.centerX = curObj.x;
             curObj.centerY = curObj.y;
-            curObj.x = curObj.x - this.objectRadius;
-            curObj.y = curObj.y - this.objectRadius;
-            curObj.w = curObj.h = this.objectRadius * 2;
+            curObj.x = curObj.x - this.objectRadius * curObj.radiusX;
+            curObj.y = curObj.y - this.objectRadius * curObj.radiusY;
+            curObj.w = curObj.h = this.objectRadius * curObj.radiusY * 2;
             curObj.id = 'obj_'+i;
             curObj.label = generateLabelRect.call(this, curObj, i);
-
-            this.grid.placeObject(curObj);
+			
+			if(!curObj.isCluster) {
+				this.grid.placeObject(curObj);
+			}
             this.grid.placeObject(curObj.label);
 
 			if(curObj.hasOwnProperty('col')) {
@@ -167,6 +172,91 @@ module.exports = (function () {
 
         return ret;
     };
+	
+	LabelManager.prototype.determineLabelPositionFor = function (obj) {
+		var manualArr = this.labelConfig[obj.name];
+		if(!manualArr || manualArr.length === 0) {
+			this.logger.error('cannot place label: no manual config for ' + obj.name);
+			return;
+		}
+		
+		for(var i = 0; i < manualArr.length; i++) {
+			this.applyManualConfig(obj, manualArr[i]);
+			if(true) {
+				break;
+			}
+		}
+	};
+	
+	/**
+	 * @private
+	 */
+	LabelManager.prototype.applyManualConfig = function (obj, config) {
+		var dist = this.objLabelDist;
+		var position = Utils.deepCopy(config.position);
+		var anchor = config.anchor;
+		var connPoint, isecPoint1, isecPoint2;
+		
+		// position shorthands
+		if(typeof position.x === 'string') {
+			if(position.x === 'left') {
+				position.x = obj.centerX - obj.radiusX - dist;
+			} else if(position.x === 'center') {
+				position.x = obj.centerX;
+			} else if(position.x === 'right') {
+				position.x = obj.centerX + obj.radiusX + dist;
+			} else {
+				this.logger.warn(`label config for ${obj.name}: x position shorthand "${position.x}" is unknown`);
+			}
+		}
+		if(typeof position.y === 'string') {
+			if(position.y === 'top') {
+				position.y = obj.centerY + obj.radiusY + dist * .5;
+			} else if(position.y === 'center') {
+				position.y = obj.centerY;
+			} else if(position.y === 'bottom') {
+				position.y = obj.centerY - obj.radiusY - dist * .5;
+			} else {
+				this.logger.warn(`label config for ${obj.name}: y position shorthand "${position.y}" is unknown`);
+			}
+		}
+		// anchor shorthands
+		if(typeof anchor.x === 'string') {
+			if(anchor.x === 'center') {
+				position.x -= obj.label.w * .5;
+			} else if(anchor.x === 'right') {
+				position.x -= obj.label.w;
+			}
+		}
+		if(typeof anchor.y === 'string') {
+			if(anchor.y === 'center') {
+				position.y -= obj.label.h * .5;
+			} else if(anchor.y === 'top') {
+				position.y -= obj.label.h;
+			}
+		}
+		
+		obj.label.x = position.x + position.dx;
+		obj.label.y = position.y + position.dy;
+		
+		// connector
+		if(config.connector) {
+			connPoint = {
+				x: obj.centerX + config.connector.dx || 0,
+				y: obj.centerY + config.connector.dy || 0
+			};
+			isecPoint1 = Utils.getClosestPointOnRectanglePerimeter(connPoint, obj.label);
+			isecPoint2 = Utils.getClosestPointOnEllipsePerimeter(connPoint, obj);
+			
+			obj.label.connector = {
+				p1: isecPoint1,
+				p2: connPoint,
+				p3: isecPoint2
+			};
+		}
+		
+		
+	};
 
     /**
      * Places a label at the best possible position.
@@ -541,7 +631,11 @@ module.exports = (function () {
         for(var i = 0, len = this.orderedObjIndices.length; i < len; i++) {
             curObj = this.objects[this.orderedObjIndices[i]];
             this.grid.unplaceObject(curObj.label);
-            this.findBestLabelPositionFor(curObj);
+			if(this.labelConfig.hasOwnProperty(curObj.name)) {
+				this.determineLabelPositionFor(curObj);
+			} else {
+				this.findBestLabelPositionFor(curObj);
+			}
             this.grid.placeObject(curObj.label);
         }
 
