@@ -16,6 +16,15 @@ module.exports = (function () {
 	};
 
     SvgWriter.prototype.constructor = SvgWriter;
+	
+	/**
+	 * Create a system neighborhood SVG file.
+	 */
+	SvgWriter.prototype.writeSystemNeighborhoodSvg = function (name, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings, additionalConfig) {
+		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
+		var filename = this.baseDir + '/output/'+name.replace(/\s/g, '_')+'_' +era.year + '_' + safeEraName + '.svg';
+		this.writeSvg(filename, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings, additionalConfig);
+	};
 
 	/**
 	 * Create an SVG file.
@@ -49,7 +58,7 @@ module.exports = (function () {
 		els = {
 			borders: '',
 			factionLabels : '',
-			jumpRadius : '',
+			jumpRings : '',
 			cutout : '',
 			nebulae : '',
 			nebulaeLabels : '',
@@ -205,6 +214,7 @@ module.exports = (function () {
 				rgba = this.hexToRgba(fill + '88');
 				tplObj = {
 					faction : systems[i].col,
+					additionalClasses : '',
 					name : systems[i].name,
 					x : systems[i].centerX.toFixed(3),
 					y : (-systems[i].centerY).toFixed(3),
@@ -214,7 +224,11 @@ module.exports = (function () {
 					stroke : fill,
 					fill : `rgba(${rgba.r},${rgba.g},${rgba.b},${rgba.a})`
 				};
-				els.systems += `<ellipse class="cluster ${tplObj.faction}" data-name="${tplObj.name}"
+				if(systems[i].status.toLowerCase() === 'apocryphal') {
+					tplObj.additionalClasses += 'apocryphal';
+				}
+				els.systems += `<ellipse class="cluster ${tplObj.faction} ${tplObj.additionalClasses}" 
+							data-name="${tplObj.name}"
 							cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.radiusX}" ry="${tplObj.radiusY}"
 							transform="rotate(${tplObj.angle}, ${tplObj.x}, ${tplObj.y})"
 							style="fill: ${tplObj.fill};"  />\n`;
@@ -232,54 +246,61 @@ module.exports = (function () {
 
 				tplObj = {
 					x : systems[i].label.x.toFixed(3),
-					//y : (-systems[i].label.y - systems[i].h * .25).toFixed(3),
 					y: (-systems[i].label.y).toFixed(3),
 					labelClass : labelCls,
-					name : systems[i].name
+					name : systems[i].name,
+					sup : ''
 				};
+				if((systems[i].status || '').toLowerCase() === 'apocryphal') {
+					tplObj.labelClass += ' apocryphal';
+					tplObj.sup = '<tspan class="sup" dx="0.5" dy="1">(apocryphal)</tspan>';
+				}
 				els.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
 										class="system-label ${tplObj.labelClass}" >
-							${tplObj.name}
+							${tplObj.name}${tplObj.sup}
 							</text>\n`;
 
 			} else {
 				// system circle
 				tplObj = {
 					faction : systems[i].col,
+					additionalClasses : '',
 					name : systems[i].name,
 					x : systems[i].centerX.toFixed(3),
 					y : (-systems[i].centerY).toFixed(3),
 					r : systems[i].radiusX,
 					fill : fill
 				};
-				els.systems += `<circle class="system ${tplObj.faction}"
+				if(systems[i].status.toLowerCase() === 'apocryphal') {
+					tplObj.additionalClasses += 'apocryphal';
+				}
+				els.systems += `<circle class="system ${tplObj.faction} ${tplObj.additionalClasses}"
 							data-name="${tplObj.name}" cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r}"
 							style="fill: ${tplObj.fill}" />\n`;
 
 				// system label
 				tplObj = {
 					x : systems[i].label.x.toFixed(3),
-					y : (-systems[i].label.y).toFixed(3),// - systems[i].h*.25).toFixed(3),
+					y : (-systems[i].label.y).toFixed(3),
 					labelClass : labelCls,
-					name : systems[i].name
+					name : systems[i].name,
+					sup : ''
 				};
+				if((systems[i].status || '').toLowerCase() === 'apocryphal') {
+					tplObj.labelClass += ' apocryphal';
+					tplObj.sup = '<tspan class="sup" dx="0.5" dy="-1">(apocryphal)</tspan>';
+				}
 				els.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
 										class="system-label ${tplObj.labelClass}">
-							${tplObj.name}</text>\n`;
+							${tplObj.name}${tplObj.sup}</text>\n`;
 			}
 		}
 
-		// render jump radius circles
-		tplObj = {
+		// render jump rings
+		els.jumpRings = this.renderJumpRings({
 			x: viewRect.x + viewRect.w * .5,
-			y: -viewRect.y - viewRect.h * .5,
-			r: 30
-		};
-		els.jumpRadius = `<circle class="jump-radius" cx="${tplObj.x}"
-					cy="${tplObj.y}" r="${tplObj.r}" />\n`;
-		tplObj.r = 60;
-		els.jumpRadius += `<circle class="jump-radius" cx="${tplObj.x}"
-					cy="${tplObj.y}" r="${tplObj.r}" />\n`;
+			y: viewRect.y + viewRect.h * .5
+		}, additionalConfig.jumpRings);
 
 		// render the minimap
 		if(minimapSettings) {
@@ -492,8 +513,8 @@ module.exports = (function () {
 		if(!!els.nebulaeLabels) {
 			elementsStr += `<g class="nebulae-labels">${els.nebulaeLabels}</g>\n`;
 		}
-		if(!!els.jumpRadius) {
-			elementsStr += `<g class="jump-radius">${els.jumpRadius}</g>\n`;
+		if(!!els.jumpRings) {
+			elementsStr += `<g class="jump-radius-rings">${els.jumpRings}</g>\n`;
 		}
 		if(!!els.systems) {
 			elementsStr += `<g class="systems">${els.systems}</g>\n`;
@@ -527,12 +548,28 @@ module.exports = (function () {
 		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + filename + '" written');
 	};
-
-
-	SvgWriter.prototype.writeSystemNeighborhoodSvg = function (name, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings) {
-		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
-		var filename = this.baseDir + '/output/'+name.replace(/\s/g, '_')+'_' +era.year + '_' + safeEraName + '.svg';
-		this.writeSvg(filename, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings);
+	
+	/**
+	 * @param c {Object} The center point of all jump rings
+	 * @param jumpRingDistances {Array} The distances to paint jump rings at
+	 * @returns {String} SVG elements representing the jump radius rings
+	 * @private
+	 */
+	SvgWriter.prototype.renderJumpRings = function (c, jumpRingDistances) {
+		var ret = '';
+		var tplObj;
+		if(!c || !jumpRingDistances) {
+			return ret;
+		}
+		tplObj = {
+			cx: c.x.toFixed(3),
+			cy: (-c.y).toFixed(3)
+		};
+		for(var i = 0; i < jumpRingDistances.length; i++) {
+			tplObj.r = jumpRingDistances[i];
+			ret += `<circle cx="${tplObj.cx}" cy="${tplObj.cy}" r="${tplObj.r}" />\n`;
+		}			
+		return ret;
 	};
 
 	/**
@@ -551,16 +588,7 @@ module.exports = (function () {
 	SvgWriter.prototype.rgbToHex = function (r, g, b) {
     	return "#" + this.componentToHex(r) + this.componentToHex(g) + this.componentToHex(b);
 	};
-
-	/*SvgWriter.prototype.hexToRgb = function (hex) {
-	    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-	    return result ? {
-	        r: parseInt(result[1], 16),
-	        g: parseInt(result[2], 16),
-	        b: parseInt(result[3], 16)
-	    } : null;
-	};*/
-
+	
 	/**
 	 * @see https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 	 * @private

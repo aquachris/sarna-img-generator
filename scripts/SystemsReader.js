@@ -145,28 +145,8 @@ module.exports = (function () {
 				continue;
 			}
 
-			// skip apocryphal systems for now (TODO)
-			if(curRow[columnIdxMap['status']].toLowerCase() === 'apocryphal') {
-				continue;
-			}
-
 			// read system
-			curSystem = {
-				radiusX: 1.0,
-				radiusY: 1.0
-			};
-			// TODO read this from SUCS file
-            if(curRow[columnIdxMap['system']] === 'Hyades Cluster') {
-				curSystem.radiusX = 5.0;
-				curSystem.radiusY = 5.0;
-				curSystem.rotation = 0.0;
-            } else if(curRow[columnIdxMap['system']] === 'Pleiades Cluster') {
-				/*curSystem.radiusX = 2.6;
-				curSystem.radiusY = 5.0;
-				curSystem.rotation = 52;
-				curRow[columnIdxMap['x']] = 214;
-				curRow[columnIdxMap['y']] = -323;*/
-			}
+			curSystem = {};
 			// name and status
 			curSystem.name_full = curRow[columnIdxMap['system']];
             curSystem.name = curSystem.name_full;
@@ -182,6 +162,10 @@ module.exports = (function () {
                 //console.log(parentheses, curSystem.name, curSystem.oldName || '', curSystem.newName || '');
             }
 			curSystem.status = curRow[columnIdxMap['status']];
+			/*if(curSystem.status.toLowerCase() === 'apocryphal') {
+				curSystem.name_full += ' (apocryphal)';
+				curSystem.name += ' (apocryphal)';
+			}*/
 			// coordinates
 			curSystem.x = curRow[columnIdxMap['x']];
 			curSystem.y = curRow[columnIdxMap['y']];

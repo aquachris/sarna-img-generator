@@ -78,9 +78,17 @@ module.exports = (function () {
             var labelWidth = 0;
             var labelId;
 			var x, y;
+			var sup;
             for(var i = 0; i < obj.name.length; i++) {
                 labelWidth += this.glyphSettings.widths[obj.name[i]] || defaultWidth;
             }
+			if((obj.status || '').toLowerCase() === 'apocryphal') {
+				sup = '(apocryphal)';
+				labelWidth += this.glyphSettings.widths[' '] || defaultWidth;
+				for(var i = 0; i < sup.length; i++) {
+					labelWidth += .6 * this.glyphSettings.widths[sup[i]] || defaultWidth;
+				}
+			}
 
             labelId = 'label_';
             if(!isElliptical) {
@@ -272,7 +280,7 @@ module.exports = (function () {
                     y: obj.label.y + obj.label.h + dist * .5
                 };
                 if(obj.label.y > connPoint.y) {
-                    labelEdgePoint.y = obj.label.y - dist * .5;
+                    labelEdgePoint.y = obj.label.y - dist;
                 }
             } else {
                 labelEdgePoint = Utils.getClosestPointOnRectanglePerimeter(connPoint, obj.label);

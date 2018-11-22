@@ -12,7 +12,7 @@
 		},
 		"connector": {
 			"dx" : 7,
-			"dy" : -3.7
+			"dy" : -3.5
 		}
 	}],
 	"Ishtar": [{
@@ -55,6 +55,22 @@
 			"x" : "left",
 			"y" : "center",
 			"dy": -1.5
+		}
+	}],
+	"Pleiades Cluster": [{
+		"anchor": {
+			"x": "center",
+			"y": "center"
+		}, 
+		"position": {
+			"x": "center",
+			"y": "center",
+			"dx": 2,
+			"dy": 7
+		},
+		"connector" : {
+			"dx" : 5, 
+			"dy" : 4
 		}
 	}],
 	"Taurus": [{

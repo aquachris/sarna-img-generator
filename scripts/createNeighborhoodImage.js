@@ -80,6 +80,10 @@ var main = function () {
 	//focusedSystemName = 'Babaeski';
 	//focusedSystemName = 'Terra';
 	//focusedSystemName = 'Ridgebrook';
+	//focusedSystemName = 'New Vandenburg';
+	//focusedSystemName = 'Alloway';
+	//focusedSystemName = 'Naco';
+	//focusedSystemName = 'Thala';
     for(var i = 0, len = reader.systems.length; i < len; i++) {
         if(reader.systems[i].name === focusedSystemName) {
             viewRect.x = reader.systems[i].x - viewRect.w * .5;
@@ -128,6 +132,9 @@ var main = function () {
 			reader.systems[i].col = curAff;
 			if(curAff === '' || curAff === 'U' || curAff === 'A') {
 		          continue;
+			}
+			if(curSys.status.toLowerCase() === 'apocryphal') {
+				continue;
 			}
 			reservedPoints.push({x: curSys.x, y: curSys.y, col: curAff});
 			voronoiSystems.push({
@@ -195,6 +202,9 @@ var main = function () {
 				dimensions : minimapDimensions,
 				viewRect : minimapViewRect,
 				borders: minimapBorders
+			}, 
+			{
+				jumpRings: [30, 60]
 			}
 		);
 	}
