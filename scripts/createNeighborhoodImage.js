@@ -83,6 +83,7 @@ var main = function () {
 	//focusedSystemName = 'New Vandenburg';
 	//focusedSystemName = 'Alloway';
 	//focusedSystemName = 'Naco';
+	//focusedSystemName = 'Rosetta';
 	//focusedSystemName = 'Thala';
     for(var i = 0, len = reader.systems.length; i < len; i++) {
         if(reader.systems[i].name === focusedSystemName) {

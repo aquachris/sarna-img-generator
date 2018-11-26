@@ -178,9 +178,9 @@ module.exports = (function () {
 			} else if(curScale.length === 2) {
 				curScale = [curScale[0], curScale[1], 0];
 			}
-			curSystem.radiusX = parseInt(curScale[0], 10);
-			curSystem.radiusY = parseInt(curScale[1], 10);
-			curSystem.rotation = parseInt(curScale[2], 10);
+			curSystem.radiusX = parseFloat(curScale[0], 10);
+			curSystem.radiusY = parseFloat(curScale[1], 10);
+			curSystem.rotation = parseFloat(curScale[2], 10);
 			curSystem.isCluster = curSystem.radiusX !== 1.0 || curSystem.radiusY !== 1.0;
 
             // era affiliations

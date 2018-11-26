@@ -62,6 +62,7 @@ module.exports = (function () {
 			cutout : '',
 			nebulae : '',
 			nebulaeLabels : '',
+			clusters : '',
 			systems : '',
 			systemLabels : '',
 			minimap : '',
@@ -202,16 +203,22 @@ module.exports = (function () {
 				fill = factions[systems[i].col].color;
 			}
 			labelCls = '';
-			if(systems[i].col === '' || systems[i].col === 'U' || systems[i].col === 'A') {
+			if(systems[i].col === '' || systems[i].col === 'U') {
 				fill = '#aaaaaa';
-				labelCls = 'uninhabited';
+				labelCls = 'undiscovered';
+			} else if(systems[i].col === 'A') {
+				fill = '#000000';
+				labelCls = 'abandoned';
+			} else if(systems[i].col === 'I') {
+				fill = '#ffffff';
+				labelCls = 'independent';
 			}
 
 			if(systems[i].isCluster) {
 				// cluster ellipse
 				// Microsoft browsers do not support the hexadecimal rgba notation (#000000ff)
 				// use rgba(r, g, b, a) syntax instead
-				rgba = this.hexToRgba(fill + '88');
+				rgba = this.hexToRgba(fill + '44');
 				tplObj = {
 					faction : systems[i].col,
 					additionalClasses : '',
@@ -227,7 +234,7 @@ module.exports = (function () {
 				if(systems[i].status.toLowerCase() === 'apocryphal') {
 					tplObj.additionalClasses += 'apocryphal';
 				}
-				els.systems += `<ellipse class="cluster ${tplObj.faction} ${tplObj.additionalClasses}" 
+				els.clusters += `<ellipse class="cluster ${tplObj.faction} ${tplObj.additionalClasses}" 
 							data-name="${tplObj.name}"
 							cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.radiusX}" ry="${tplObj.radiusY}"
 							transform="rotate(${tplObj.angle}, ${tplObj.x}, ${tplObj.y})"
@@ -241,7 +248,7 @@ module.exports = (function () {
 					curD += ',' + (-systems[i].label.connector.p2.y).toFixed(2);
 					curD += ' L' + systems[i].label.connector.p3.x.toFixed(2);
 					curD += ',' + (-systems[i].label.connector.p3.y).toFixed(2);
-					els.systems += `<path d="${curD}" class="label-connector" />\n`;
+					els.clusters += `<path d="${curD}" class="label-connector" />\n`;
 				}
 
 				tplObj = {
@@ -378,6 +385,36 @@ module.exports = (function () {
 								style="stroke: ${tplObj.stroke}; stroke-width:2px; fill:${tplObj.fill};"
 								d="${curD}" />\n`;
 			}
+			
+			// iterate over nebulae
+			for(var i = 0, len = nebulae.length; i < len; i++) {
+				// nebula ellipse
+				tplObj = {
+					name : nebulae[i].name,
+					x : nebulae[i].centerX.toFixed(3),
+					y : (-nebulae[i].centerY).toFixed(3),
+					rx : nebulae[i].w*.5,
+					ry : nebulae[i].h*.5
+				};
+				/*els.nebulae += `<ellipse data-name="${tplObj.name}"
+							cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.rx}" ry="${tplObj.ry}" />\n`;*/
+
+				curD = '';
+				for(var j = 0, jlen = nebulae[i].points.length; j <= jlen; j++) {
+					curPoint = nebulae[i].points[j % jlen];
+					if(j === 0) {
+						curD += 'M' + curPoint.x.toFixed(1) + ',' + (-curPoint.y).toFixed(1);
+					} else {
+						curD += ' L' + curPoint.x.toFixed(1) + ',' + (-curPoint.y).toFixed(1);
+					}
+					//curD += nebulae[i].points[j].x.toFixed(3) + ',';
+					//curD += (-nebulae[i].points[j].y).toFixed(3);
+				}
+
+				els.minimap += `<path fill-rule="evenodd" class="nebula"
+							data-name="${tplObj.name}"
+							d="${curD}" />\n`;
+			}
 
 			// map cutout rectangle
 			tplObj = {
@@ -506,6 +543,9 @@ module.exports = (function () {
 		}
 		if(!!els.factionLabels) {
 			elementsStr += `<g class="faction-labels">${els.factionLabels}</g>\n`;
+		}
+		if(!!els.clusters) {
+			elementsStr += `<g class="clusters">${els.clusters}</g>\n`;
 		}
 		if(!!els.nebulae) {
 		elementsStr += `<g class="nebulae">${els.nebulae}</g>\n`;

@@ -45,6 +45,9 @@
 				<feMergeNode in="SourceGraphic"/>
 			</feMerge>
 		</filter>
+		<pattern id="nebula-fill" width="2" height="2" patternUnits="userSpaceOnUse">
+			<path d="M-.5,.5 l1,-1 M0,2 l2,-2 M1.5,2.5 l1,-1" style="stroke:rgba(0, 0, 0, .075); stroke-width:.6" />
+		</pattern>
 		{DEFS}
 	</defs>
 
@@ -53,18 +56,20 @@
 		circle.system { fill: #000; stroke: #000; stroke-width: .25; } /* default color */
 		circle.system.apocryphal { stroke: #c00; }
 		ellipse.cluster { fill: #000; stroke: #000; stroke-width: .25; } /* default color */
-		g.jump-radius-rings circle { fill: transparent; stroke: rgba(80,80,80,.5); stroke-width: .25 }
+		g.jump-radius-rings circle { fill: none; stroke: rgba(80,80,80,.5); stroke-width: .25 }
 		g.nebulae ellipse { fill: rgba(0, 0, 0, .1); stroke: rgba(0, 0, 0, .3); stroke-width: .25 }
-		g.nebulae path { fill: rgba(0, 0, 0, .1); stroke: rgba(0, 0, 0, .3); stroke-width: .25 }
-		text.nebulae-label { font-size: 2.5px; fill: #888; }
+		g.nebulae path { fill: url(#nebula-fill); stroke: rgba(0, 0, 0, .5); stroke-width: .25 }
+		text.nebulae-label { font-size: 2.5px; fill: #777; }
 		text.system-label { font-size: 2.5px; text-shadow: 1px 1px 0 #fff, -1px 1px 0 #fff, 1px -1px 0 #fff, -1px -1px 0 #fff; }
-		text.system-label.uninhabited { fill: #555; font-style: italic; }
+		text.system-label.abandoned { fill: #555; font-style: italic; }
+		text.system-label.undiscovered { fill: #555; font-style: italic; }
 		text.system-label tspan.sup { font-size: 1.5px; }
 		text.system-label.apocryphal tspan.sup { fill: #c00 }
 		text.faction-label { fill: #aaa; font-size: 6px; font-style: italic; font-weight: bold; text-shadow: .05em .05em 0 #eee, -.05em .05em 0 #eee, .05em -.05em 0 #eee, -.05em -.05em 0 #eee; }
 		path.label-connector { fill: none; stroke: #000; stroke-width: 0.25; }
 		.minimap-outer text { font-size: 60px; text-shadow: 1px 1px 0 #fff, -1px 1px 0 #fff, 1px -1px 0 #fff, -1px -1px 0 #fff; }
 		.minimap-outer text .smaller { font-size: 45px; }
+		.minimap-outer path.nebula { fill: rgba(0, 0, 0, .075); stroke: rgba(0, 0, 0, .5); stroke-width: .25; }
 		path { stroke-linejoin: round; stroke-linecap: round; }
 		.scale rect.black { stroke-width: 0; fill: #000; }
 		.scale rect.white { stroke-width: 0; fill: #fff; }

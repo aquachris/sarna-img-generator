@@ -11,25 +11,17 @@
 			"dy": -3.5
 		},
 		"connector": {
-			"dx" : 7,
+			"dx" : 9,
 			"dy" : -3.5
 		}
 	}],
 	"Ishtar": [{
-		"anchor": {
-			"x" : "right",
-			"y" : "center"
-		},
 		"position": {
 			"x" : "left",
 			"y" : "center"
 		}
 	}],
 	"Jansen's Hold" : [{
-		"anchor": {
-			"x" : "center",
-			"y" : "bottom"
-		},
 		"position": {
 			"x" : "center",
 			"y" : "top",
@@ -37,20 +29,12 @@
 		}
 	}],
 	"MacLeod's Land" : [{
-		"anchor": {
-			"x" : "center",
-			"y" : "bottom"
-		},
 		"position": {
 			"x" : "center",
 			"y" : "top"
 		}
 	}],
 	"Pinard": [{
-		"anchor": {
-			"x": "right",
-			"y": "center"
-		},
 		"position": {
 			"x" : "left",
 			"y" : "center",
@@ -65,12 +49,13 @@
 		"position": {
 			"x": "center",
 			"y": "center",
-			"dx": 2,
-			"dy": 7
-		},
-		"connector" : {
-			"dx" : 5, 
-			"dy" : 4
+			"dx": 0,
+			"dy": 5
+		}
+	}, {
+		"position": {
+			"x": "right",
+			"y": "center"
 		}
 	}],
 	"Taurus": [{
