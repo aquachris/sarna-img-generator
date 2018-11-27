@@ -13,9 +13,30 @@ module.exports = (function () {
 	var SvgWriter = function (logger, baseDir) {
 		this.baseDir = baseDir || '.';
 		this.logger = logger;
+		this.markup = {};
+		this.initMarkup();
 	};
 
     SvgWriter.prototype.constructor = SvgWriter;
+	
+	/**
+	 * Resets the generated markup.
+	 * @private
+	 */
+	SvgWriter.prototype.initMarkup = function () {
+		this.markup = {
+			defs : '',
+			borders: '',
+			jumpRings : '',
+			nebulae : '',
+			nebulaeLabels : '',
+			clusters : '',
+			systems : '',
+			systemLabels : '',
+			minimap : '',
+			scaleHelp : ''
+		};
+	};
 	
 	/**
 	 * Create a system neighborhood SVG file.
@@ -43,42 +64,84 @@ module.exports = (function () {
 	SvgWriter.prototype.writeSvg = function (filename, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings, additionalConfig) {
 		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf-8' });
 		var viewBox;
-		var defsStr = '';
 		var elementsStr;
-		var els;
-		var borderEdges;
-		var stroke, fill, rgba;
-		var labelCls;
-		var prevEdge, curEdge, curD;
 		var pxPerLy = dimensions.w / viewRect.w;
-		var htmlTpl, tplObj;
-		var isec1, isec2;
+		
+		// reset markup
+		this.initMarkup();
 
-		// initialize elements object
-		els = {
-			borders: '',
-			factionLabels : '',
-			jumpRings : '',
-			cutout : '',
-			nebulae : '',
-			nebulaeLabels : '',
-			clusters : '',
-			systems : '',
-			systemLabels : '',
-			minimap : '',
-			scale : ''
-		};
+		// render faction borders and state areas
+		this.renderFactions(factions, borders);
+		
+		// render nebulae
+		this.renderNebulae(nebulae);
+		
+		// render systems and clusters
+		this.renderSystemsAndClusters(factions, systems);
 
-		// create a faction entry for disputed systems
-		factions['D'] = {
-			shortName : 'D',
-			longName : 'Disputed',
-			category : '',
-			color : '#ff0000',
-			fill : 'transparent',
-			founding : 0,
-			dissolution : ''
+		// render jump rings
+		this.renderJumpRings(viewRect, additionalConfig.jumpRings);
+
+		// render the minimap
+		this.renderMinimap(minimapSettings, viewRect, pxPerLy, factions, nebulae);
+
+		// render scale help
+		this.renderScaleHelp(viewRect, pxPerLy);
+
+		// concatenate markup
+		elementsStr = '';
+		elementsStr += this.markup.borders ? `<g class="borders">${this.markup.borders}</g>\n` : '';
+		elementsStr += this.markup.clusters ? `<g class="clusters">${this.markup.clusters}</g>\n` : '';
+		elementsStr += this.markup.nebulae ? `<g class="nebulae">${this.markup.nebulae}</g>\n` : '';
+		elementsStr += this.markup.nebulaeLabels ? `<g class="nebulae-labels">${this.markup.nebulaeLabels}</g>\n` : '';
+		elementsStr += this.markup.jumpRings ? `<g class="jump-radius-rings">${this.markup.jumpRings}</g>\n` : '';
+		elementsStr += this.markup.systems ? `<g class="systems">${this.markup.systems}</g>\n` : '';
+		elementsStr += this.markup.systemLabels ? `<g class="system-labels">${this.markup.systemLabels}</g>\n` : '';
+		elementsStr += this.markup.minimap ? `<g class="minimap">${this.markup.minimap}</g>\n` : '';
+		elementsStr += this.markup.scaleHelp ? `<g class="scale">${this.markup.scaleHelp}</g>\n` : '';
+
+		// insert markup into base map template
+		tpl = tpl.replace('{WIDTH}', dimensions.w);
+		tpl = tpl.replace('{HEIGHT}', dimensions.h);
+		// svg viewBox's y is top left, not bottom left
+		// viewRect is in map space, viewBox is in svg space
+		viewBox = {
+			x: viewRect.x,
+			y: -viewRect.y - viewRect.h,
+			w: viewRect.w,
+			h: viewRect.h
 		};
+		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);
+		tpl = tpl.replace('{DEFS}', this.markup.defs);
+		tpl = tpl.replace('{ELEMENTS}', elementsStr);
+		// make filename safe
+		filename = filename.replace(/[\+\s\(\)]/g, '_');
+		// write file
+		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
+		this.logger.log('file "' + filename + '" written');
+	};
+	
+	/**
+	 * @private
+	 */
+	SvgWriter.prototype.renderFactions = function (factions, borders) {
+		var borderEdges;
+		var curEdge, curD;
+		var rgba, tplObj;
+		
+		// make sure there is a faction entry for disputed systems
+		if(!factions['D']) {
+			factions['D'] = {
+				shortName : 'D',
+				longName : 'Disputed',
+				category : '',
+				color : '#ff0000',
+				fill : 'transparent',
+				founding : 0,
+				dissolution : ''
+			};
+		}
+		
 		// change independent systems' primary color to black (from white)
 		factions['I'].color = '#000000';
 
@@ -94,7 +157,6 @@ module.exports = (function () {
 			}*/
 
 			// add borders (if faction borders have been passed)
-			//borderEdges = vBorder.boundedBorderEdges[faction];
 			borderEdges = borders[faction];
 			if(!borderEdges || borderEdges.length === 0) {
 				continue;
@@ -108,9 +170,9 @@ module.exports = (function () {
 				factions[faction].fill = 'rgba('+rgba.r+','+rgba.g+','+rgba.b+', .3)';
 			}
 
+			// trace borders one edge at a time
 			curD = '';
 			for(var i = 0, len = borderEdges.length; i < len; i++) {
-				prevEdge = curEdge;
 				curEdge = borderEdges[i];
 				if(curEdge.isFirstInLoop) {
 					curD += ' M'+curEdge.n1.x.toFixed(2)+','+(-curEdge.n1.y).toFixed(2);
@@ -127,21 +189,30 @@ module.exports = (function () {
 			if(curD.length === 0) {
 				continue;
 			}
+			
+			// convert a faction area to SVG markup
 			tplObj = {
 				faction : faction,
 				stroke : factions[faction].color,
 				fill : factions[faction].fill,
 				d : curD
 			};
-			els.borders += `<path fill-rule="evenodd" class="border ${tplObj.faction}"
+			this.markup.borders += `<path fill-rule="evenodd" class="border ${tplObj.faction}"
 						style="stroke: ${tplObj.stroke}; stroke-width: 1px; fill: ${tplObj.fill};"
 						d="${tplObj.d}" />\n`;
 		}
-
-		// render nebulae
+	};
+	
+	/**
+	 * Renders nebula objects.
+	 * @private
+	 */
+	SvgWriter.prototype.renderNebulae = function (nebulae) {
+		var tplObj, curD;
 		var prevPoint, curPoint;
+		
 		for(var i = 0, len = nebulae.length; i < len; i++) {
-			// nebula ellipse
+			// nebula ellipse / polygon
 			tplObj = {
 				name : nebulae[i].name,
 				x : nebulae[i].centerX.toFixed(3),
@@ -163,17 +234,11 @@ module.exports = (function () {
 					curD += ' ' + curPoint.c1.x.toFixed(2) + ',' + (-curPoint.c1.y).toFixed(2);
 					curD += ' ' + curPoint.x.toFixed(2) + ',' + (-curPoint.y).toFixed(2);
 				}
-				//curD += nebulae[i].points[j].x.toFixed(3) + ',';
-				//curD += (-nebulae[i].points[j].y).toFixed(3);
 			}
 
-			els.nebulae += `<path fill-rule="evenodd" class="nebula"
+			this.markup.nebulae += `<path fill-rule="evenodd" class="nebula"
 						data-name="${tplObj.name}"
 						d="${curD}" />\n`;
-
-			// style="stroke: #000; stroke-width: 0.25px; fill: #0007;"
-			/*els.nebulae += `<ellipse data-name="${tplObj.name}"
-						cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.rx}" ry="${tplObj.ry}" />\n`;*/
 
 			// nebula label
 			tplObj = {
@@ -181,19 +246,21 @@ module.exports = (function () {
 				y : (-nebulae[i].label.y).toFixed(3),
 				name : nebulae[i].name
 			};
-			els.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.y}" class="nebulae-label">
+			this.markup.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.y}" class="nebulae-label">
 				${tplObj.name}</text>\n`;
 		}
-
-		/*console.log(Utils.lineEllipseIntersection({
-			x1: 5, y1: 5,
-			x2: 0, y2: 0
-		}, {
-			centerX: -2, centerY: -1,
-			radiusX: 3, radiusY: 3
-		}));*/
-
-		// render clusters and planetary systems
+	};
+	
+	/**
+	 * Renders systems and cluster objects.
+	 * @private
+	 */
+	SvgWriter.prototype.renderSystemsAndClusters = function (factions, systems) {
+		var tplObj;
+		var fill, rgba;
+		var labelCls;
+		var curD;
+		
 		for(var i = 0, len = systems.length; i < len; i++) {
 			if(systems[i].col === 'DUMMY') {
 				continue;
@@ -234,7 +301,7 @@ module.exports = (function () {
 				if(systems[i].status.toLowerCase() === 'apocryphal') {
 					tplObj.additionalClasses += 'apocryphal';
 				}
-				els.clusters += `<ellipse class="cluster ${tplObj.faction} ${tplObj.additionalClasses}" 
+				this.markup.clusters += `<ellipse class="cluster ${tplObj.faction} ${tplObj.additionalClasses}" 
 							data-name="${tplObj.name}"
 							cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.radiusX}" ry="${tplObj.radiusY}"
 							transform="rotate(${tplObj.angle}, ${tplObj.x}, ${tplObj.y})"
@@ -248,7 +315,7 @@ module.exports = (function () {
 					curD += ',' + (-systems[i].label.connector.p2.y).toFixed(2);
 					curD += ' L' + systems[i].label.connector.p3.x.toFixed(2);
 					curD += ',' + (-systems[i].label.connector.p3.y).toFixed(2);
-					els.clusters += `<path d="${curD}" class="label-connector" />\n`;
+					this.markup.clusters += `<path d="${curD}" class="label-connector" />\n`;
 				}
 
 				tplObj = {
@@ -262,7 +329,7 @@ module.exports = (function () {
 					tplObj.labelClass += ' apocryphal';
 					tplObj.sup = '<tspan class="sup" dx="0.5" dy="1">(apocryphal)</tspan>';
 				}
-				els.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
+				this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
 										class="system-label ${tplObj.labelClass}" >
 							${tplObj.name}${tplObj.sup}
 							</text>\n`;
@@ -281,7 +348,7 @@ module.exports = (function () {
 				if(systems[i].status.toLowerCase() === 'apocryphal') {
 					tplObj.additionalClasses += 'apocryphal';
 				}
-				els.systems += `<circle class="system ${tplObj.faction} ${tplObj.additionalClasses}"
+				this.markup.systems += `<circle class="system ${tplObj.faction} ${tplObj.additionalClasses}"
 							data-name="${tplObj.name}" cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r}"
 							style="fill: ${tplObj.fill}" />\n`;
 
@@ -297,224 +364,224 @@ module.exports = (function () {
 					tplObj.labelClass += ' apocryphal';
 					tplObj.sup = '<tspan class="sup" dx="0.5" dy="-1">(apocryphal)</tspan>';
 				}
-				els.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
+				this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
 										class="system-label ${tplObj.labelClass}">
 							${tplObj.name}${tplObj.sup}</text>\n`;
 			}
 		}
-
-		// render jump rings
-		els.jumpRings = this.renderJumpRings({
-			x: viewRect.x + viewRect.w * .5,
-			y: viewRect.y + viewRect.h * .5
-		}, additionalConfig.jumpRings);
-
-		// render the minimap
-		if(minimapSettings) {
-
-			var pxPerLyMinimap = minimapSettings.dimensions.w / minimapSettings.viewRect.w;
-
-			// add clip path for minimap content
-			tplObj = {
-				x : minimapSettings.viewRect.x,
-				y : -minimapSettings.viewRect.y - minimapSettings.viewRect.h,
-				w : minimapSettings.viewRect.w,
-				h : minimapSettings.viewRect.h
-			};
-			defsStr += `<clipPath id="minimapClip">
-						<rect x="${tplObj.x}" y="${tplObj.y}"
-								width="${tplObj.w}" height="${tplObj.h}" />
-						</clipPath>\n`;
-
-			// paint minimap
-			var minimapScale = pxPerLyMinimap / pxPerLy;
-
-			var minimapMargin = 10 / pxPerLy;
-
-			tplObj = {
-				x: viewRect.x + viewRect.w - minimapSettings.viewRect.w * minimapScale - minimapMargin,
-				y: -viewRect.y - minimapSettings.viewRect.h * minimapScale - minimapMargin
-				//y: -viewRect.y - viewRect.h * .25// + viewRect.h - minimapSettings.viewRect.h * .5 * minimapScale - 10 / pxPerLy
-			}
-			els.minimap = `<g class="minimap-outer" transform="translate(${tplObj.x}, ${tplObj.y}) scale(${minimapScale})">\n`;
-
-			//els.minimap += '<rect x="'+minimapSettings.viewRect.x+'" y="'+minimapSettings.viewRect.y+'" ';
-			els.minimap += `<rect x="0" y="0"
-							width="${minimapSettings.viewRect.w}" height="${minimapSettings.viewRect.h}"
-							style="fill: #fff" />\n`;
-
-			tplObj = {
-				tX : -minimapSettings.viewRect.x,
-				tY : minimapSettings.viewRect.y + minimapSettings.viewRect.h
-			};
-			els.minimap += `<g class="minimap-inner" clip-path="url(#minimapClip)"
-								transform="translate(${tplObj.tX}, ${tplObj.tY})">\n`;
-
-			// iterate over factions
-			for(var faction in factions) {
-				borderEdges = minimapSettings.borders[faction];
-				if(!borderEdges || borderEdges.length === 0) {
-					continue;
-				}
-				// don't paint borders for independent planets
-				if(faction === 'I' || faction === 'D') {
-					continue;
-				}
-				rgba = this.hexToRgba(factions[faction].color) || {r: 0, g:0, b:0};
-				if(!factions[faction].fill) {
-					factions[faction].fill = 'rgba('+rgba.r+','+rgba.g+','+rgba.b+', .3)';
-				}
-
-				curD = '';
-				for(var i = 0, len = borderEdges.length; i < len; i++) {
-					prevEdge = curEdge;
-					curEdge = borderEdges[i];
-					if(curEdge.isFirstInLoop) {
-						curD += ' M'+curEdge.n1.x.toFixed(2)+','+(-curEdge.n1.y).toFixed(2);
-					}
-					curD += ' L' + borderEdges[i].n2.x.toFixed(2)+','+(-borderEdges[i].n2.y).toFixed(2);
-				}
-				if(curD.length === 0) {
-					continue;
-				}
-				tplObj = {
-					stroke : factions[faction].color,
-					fill : factions[faction].fill
-				};
-				els.minimap += `<path fill-rule="evenodd" class="border ${faction}"
-								style="stroke: ${tplObj.stroke}; stroke-width:2px; fill:${tplObj.fill};"
-								d="${curD}" />\n`;
-			}
-			
-			// iterate over nebulae
-			for(var i = 0, len = nebulae.length; i < len; i++) {
-				// nebula ellipse
-				tplObj = {
-					name : nebulae[i].name,
-					x : nebulae[i].centerX.toFixed(3),
-					y : (-nebulae[i].centerY).toFixed(3),
-					rx : nebulae[i].w*.5,
-					ry : nebulae[i].h*.5
-				};
-				/*els.nebulae += `<ellipse data-name="${tplObj.name}"
-							cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.rx}" ry="${tplObj.ry}" />\n`;*/
-
-				curD = '';
-				for(var j = 0, jlen = nebulae[i].points.length; j <= jlen; j++) {
-					curPoint = nebulae[i].points[j % jlen];
-					if(j === 0) {
-						curD += 'M' + curPoint.x.toFixed(1) + ',' + (-curPoint.y).toFixed(1);
-					} else {
-						curD += ' L' + curPoint.x.toFixed(1) + ',' + (-curPoint.y).toFixed(1);
-					}
-					//curD += nebulae[i].points[j].x.toFixed(3) + ',';
-					//curD += (-nebulae[i].points[j].y).toFixed(3);
-				}
-
-				els.minimap += `<path fill-rule="evenodd" class="nebula"
-							data-name="${tplObj.name}"
-							d="${curD}" />\n`;
-			}
-
-			// map cutout rectangle
-			tplObj = {
-				x: viewRect.x,
-				y: -viewRect.y - viewRect.h,
-				w: viewRect.w,
-				h: viewRect.h
-			};
-			els.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}"
-								style="fill: none; stroke: #fff; stroke-width: 10;" />\n`;
-			els.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}"
-								style="fill: none; stroke: #a00; stroke-width: 3;" />\n`;
-
-			var focusedCoords = [viewRect.x+viewRect.w*.5,-viewRect.y-viewRect.h*.5];
-
-			if(Utils.pointInRectangle({x:0, y:0}, minimapSettings.viewRect)) {
-				/*els.minimap += '<circle cx="0" cy="0" r="8" style="fill: transparent; stroke: #fff; stroke-width: 8;" />'
-				els.minimap += '<circle cx="0" cy="0" r="20" style="fill: transparent; stroke: #fff; stroke-width: 8;" />'
-				els.minimap += '<circle cx="0" cy="0" r="8" style="fill: transparent; stroke: #000; stroke-width: 3;" />'
-				els.minimap += '<circle cx="0" cy="0" r="20" style="fill: transparent; stroke: #000; stroke-width: 3;" />'*/
-				//els.minimap += '<circle cx="0" cy="0" r="32" style="fill: transparent; stroke: #000; stroke-width: 3;" />'
-			} else {
-				// line to origin
-				//els.minimap += '<path d="M'+focusedCoords[0]+','+focusedCoords[1]+' ';
-				//els.minimap += 'L0,0z" ';
-				//els.minimap += 'style="fill:#0f0;stroke-width:5;stroke:#0a0;" />\n';
-
-				var lineToOrigin = Utils.lineFromPoints(focusedCoords, [0,0]);
-				var distToOrigin = Utils.distance(focusedCoords[0], focusedCoords[1], 0, 0);
-
-				var p1, p2;
-				var rTop = -minimapSettings.viewRect.y - minimapSettings.viewRect.h;
-				var rRight = minimapSettings.viewRect.x + minimapSettings.viewRect.w;
-				var rBottom = -minimapSettings.viewRect.y;
-				var rLeft = minimapSettings.viewRect.x;
-
-				// closest perimeter point from origin
-				var periPoint = Utils.getClosestPointOnRectanglePerimeter({x:0,y:0}, minimapSettings.viewRect);
-				var pPointDist = Utils.distance(periPoint.x, periPoint.y, 0, 0);
-
-				var angle = Utils.angleBetweenVectors([1,0], [periPoint.x, periPoint.y]);
-				// differentiate whether the focused point lies below the y = 0 line to get the true 360° angle
-				if(periPoint.y > 0) {
-					angle = Math.PI * 2 - angle;
-				}
-				//console.log('angle: ', angle, Utils.radToDeg(angle));
-
-				// arrow towards origin
-				tplObj = {
-					tX : periPoint.x.toFixed(2),
-					tY : (-periPoint.y).toFixed(2),
-					rot : Utils.radToDeg(angle).toFixed(2)
-				};
-				els.minimap += `<g transform="translate(${tplObj.tX}, ${tplObj.tY}) rotate(${tplObj.rot})">
-									<path d="M5,0 l50,20 l0,-40z" style="stroke-width: 4; stroke: #fff; fill: #a00;" />
-								</g>`;
-
-				var textPoint = Utils.deepCopy(periPoint);
-				if(periPoint.x < minimapSettings.viewRect.x + 60) {
-					textPoint.x += 60;
-				} else if(periPoint.x < minimapSettings.viewRect.x + minimapSettings.viewRect.w - 150) {
-					textPoint.x += 30;
-				} else {
-					textPoint.x -= 200;
-				}
-				textPoint.y = Utils.clampNumber(periPoint.y, minimapSettings.viewRect.y + 60, minimapSettings.viewRect.y + minimapSettings.viewRect.h - 60);
-				tplObj = {
-					x : textPoint.x.toFixed(2),
-					y : (-textPoint.y).toFixed(2),
-					roundedDist : Math.round(pPointDist / 5) * 5,
-					distStr : ''
-				};
-				if(pPointDist >= 3) {
-					tplObj.distStr = `<tspan x="${tplObj.x}" dy="1.1em" class="smaller">${tplObj.roundedDist} LY</tspan>`;
-				}
-
-				els.minimap += `<text x="${tplObj.x}" y="${tplObj.y}">
-									<tspan>Terra</tspan>
-									${tplObj.distStr}
-								</text>\n`;
-			}
-
-			// close minimap inner container
-			els.minimap += `</g>\n`;
-
-			// frame around the minimap
-			tplObj = {
-				w : minimapSettings.viewRect.w + 10,
-				h : minimapSettings.viewRect.h + 10
-			};
-			els.minimap += `<rect x="-5" y="-5" width="${tplObj.w}" height="${tplObj.h}"
-							style="fill: none; stroke: #000; stroke-width: 10;" />\n`;
-
-			// close minimap outer container
-			els.minimap += `</g>`;
+		
+	};
+	
+	/**
+	 * Renders the minimap.
+	 * @private
+	 */
+	SvgWriter.prototype.renderMinimap = function (minimapSettings, viewRect, pxPerLy, factions, nebulae) {
+		var pxPerLyMinimap, minimapScale, minimapMargin;
+		var tplObj;
+		var borderEdges, prevEdge, curEdge;
+		var rgba;
+		var curD, curPoint;
+		var focusedCoords;
+		
+		if(!minimapSettings) {
+			return;
 		}
 
-		// scale
-		var scaleMargin = 10 / pxPerLy;
+		pxPerLyMinimap = minimapSettings.dimensions.w / minimapSettings.viewRect.w;
+
+		// add clip path for minimap content
 		tplObj = {
+			x : minimapSettings.viewRect.x,
+			y : -minimapSettings.viewRect.y - minimapSettings.viewRect.h,
+			w : minimapSettings.viewRect.w,
+			h : minimapSettings.viewRect.h
+		};
+		this.markup.defs += `<clipPath id="minimapClip">
+			<rect x="${tplObj.x}" y="${tplObj.y}"
+					width="${tplObj.w}" height="${tplObj.h}" />
+			</clipPath>\n`;
+
+		// paint minimap
+		minimapScale = pxPerLyMinimap / pxPerLy;
+		minimapMargin = 10 / pxPerLy;
+
+		tplObj = {
+			x: viewRect.x + viewRect.w - minimapSettings.viewRect.w * minimapScale - minimapMargin,
+			y: -viewRect.y - minimapSettings.viewRect.h * minimapScale - minimapMargin
+		}
+		this.markup.minimap = `<g class="minimap-outer" transform="translate(${tplObj.x}, ${tplObj.y}) scale(${minimapScale})">\n`;
+		this.markup.minimap += `<rect x="0" y="0"
+				width="${minimapSettings.viewRect.w}" height="${minimapSettings.viewRect.h}"
+				style="fill: #fff" />\n`;
+
+		tplObj = {
+			tX : -minimapSettings.viewRect.x,
+			tY : minimapSettings.viewRect.y + minimapSettings.viewRect.h
+		};
+		this.markup.minimap += `<g class="minimap-inner" clip-path="url(#minimapClip)"
+								transform="translate(${tplObj.tX}, ${tplObj.tY})">\n`;
+
+		// iterate over factions and add state areas
+		for(var faction in factions) {
+			borderEdges = minimapSettings.borders[faction];
+			if(!borderEdges || borderEdges.length === 0) {
+				continue;
+			}
+			// don't paint borders for independent planets
+			if(faction === 'I' || faction === 'D') {
+				continue;
+			}
+			rgba = this.hexToRgba(factions[faction].color) || {r: 0, g:0, b:0};
+			if(!factions[faction].fill) {
+				factions[faction].fill = 'rgba('+rgba.r+','+rgba.g+','+rgba.b+', .3)';
+			}
+
+			curD = '';
+			for(var i = 0, len = borderEdges.length; i < len; i++) {
+				prevEdge = curEdge;
+				curEdge = borderEdges[i];
+				if(curEdge.isFirstInLoop) {
+					curD += ' M'+curEdge.n1.x.toFixed(2)+','+(-curEdge.n1.y).toFixed(2);
+				}
+				curD += ' L' + borderEdges[i].n2.x.toFixed(2)+','+(-borderEdges[i].n2.y).toFixed(2);
+			}
+			if(curD.length === 0) {
+				continue;
+			}
+			tplObj = {
+				stroke : factions[faction].color,
+				fill : factions[faction].fill
+			};
+			this.markup.minimap += `<path fill-rule="evenodd" class="border ${faction}"
+					style="stroke: ${tplObj.stroke}; stroke-width:2px; fill:${tplObj.fill};"
+					d="${curD}" />\n`;
+		}
+			
+		// iterate over nebulae
+		for(var i = 0, len = nebulae.length; i < len; i++) {
+			// nebula ellipse / polygon
+			tplObj = {
+				name : nebulae[i].name,
+				x : nebulae[i].centerX.toFixed(3),
+				y : (-nebulae[i].centerY).toFixed(3),
+				rx : nebulae[i].w*.5,
+				ry : nebulae[i].h*.5
+			};
+
+			curD = '';
+			for(var j = 0, jlen = nebulae[i].points.length; j <= jlen; j++) {
+				curPoint = nebulae[i].points[j % jlen];
+				if(j === 0) {
+					curD += 'M' + curPoint.x.toFixed(1) + ',' + (-curPoint.y).toFixed(1);
+				} else {
+					curD += ' L' + curPoint.x.toFixed(1) + ',' + (-curPoint.y).toFixed(1);
+				}
+			}
+
+			this.markup.minimap += `<path fill-rule="evenodd" class="nebula"
+						data-name="${tplObj.name}"
+						d="${curD}" />\n`;
+		}
+
+		// map cutout rectangle
+		tplObj = {
+			x: viewRect.x,
+			y: -viewRect.y - viewRect.h,
+			w: viewRect.w,
+			h: viewRect.h
+		};
+		this.markup.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}"
+							style="fill: none; stroke: #fff; stroke-width: 10;" />\n`;
+		this.markup.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}"
+							style="fill: none; stroke: #a00; stroke-width: 3;" />\n`;
+
+		// Terra indicator
+		focusedCoords = [viewRect.x+viewRect.w*.5,-viewRect.y-viewRect.h*.5];
+		if(Utils.pointInRectangle({x:0, y:0}, minimapSettings.viewRect)) {
+			/*els.minimap += '<circle cx="0" cy="0" r="8" style="fill: transparent; stroke: #fff; stroke-width: 8;" />'
+			els.minimap += '<circle cx="0" cy="0" r="20" style="fill: transparent; stroke: #fff; stroke-width: 8;" />'
+			els.minimap += '<circle cx="0" cy="0" r="8" style="fill: transparent; stroke: #000; stroke-width: 3;" />'
+			els.minimap += '<circle cx="0" cy="0" r="20" style="fill: transparent; stroke: #000; stroke-width: 3;" />'*/
+			//els.minimap += '<circle cx="0" cy="0" r="32" style="fill: transparent; stroke: #000; stroke-width: 3;" />'
+		} else {
+			// line to origin
+			/*var lineToOrigin = Utils.lineFromPoints(focusedCoords, [0,0]);
+			var distToOrigin = Utils.distance(focusedCoords[0], focusedCoords[1], 0, 0);*/
+
+			/*var p1, p2;
+			var rTop = -minimapSettings.viewRect.y - minimapSettings.viewRect.h;
+			var rRight = minimapSettings.viewRect.x + minimapSettings.viewRect.w;
+			var rBottom = -minimapSettings.viewRect.y;
+			var rLeft = minimapSettings.viewRect.x;*/
+
+			// closest perimeter point from origin
+			var periPoint = Utils.getClosestPointOnRectanglePerimeter({x:0,y:0}, minimapSettings.viewRect);
+			var pPointDist = Utils.distance(periPoint.x, periPoint.y, 0, 0);
+
+			var angle = Utils.angleBetweenVectors([1,0], [periPoint.x, periPoint.y]);
+			// differentiate whether the focused point lies below the y = 0 line to get the true 360° angle
+			if(periPoint.y > 0) {
+				angle = Math.PI * 2 - angle;
+			}
+			
+			// arrow towards origin
+			tplObj = {
+				tX : periPoint.x.toFixed(2),
+				tY : (-periPoint.y).toFixed(2),
+				rot : Utils.radToDeg(angle).toFixed(2)
+			};
+			this.markup.minimap += `<g transform="translate(${tplObj.tX}, ${tplObj.tY}) rotate(${tplObj.rot})">
+								<path d="M5,0 l50,20 l0,-40z" style="stroke-width: 4; stroke: #fff; fill: #a00;" />
+							</g>`;
+
+			var textPoint = Utils.deepCopy(periPoint);
+			if(periPoint.x < minimapSettings.viewRect.x + 60) {
+				textPoint.x += 60;
+			} else if(periPoint.x < minimapSettings.viewRect.x + minimapSettings.viewRect.w - 150) {
+				textPoint.x += 30;
+			} else {
+				textPoint.x -= 200;
+			}
+			textPoint.y = Utils.clampNumber(periPoint.y, minimapSettings.viewRect.y + 60, minimapSettings.viewRect.y + minimapSettings.viewRect.h - 60);
+			tplObj = {
+				x : textPoint.x.toFixed(2),
+				y : (-textPoint.y).toFixed(2),
+				roundedDist : Math.round(pPointDist / 5) * 5,
+				distStr : ''
+			};
+			if(pPointDist >= 3) {
+				tplObj.distStr = `<tspan x="${tplObj.x}" dy="1.1em" class="smaller">${tplObj.roundedDist} LY</tspan>`;
+			}
+
+			this.markup.minimap += `<text x="${tplObj.x}" y="${tplObj.y}">
+								<tspan>Terra</tspan>
+								${tplObj.distStr}
+							</text>\n`;
+		}
+
+		// close minimap inner container
+		this.markup.minimap += `</g>\n`;
+
+		// frame around the minimap
+		tplObj = {
+			w : minimapSettings.viewRect.w + 10,
+			h : minimapSettings.viewRect.h + 10
+		};
+		this.markup.minimap += `<rect x="-5" y="-5" width="${tplObj.w}" height="${tplObj.h}"
+					style="fill: none; stroke: #000; stroke-width: 10;" />\n`;
+
+		// close minimap outer container
+		this.markup.minimap += `</g>`;
+	};
+	
+	/**
+	 * Renders the scale help.
+	 * @private
+	 */
+	SvgWriter.prototype.renderScaleHelp = function (viewRect, pxPerLy) {
+		var scaleMargin = 10 / pxPerLy;
+		var tplObj = {
 			tX  : viewRect.x + scaleMargin,
 			tY  : -viewRect.y - 1.5 - scaleMargin,
 			t10 : 10 - 1.365,
@@ -523,93 +590,39 @@ module.exports = (function () {
 			t40 : 40 - 1.365,
 			t50 : 50 - 1.365
 		};
-		els.scale = `<g transform="translate(${tplObj.tX}, ${tplObj.tY})">
-						<rect x="0" y="0" width="50" height="1.5" class="black" />
-						<rect x="10" y="0" width="10" height="1.5" class="white" />
-						<rect x="30" y="0" width="10" height="1.5" class="white" />
-						<rect x="0" y="0" width="50" height="1.5" class="frame" />
-						<text x="-0.682" y="-1">0</text>
-						<text x="${tplObj.t10}" y="-1">10</text>
-						<text x="${tplObj.t20}" y="-1">20</text>
-						<text x="${tplObj.t30}" y="-1">30</text>
-						<text x="${tplObj.t40}" y="-1">40</text>
-						<text x="${tplObj.t50}" y="-1">50</text>
-						<text x="51" y="1.85">LY</text>
-					</g>\n`;
-
-		elementsStr = '';
-		if(!!els.borders) {
-			elementsStr += `<g class="borders">${els.borders}</g>\n`;
-		}
-		if(!!els.factionLabels) {
-			elementsStr += `<g class="faction-labels">${els.factionLabels}</g>\n`;
-		}
-		if(!!els.clusters) {
-			elementsStr += `<g class="clusters">${els.clusters}</g>\n`;
-		}
-		if(!!els.nebulae) {
-		elementsStr += `<g class="nebulae">${els.nebulae}</g>\n`;
-		}
-		if(!!els.nebulaeLabels) {
-			elementsStr += `<g class="nebulae-labels">${els.nebulaeLabels}</g>\n`;
-		}
-		if(!!els.jumpRings) {
-			elementsStr += `<g class="jump-radius-rings">${els.jumpRings}</g>\n`;
-		}
-		if(!!els.systems) {
-			elementsStr += `<g class="systems">${els.systems}</g>\n`;
-		}
-		if(!!els.systemLabels) {
-			elementsStr += `<g class="system-labels">${els.systemLabels}</g>\n`;
-		}
-		if(!!els.minimap) {
-			elementsStr += `<g class="minimap">${els.minimap}</g>\n`;
-		}
-		if(!!els.scale) {
-			elementsStr += `<g class="scale">${els.scale}</g>\n`;
-		}
-
-		tpl = tpl.replace('{WIDTH}', dimensions.w);
-		tpl = tpl.replace('{HEIGHT}', dimensions.h);
-		// svg viewBox's y is top left, not bottom left
-		// viewRect is in map space, viewBox is in svg space
-		viewBox = {
-			x: viewRect.x,
-			y: -viewRect.y - viewRect.h,
-			w: viewRect.w,
-			h: viewRect.h
-		};
-		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);
-		tpl = tpl.replace('{DEFS}', defsStr);
-		tpl = tpl.replace('{ELEMENTS}', elementsStr);
-		// make filename safe
-		filename = filename.replace(/[\+\s\(\)]/g, '_');
-		// write file
-		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
-		this.logger.log('file "' + filename + '" written');
+		this.markup.scaleHelp = `<g transform="translate(${tplObj.tX}, ${tplObj.tY})">
+				<rect x="0" y="0" width="50" height="1.5" class="black" />
+				<rect x="10" y="0" width="10" height="1.5" class="white" />
+				<rect x="30" y="0" width="10" height="1.5" class="white" />
+				<rect x="0" y="0" width="50" height="1.5" class="frame" />
+				<text x="-0.682" y="-1">0</text>
+				<text x="${tplObj.t10}" y="-1">10</text>
+				<text x="${tplObj.t20}" y="-1">20</text>
+				<text x="${tplObj.t30}" y="-1">30</text>
+				<text x="${tplObj.t40}" y="-1">40</text>
+				<text x="${tplObj.t50}" y="-1">50</text>
+				<text x="51" y="1.85">LY</text>
+			</g>\n`;
 	};
 	
 	/**
 	 * @param c {Object} The center point of all jump rings
 	 * @param jumpRingDistances {Array} The distances to paint jump rings at
-	 * @returns {String} SVG elements representing the jump radius rings
 	 * @private
 	 */
-	SvgWriter.prototype.renderJumpRings = function (c, jumpRingDistances) {
-		var ret = '';
+	SvgWriter.prototype.renderJumpRings = function (viewRect, jumpRingDistances) {
 		var tplObj;
-		if(!c || !jumpRingDistances) {
-			return ret;
+		if(!viewRect || !jumpRingDistances) {
+			return;
 		}
 		tplObj = {
-			cx: c.x.toFixed(3),
-			cy: (-c.y).toFixed(3)
+			cx: (viewRect.x + viewRect.w * .5).toFixed(3),
+			cy: (-viewRect.y - viewRect.h * .5).toFixed(3)
 		};
 		for(var i = 0; i < jumpRingDistances.length; i++) {
 			tplObj.r = jumpRingDistances[i];
-			ret += `<circle cx="${tplObj.cx}" cy="${tplObj.cy}" r="${tplObj.r}" />\n`;
-		}			
-		return ret;
+			this.markup.jumpRings += `<circle cx="${tplObj.cx}" cy="${tplObj.cy}" r="${tplObj.r}" />\n`;
+		}
 	};
 
 	/**
