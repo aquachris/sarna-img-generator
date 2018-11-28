@@ -20,7 +20,7 @@ var main = function () {
     var voronoiSystems;
     var clampedSystems;
 	var clampedBorders;
-    var clampedNebulae;
+    var clampedNebulae, minimapNebulae;
 	var curYear;
     var curSys, curAff, curP;
     var years = [];//['3025', '3030', '3052'];
@@ -83,8 +83,16 @@ var main = function () {
 	//focusedSystemName = 'New Vandenburg';
 	//focusedSystemName = 'Alloway';
 	//focusedSystemName = 'Naco';
-	focusedSystemName = 'Rosetta';
+	//focusedSystemName = 'Rosetta';
 	//focusedSystemName = 'Thala';
+	focusedSystemName = 'Badlands Cluster';
+	focusedSystemName = 'Brocchi\'s Cluster';
+	focusedSystemName = 'Chaine Cluster';
+	focusedSystemName = 'Enders Cluster';
+	focusedSystemName = 'Hyades Cluster';
+	focusedSystemName = 'Pleiades Cluster'
+	focusedSystemName = 'Spica';
+	
     for(var i = 0, len = reader.systems.length; i < len; i++) {
         if(reader.systems[i].name === focusedSystemName) {
             viewRect.x = reader.systems[i].x - viewRect.w * .5;
@@ -124,8 +132,10 @@ var main = function () {
     var nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
 	//clampedNebulae = Utils.clampObjects(nebulaeRandomizer.nebulae, viewRect, 0);
 	clampedNebulae = nebulaeRandomizer.generateBoundedNebulae(viewRect);
+	minimapNebulae = nebulaeRandomizer.generateBoundedNebulae(minimapViewRect);
 	
     // for each era ...
+	//for(var eraI = 0; eraI < 1; eraI++) {
 	for(var eraI = 16; eraI < 17; eraI++) {
 	//for(var eraI = 0; eraI < reader.eras.length; eraI++) {
 		curEra = reader.eras[eraI];
@@ -200,7 +210,8 @@ var main = function () {
 			{
 				dimensions : minimapDimensions,
 				viewRect : minimapViewRect,
-				borders: minimapBorders
+				borders: minimapBorders,
+				nebulae: minimapNebulae
 			}, 
 			[30, 60]
 		);

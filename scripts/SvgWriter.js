@@ -273,6 +273,7 @@ module.exports = (function () {
 			}
 			labelCls = '';
 			if(systems[i].col === '' || systems[i].col === 'U') {
+				systems[i].col = 'U';
 				fill = '#aaaaaa';
 				labelCls = 'undiscovered';
 			} else if(systems[i].col === 'A') {
@@ -378,13 +379,14 @@ module.exports = (function () {
 	 * Renders the minimap.
 	 * @private
 	 */
-	SvgWriter.prototype.renderMinimap = function (minimapSettings, viewRect, pxPerLy, factions, nebulae) {
+	SvgWriter.prototype.renderMinimap = function (minimapSettings, viewRect, pxPerLy, factions) {
 		var pxPerLyMinimap, minimapScale, minimapMargin;
 		var tplObj;
 		var borderEdges, prevEdge, curEdge;
 		var rgba;
 		var curD, curPoint;
 		var focusedCoords;
+		var nebulae;
 		
 		if(!minimapSettings) {
 			return;
@@ -461,6 +463,7 @@ module.exports = (function () {
 		}
 			
 		// iterate over nebulae
+		nebulae = minimapSettings.nebulae || [];
 		for(var i = 0, len = nebulae.length; i < len; i++) {
 			// nebula ellipse / polygon
 			tplObj = {
