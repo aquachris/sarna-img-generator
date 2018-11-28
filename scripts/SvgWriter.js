@@ -2,8 +2,6 @@ module.exports = (function () {
 	'use strict';
 
 	var fs = require('fs');
-	var Delaunator = require('Delaunator');
-	var VoronoiBorder = require('./VoronoiBorder.js');
 	var Utils = require('./Utils.js');
 
 	/**
@@ -41,10 +39,10 @@ module.exports = (function () {
 	/**
 	 * Create a system neighborhood SVG file.
 	 */
-	SvgWriter.prototype.writeSystemNeighborhoodSvg = function (name, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings, additionalConfig) {
+	SvgWriter.prototype.writeSystemNeighborhoodSvg = function (name, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings, jumpRings) {
 		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
 		var filename = this.baseDir + '/output/'+name.replace(/\s/g, '_')+'_' +era.year + '_' + safeEraName + '.svg';
-		this.writeSvg(filename, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings, additionalConfig);
+		this.writeSvg(filename, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings, jumpRings);
 	};
 
 	/**
@@ -59,9 +57,9 @@ module.exports = (function () {
 	 * @param borders {Object} Key/value map of faction borders
 	 * @param nebulae {Array} Array of all displayed nebulae
 	 * @param minimapSettings {Object} Settings for an optional minimap (dimensions, viewRect and borders)
-	 * @param additionalConfig {Object} Additional configuration options like jump radius circles or cutout rectangles
+	 * @param jumpRings {Array} List of jump ring radii
 	 */
-	SvgWriter.prototype.writeSvg = function (filename, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings, additionalConfig) {
+	SvgWriter.prototype.writeSvg = function (filename, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings, jumpRings) {
 		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf-8' });
 		var viewBox;
 		var elementsStr;
@@ -80,7 +78,7 @@ module.exports = (function () {
 		this.renderSystemsAndClusters(factions, systems);
 
 		// render jump rings
-		this.renderJumpRings(viewRect, additionalConfig.jumpRings);
+		this.renderJumpRings(viewRect, jumpRings || []);
 
 		// render the minimap
 		this.renderMinimap(minimapSettings, viewRect, pxPerLy, factions, nebulae);
@@ -226,8 +224,12 @@ module.exports = (function () {
 			curD = '';
 			for(var j = 0, jlen = nebulae[i].points.length; j <= jlen; j++) {
 				curPoint = nebulae[i].points[j % jlen];
+				(j > 0) && (prevPoint = nebulae[i].points[j-1]);
 				if(j === 0) {
 					curD += 'M' + curPoint.x.toFixed(2) + ',' + (-curPoint.y).toFixed(2);
+				} else if(!prevPoint.c2 || !curPoint.c1) {
+					curD += ' L' + curPoint.x.toFixed(2) + ',' + (-curPoint.y).toFixed(2);
+					
 				} else {
 					prevPoint = nebulae[i].points[j-1];
 					curD += ' C' + prevPoint.c2.x.toFixed(2) + ',' + (-prevPoint.c2.y).toFixed(2);
@@ -470,8 +472,8 @@ module.exports = (function () {
 			};
 
 			curD = '';
-			for(var j = 0, jlen = nebulae[i].points.length; j <= jlen; j++) {
-				curPoint = nebulae[i].points[j % jlen];
+			for(var j = 0, jlen = nebulae[i].allPoints.length; j <= jlen; j++) {
+				curPoint = nebulae[i].allPoints[j % jlen];
 				if(j === 0) {
 					curD += 'M' + curPoint.x.toFixed(1) + ',' + (-curPoint.y).toFixed(1);
 				} else {

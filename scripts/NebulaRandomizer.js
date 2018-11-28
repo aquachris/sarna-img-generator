@@ -153,6 +153,138 @@ module.exports = (function () {
 			};
 		}
     };
+	
+	/**
+	 * Reduces the amount of points in a nebula polygon path to only those that are actually displayed, 
+	 * and also adds connecting "off-screen" lines to maintain shape closure.
+	 * 
+	 * This is an optional step that reduces file size.
+	 *
+	 * @param rect {Object} The bounding box (x, y, w, h in map space)
+     * @param tolerance {Number} Bounding box tolerance, default is 10
+	 * @returns {Array} List of bounded nebulae for each faction
+	 */
+	NebulaRandomizer.prototype.generateBoundedNebulae = function (rect, tolerance) {
+		var tRect;
+		var curNebula;
+		var curNebulaIsVisible;
+		var curPoint, prevPoint;
+		var curPointVisible, prevPointVisible;
+		var curBoundedNeb;
+		var boundedNebulae = [];
+		var outsidePoints = [];
+		var aggregatedOutsidePoints = [];
+		
+		tolerance === undefined ? tolerance = 10 : false;
+		tRect = {
+            x: rect.x - tolerance,
+            y: rect.y - tolerance,
+            w: rect.w + tolerance * 2,
+            h: rect.h + tolerance * 2
+        };
+		
+		// private helper function that constrains a point to the given rectangle
+        var clampPoint = function(x, y, rect) {
+            return {
+                x: Math.min(Math.max(x, rect.x), rect.x + rect.w),
+                y: Math.min(Math.max(y, rect.y), rect.y + rect.h)
+            };
+        };
+		
+		// private helper function that aggregates outside points
+		var aggregateOutsidePoints  = function (points) {
+			var resultingPoints = [];
+			
+            var p1, p2, p3;
+            var newEdge;
+
+            if(!points || points.length < 1) {
+                return resultingPoints;
+            } else if(points.length === 1) {
+				resultingPoints.push(Utils.deepCopy(points[0]));
+			}
+
+            // Remove points one by one:
+            // If the array's first three points are on a common line along the
+            // x or y direction, the middle point can be removed.
+            // If not, point 1 will be added to the resulting array and removed 
+			// from the list
+            while(points.length > 2) {
+                p1 = points[0];
+                p2 = points[1];
+                p3 = points[2];
+
+                // remove identical points p2, or ones that are on a line between p1 and p3
+                if( (p1.x === p2.x && (p1.y === p2.y || p2.x === p3.x)) ||
+                    (p1.y === p2.y && p2.y === p3.y) ) {
+                    points.splice(1, 1); // remove p2
+
+                // there is a switch in direction at p2
+                } else {
+					resultingPoints.push(p1);
+					points.shift(); // remove p1
+                }
+            }
+            // clean up the remaining two points
+            resultingPoints.push(p1);
+			resultingPoints.push(p2);
+			return resultingPoints;
+		};
+		
+		// iterate over all nebulae
+		for(var i = 0; i < this.nebulae.length; i++) {
+			curNebula = this.nebulae[i];
+			curNebulaIsVisible = false;
+			curBoundedNeb = Utils.deepCopy(curNebula);
+			curBoundedNeb.allPoints = curBoundedNeb.points;
+			curBoundedNeb.points = [];
+			curPoint = undefined;
+			curPointVisible = false;
+			prevPointVisible = false;
+			outsidePoints = [];
+			
+			
+			// iterate over the current nebula's points
+			for(var j = 0; j < curNebula.points.length; j++) {
+				prevPoint = curPoint;
+				curPoint = curNebula.points[j];
+				prevPointVisible = !!prevPoint ? Utils.pointInRectangle(prevPoint, tRect) : false;
+				curPointVisible = Utils.pointInRectangle(curPoint, tRect);
+				
+				// either the current point or the previous point is visible 
+				// --> add current point to list, after adding any outside points that precede it
+				if(prevPointVisible || curPointVisible) {
+					aggregatedOutsidePoints = aggregateOutsidePoints(outsidePoints);
+					for(var oi = 0; oi < aggregatedOutsidePoints.length; oi++) {
+						curBoundedNeb.points.push(aggregatedOutsidePoints[oi]);
+					}
+					outsidePoints = [];
+					curBoundedNeb.points.push(Utils.deepCopy(curPoint));
+					curNebulaIsVisible = true;
+				
+				// both the previous and the current point are invisible
+                // --> add the current edge's first point to a list of outside points
+                //     that will be aggregated and re-assembled to shorter path parts later
+                } else {
+                    outsidePoints.push(clampPoint(curPoint.x, curPoint.y, tRect));
+				}
+			}
+			
+			// add remaining outside points
+			aggregatedOutsidePoints = aggregateOutsidePoints(outsidePoints);
+			if(curNebulaIsVisible || aggregatedOutsidePoints.length >= 4) {
+				for(var oi = 0; oi < aggregatedOutsidePoints.length; oi++) {
+					curBoundedNeb.points.push(aggregatedOutsidePoints[oi]);
+				}
+			}
+			
+			if(curBoundedNeb.points.length > 0) {
+				boundedNebulae.push(curBoundedNeb);
+			}
+		}
+		
+		return boundedNebulae;
+	};
 
     return NebulaRandomizer;
 })();

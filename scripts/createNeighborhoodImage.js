@@ -83,7 +83,7 @@ var main = function () {
 	//focusedSystemName = 'New Vandenburg';
 	//focusedSystemName = 'Alloway';
 	//focusedSystemName = 'Naco';
-	//focusedSystemName = 'Rosetta';
+	focusedSystemName = 'Rosetta';
 	//focusedSystemName = 'Thala';
     for(var i = 0, len = reader.systems.length; i < len; i++) {
         if(reader.systems[i].name === focusedSystemName) {
@@ -94,9 +94,6 @@ var main = function () {
             break;
         }
     }
-
-    // generate additional points randomly
-    var pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
 
     // prepare label letter settings
     glyphSettings = {
@@ -119,7 +116,15 @@ var main = function () {
             "'":0.52734375, ' ':0.78125, 'default': 1
         }
     };
+	
+	// generate points randomly scattered in 2D space
+    var pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
 
+	// randomize and clamp nebulae
+    var nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
+	//clampedNebulae = Utils.clampObjects(nebulaeRandomizer.nebulae, viewRect, 0);
+	clampedNebulae = nebulaeRandomizer.generateBoundedNebulae(viewRect);
+	
     // for each era ...
 	for(var eraI = 16; eraI < 17; eraI++) {
 	//for(var eraI = 0; eraI < reader.eras.length; eraI++) {
@@ -150,10 +155,7 @@ var main = function () {
 
 		for(var i = 0; i < pDisc.aggregatedPoints.length; i++) {
 			curP = pDisc.aggregatedPoints[i];
-
-            if(curP.col) {
-                //voronoiSystems.push(curP);
-            } else {
+			if(!curP.col) {
                 voronoiSystems.push({
     				x: curP.x,
     				y: curP.y,
@@ -163,16 +165,12 @@ var main = function () {
             }
 		}
 
-        // randomize nebulae
-        var nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
-
 		// generate the voronoi diagram to find borders
 		var vBorder = new VoronoiBorder(logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
 
 		// clamp the systems and borders to the image's viewBox
 		clampedSystems = Utils.clampObjects(reader.systems, viewRect, 0);
 		clampedBorders = vBorder.generateBoundedBorders(viewRect);
-        clampedNebulae = Utils.clampObjects(nebulaeRandomizer.nebulae, viewRect, 0);
 
 		// initiate and execute the label manager
         labelMgr = new LabelManager(logger).init(
@@ -204,9 +202,7 @@ var main = function () {
 				viewRect : minimapViewRect,
 				borders: minimapBorders
 			}, 
-			{
-				jumpRings: [30, 60]
-			}
+			[30, 60]
 		);
 	}
 
