@@ -15,16 +15,17 @@ var main = function () {
     var logRenderer = new LogRenderer(logger, '../data/script_log.html', '../data/log.tpl.html');
     var reader = new SystemsReader(logger);
 	var writer = new SvgWriter(logger);
+	var pDisc;
+	var nebulaeRandomizer;
+	var vBorder;
     var labelMgr;
+	var curEra;
     var reservedPoints;
     var voronoiSystems;
     var clampedSystems;
-	var clampedBorders;
+	var clampedBorders, minimapBorders;
     var clampedNebulae, minimapNebulae;
-	var curYear;
     var curSys, curAff, curP;
-    var years = [];//['3025', '3030', '3052'];
-    var glyphSettings;
     var systemRadius = 1;
     var labelDist = 0.5;
 
@@ -103,33 +104,11 @@ var main = function () {
         }
     }
 
-    // prepare label letter settings
-    glyphSettings = {
-        lineHeight : 2.5,
-        widths: {
-            '0':1.36474609375, '1':1.36474609375, '2':1.36474609375, '3':1.36474609375, '4':1.36474609375,
-            '5':1.36474609375, '6':1.36474609375, '7':1.36474609375, '8':1.36474609375, '9':1.36474609375,
-            'A':1.4990234375, 'B':1.473388671875, 'C':1.50146484375, 'D':1.695556640625, 'E':1.402587890625,
-            'F':1.3037109375, 'G':1.668701171875, 'H':1.688232421875, 'I':0.9326171875, 'J':1.041259765625,
-            'K':1.4697265625, 'L':1.243896484375, 'M':1.92626953125, 'N':1.668701171875, 'O':1.768798828125,
-            'P':1.378173828125, 'Q':1.768798828125, 'R':1.551513671875, 'S':1.392822265625, 'T':1.4599609375,
-            'U':1.639404296875, 'V':1.49169921875, 'W':2.254638671875, 'X':1.451416015625, 'Y':1.4404296875,
-            'Z':1.397705078125,
-            'a':1.312255859375, 'b':1.3818359375, 'c':1.153564453125, 'd':1.3818359375, 'e':1.31591796875,
-            'f':0.7958984375, 'g':1.3818359375, 'h':1.39404296875, 'i':0.5712890625, 'j':0.704345703125,
-            'k':1.2451171875, 'l':0.5712890625, 'm':2.099609375, 'n':1.39404296875, 'o':1.357421875,
-            'p':1.3818359375, 'q':1.3818359375, 'r':0.90087890625, 's':1.11572265625, 't':0.836181640625,
-            'u':1.39404296875, 'v':1.2451171875, 'w':1.85546875, 'x':1.23779296875, 'y':1.2451171875,
-            'z':1.11083984375,
-            "'":0.52734375, ' ':0.78125, 'default': 1
-        }
-    };
-	
 	// generate points randomly scattered in 2D space
-    var pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
+    pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
 
 	// randomize and clamp nebulae
-    var nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
+    nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
 	//clampedNebulae = Utils.clampObjects(nebulaeRandomizer.nebulae, viewRect, 0);
 	clampedNebulae = nebulaeRandomizer.generateBoundedNebulae(viewRect);
 	minimapNebulae = nebulaeRandomizer.generateBoundedNebulae(minimapViewRect);
@@ -176,7 +155,7 @@ var main = function () {
 		}
 
 		// generate the voronoi diagram to find borders
-		var vBorder = new VoronoiBorder(logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
+		vBorder = new VoronoiBorder(logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
 
 		// clamp the systems and borders to the image's viewBox
 		clampedSystems = Utils.clampObjects(reader.systems, viewRect, 0);
@@ -189,13 +168,12 @@ var main = function () {
             systemRadius,
             clampedNebulae,
             labelDist,
-            glyphSettings,
             reader.factions,
 			reader.labelConfig
         );
 
 		// minimap borders
-		var minimapBorders = vBorder.generateBoundedBorders(minimapViewRect);
+		minimapBorders = vBorder.generateBoundedBorders(minimapViewRect);
 
 		// create an svg with a universe picture
         writer.writeSystemNeighborhoodSvg(

@@ -38,19 +38,19 @@ module.exports = (function () {
      * @returns {LabelManager} this object
      */
     LabelManager.prototype.init = function (viewRect, objects, objectRadius, ellipticalObjects, objLabelDist,
-			glyphSettings, factions, labelConfig) {
+			factions, labelConfig) {
         this.viewRect = viewRect || {x: 0, y: 0, w: 0, h: 0};
         this.objects = Utils.deepCopy(objects || []);
         this.objectRadius = objectRadius || 1;
         this.ellipticalObjects = Utils.deepCopy(ellipticalObjects || []);
         this.objLabelDist = objLabelDist || 0;
-        this.glyphSettings = glyphSettings || {};
-        this.glyphSettings.lineHeight = this.glyphSettings.lineHeight || 3;
-        this.glyphSettings.widths = this.glyphSettings.widths || { default: 1.6 };
         this.factions = Utils.deepCopy(factions);
 		this.labelConfig = labelConfig || {};
+		this.glyphSettings = labelConfig._glyphSettings || {};
+        this.glyphSettings.lineHeight = this.glyphSettings.lineHeight || 3;
+        this.glyphSettings.widths = this.glyphSettings.widths || { default: 1.6 };
         // cannot really determine why, but there seems to be a .5 shift required
-        // for the labels to be at the correct position
+        // for the labels to be at the correct y position
         this.defaultDelta = { x: 0, y: .5 };
 
         this.grid = new RectangleGrid().init(viewRect);
