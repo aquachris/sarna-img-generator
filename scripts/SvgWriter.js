@@ -16,7 +16,7 @@ module.exports = (function () {
 	};
 
     SvgWriter.prototype.constructor = SvgWriter;
-	
+
 	/**
 	 * Resets the generated markup.
 	 * @private
@@ -35,7 +35,7 @@ module.exports = (function () {
 			scaleHelp : ''
 		};
 	};
-	
+
 	/**
 	 * Create a system neighborhood SVG file.
 	 */
@@ -64,16 +64,16 @@ module.exports = (function () {
 		var viewBox;
 		var elementsStr;
 		var pxPerLy = dimensions.w / viewRect.w;
-		
+
 		// reset markup
 		this.initMarkup();
 
 		// render faction borders and state areas
 		this.renderFactions(factions, borders);
-		
+
 		// render nebulae
 		this.renderNebulae(nebulae);
-		
+
 		// render systems and clusters
 		this.renderSystemsAndClusters(factions, systems);
 
@@ -98,6 +98,9 @@ module.exports = (function () {
 		elementsStr += this.markup.minimap ? `<g class="minimap">${this.markup.minimap}</g>\n` : '';
 		elementsStr += this.markup.scaleHelp ? `<g class="scale">${this.markup.scaleHelp}</g>\n` : '';
 
+		// remove unnecessary newlines and spaces
+		elementsStr = elementsStr.replace(/\n\s+/gi, ' ');
+
 		// insert markup into base map template
 		tpl = tpl.replace('{WIDTH}', dimensions.w);
 		tpl = tpl.replace('{HEIGHT}', dimensions.h);
@@ -118,7 +121,7 @@ module.exports = (function () {
 		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + filename + '" written');
 	};
-	
+
 	/**
 	 * @private
 	 */
@@ -126,7 +129,7 @@ module.exports = (function () {
 		var borderEdges;
 		var curEdge, curD;
 		var rgba, tplObj;
-		
+
 		// make sure there is a faction entry for disputed systems
 		if(!factions['D']) {
 			factions['D'] = {
@@ -139,7 +142,7 @@ module.exports = (function () {
 				dissolution : ''
 			};
 		}
-		
+
 		// change independent systems' primary color to black (from white)
 		factions['I'].color = '#000000';
 
@@ -187,7 +190,7 @@ module.exports = (function () {
 			if(curD.length === 0) {
 				continue;
 			}
-			
+
 			// convert a faction area to SVG markup
 			tplObj = {
 				faction : faction,
@@ -200,7 +203,7 @@ module.exports = (function () {
 						d="${tplObj.d}" />\n`;
 		}
 	};
-	
+
 	/**
 	 * Renders nebula objects.
 	 * @private
@@ -208,7 +211,7 @@ module.exports = (function () {
 	SvgWriter.prototype.renderNebulae = function (nebulae) {
 		var tplObj, curD;
 		var prevPoint, curPoint;
-		
+
 		for(var i = 0, len = nebulae.length; i < len; i++) {
 			// nebula ellipse / polygon
 			tplObj = {
@@ -229,7 +232,7 @@ module.exports = (function () {
 					curD += 'M' + curPoint.x.toFixed(2) + ',' + (-curPoint.y).toFixed(2);
 				} else if(!prevPoint.c2 || !curPoint.c1) {
 					curD += ' L' + curPoint.x.toFixed(2) + ',' + (-curPoint.y).toFixed(2);
-					
+
 				} else {
 					prevPoint = nebulae[i].points[j-1];
 					curD += ' C' + prevPoint.c2.x.toFixed(2) + ',' + (-prevPoint.c2.y).toFixed(2);
@@ -252,7 +255,7 @@ module.exports = (function () {
 				${tplObj.name}</text>\n`;
 		}
 	};
-	
+
 	/**
 	 * Renders systems and cluster objects.
 	 * @private
@@ -262,7 +265,7 @@ module.exports = (function () {
 		var fill, rgba;
 		var labelCls;
 		var curD;
-		
+
 		for(var i = 0, len = systems.length; i < len; i++) {
 			if(systems[i].col === 'DUMMY') {
 				continue;
@@ -304,7 +307,7 @@ module.exports = (function () {
 				if(systems[i].status.toLowerCase() === 'apocryphal') {
 					tplObj.additionalClasses += 'apocryphal';
 				}
-				this.markup.clusters += `<ellipse class="cluster ${tplObj.faction} ${tplObj.additionalClasses}" 
+				this.markup.clusters += `<ellipse class="cluster ${tplObj.faction} ${tplObj.additionalClasses}"
 							data-name="${tplObj.name}"
 							cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.radiusX}" ry="${tplObj.radiusY}"
 							transform="rotate(${tplObj.angle}, ${tplObj.x}, ${tplObj.y})"
@@ -372,9 +375,9 @@ module.exports = (function () {
 							${tplObj.name}${tplObj.sup}</text>\n`;
 			}
 		}
-		
+
 	};
-	
+
 	/**
 	 * Renders the minimap.
 	 * @private
@@ -387,7 +390,7 @@ module.exports = (function () {
 		var curD, curPoint;
 		var focusedCoords;
 		var nebulae;
-		
+
 		if(!minimapSettings) {
 			return;
 		}
@@ -461,7 +464,7 @@ module.exports = (function () {
 					style="stroke: ${tplObj.stroke}; stroke-width:2px; fill:${tplObj.fill};"
 					d="${curD}" />\n`;
 		}
-			
+
 		// iterate over nebulae
 		nebulae = minimapSettings.nebulae || [];
 		for(var i = 0, len = nebulae.length; i < len; i++) {
@@ -529,7 +532,7 @@ module.exports = (function () {
 			if(periPoint.y > 0) {
 				angle = Math.PI * 2 - angle;
 			}
-			
+
 			// arrow towards origin
 			tplObj = {
 				tX : periPoint.x.toFixed(2),
@@ -579,7 +582,7 @@ module.exports = (function () {
 		// close minimap outer container
 		this.markup.minimap += `</g>`;
 	};
-	
+
 	/**
 	 * Renders the scale help.
 	 * @private
@@ -609,7 +612,7 @@ module.exports = (function () {
 				<text x="51" y="1.85">LY</text>
 			</g>\n`;
 	};
-	
+
 	/**
 	 * @param c {Object} The center point of all jump rings
 	 * @param jumpRingDistances {Array} The distances to paint jump rings at
@@ -646,7 +649,7 @@ module.exports = (function () {
 	SvgWriter.prototype.rgbToHex = function (r, g, b) {
     	return "#" + this.componentToHex(r) + this.componentToHex(g) + this.componentToHex(b);
 	};
-	
+
 	/**
 	 * @see https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 	 * @private
