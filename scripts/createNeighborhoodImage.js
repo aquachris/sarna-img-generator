@@ -37,7 +37,7 @@ var main = function () {
 
     // read planetary systems from the xlsx
     reader.readSystemsAndEras();
-	
+
 	// read label settings from the config file
 	reader.readLabelConfig();
 
@@ -93,7 +93,7 @@ var main = function () {
 	focusedSystemName = 'Hyades Cluster';
 	focusedSystemName = 'Pleiades Cluster'
 	focusedSystemName = 'Spica';
-	
+
     for(var i = 0, len = reader.systems.length; i < len; i++) {
         if(reader.systems[i].name === focusedSystemName) {
             viewRect.x = reader.systems[i].x - viewRect.w * .5;
@@ -112,7 +112,7 @@ var main = function () {
 	//clampedNebulae = Utils.clampObjects(nebulaeRandomizer.nebulae, viewRect, 0);
 	clampedNebulae = nebulaeRandomizer.generateBoundedNebulae(viewRect);
 	minimapNebulae = nebulaeRandomizer.generateBoundedNebulae(minimapViewRect);
-	
+
     // for each era ...
 	//for(var eraI = 0; eraI < 1; eraI++) {
 	for(var eraI = 16; eraI < 17; eraI++) {
@@ -123,7 +123,13 @@ var main = function () {
 
 		for(var i = 0; i < reader.systems.length; i++) {
 			curSys = reader.systems[i];
-			curAff = curSys.affiliations[eraI].split(',')[0].trim();
+            curAff = '';
+            if(curSys.affiliations[eraI].search(/^D\s*\(/g) >= 0) {
+                curAff = curSys.affiliations[eraI];
+                console.log('AFFILIATION FOR ' + reader.systems[i].name + ' SAVED', curAff);
+            } else {
+                curAff = curSys.affiliations[eraI].split(',')[0].trim();
+            }
 			reader.systems[i].col = curAff;
 			if(curAff === '' || curAff === 'U' || curAff === 'A') {
 		          continue;
@@ -190,7 +196,7 @@ var main = function () {
 				viewRect : minimapViewRect,
 				borders: minimapBorders,
 				nebulae: minimapNebulae
-			}, 
+			},
 			[30, 60]
 		);
 	}

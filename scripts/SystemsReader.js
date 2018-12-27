@@ -259,13 +259,13 @@ module.exports = (function () {
 			this.nebulae.push(curNeb);
 		}
     };
-	
+
 	/**
 	 * Reads and parses the json label config file
 	 */
 	SystemsReader.prototype.readLabelConfig = function () {
 		this.logger.log('Label config reader started');
-		
+
 		var fileContent = fs.readFileSync(__dirname + '/../data/labelConfig.json', 'utf8');
 		var arr;
 		try {
@@ -283,7 +283,7 @@ module.exports = (function () {
 			for(var i = 0; i < arr.length; i++) {
 				if(!arr[i].position) {
 					arr[i].position = {
-						x: 'right', 
+						x: 'right',
 						y: 'center'
 					}
 				}
@@ -293,14 +293,14 @@ module.exports = (function () {
 				if(typeof arr[i].position.y === 'string') {
 					arr[i].position.y = arr[i].position.y.toLowerCase();
 				}
-				
+
 				if(!arr[i].position.dx) {
 					arr[i].position.dx = 0;
 				}
 				if(!arr[i].position.dy) {
 					arr[i].position.dy = 0;
 				}
-				
+
 				if(!arr[i].anchor) {
 					arr[i].anchor = {};
 				}

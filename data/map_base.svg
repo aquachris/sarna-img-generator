@@ -50,7 +50,7 @@
 		</pattern>
 		<pattern id="disputed-fill" width="1" height="1">
 			<circle cx="1" cy="1" r=".1" style="fill: #f00; stroke: #f00; stroke-width: 0">
-				<animate attributeType="CSS" 
+				<animate attributeType="CSS"
 					attributeName="stroke-width"
 					keySplines=".5 0 .5 1"
 					from="0" to="2"
@@ -64,7 +64,6 @@
 		text { fill: #000; font-family: Tahoma, Arial, sans-serif; font-size: 2.75px; }
 		g.systems .system { fill: #000; stroke: #000; stroke-width: .25; } /* default color */
 		g.systems .system.U { stroke: #777; }
-		g.systems .system.D { fill: url('#disputed-fill') !important; }
 		/*g.systems .system.undiscovered { stroke: #555; }*/
 		g.clusters .cluster { fill: #000; stroke: #000; stroke-width: .25; } /* default color */
 		g.jump-radius-rings circle { fill: none; stroke: rgba(80,80,80,.5); stroke-width: .25 }
@@ -86,6 +85,7 @@
 		.scale rect.white { stroke-width: 0; fill: #fff; }
 		.scale rect.frame { stroke: #000; stroke-width: 0.4375; fill: none; }
 		.scale text { text-shadow: 1px 1px 0 #fff, -1px 1px 0 #fff, 1px -1px 0 #fff, -1px -1px 0 #fff; }
+		{CSS}
 
 		/* IE10+ specific styles */
 		@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {

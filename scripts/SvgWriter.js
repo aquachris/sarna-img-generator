@@ -24,6 +24,7 @@ module.exports = (function () {
 	SvgWriter.prototype.initMarkup = function () {
 		this.markup = {
 			defs : '',
+			css : '',
 			borders: '',
 			jumpRings : '',
 			nebulae : '',
@@ -114,6 +115,7 @@ module.exports = (function () {
 		};
 		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);
 		tpl = tpl.replace('{DEFS}', this.markup.defs);
+		tpl = tpl.replace('{CSS}', this.markup.css);
 		tpl = tpl.replace('{ELEMENTS}', elementsStr);
 		// make filename safe
 		filename = filename.replace(/[\+\s\(\)]/g, '_');
@@ -265,6 +267,9 @@ module.exports = (function () {
 		var fill, rgba;
 		var labelCls;
 		var curD;
+		var dispRegEx = /D\s*\(([^\)]+)\)/g; // regex for disputed system notation: "D(CC,FS)"
+		var dispReResult, dispColArr, dispCls;
+		var defsMap = {};
 
 		for(var i = 0, len = systems.length; i < len; i++) {
 			if(systems[i].col === 'DUMMY') {
@@ -275,6 +280,7 @@ module.exports = (function () {
 				fill = factions[systems[i].col].color;
 			}
 			labelCls = '';
+			dispCls = '';
 			if(systems[i].col === '' || systems[i].col === 'U') {
 				systems[i].col = 'U';
 				fill = '#aaaaaa';
@@ -285,7 +291,21 @@ module.exports = (function () {
 			} else if(systems[i].col === 'I') {
 				fill = '#ffffff';
 				labelCls = 'independent';
+			} else if(dispReResult = dispRegEx.exec(systems[i].col)) {
+				dispCls = 'disputed';
+				dispColArr = dispReResult[1].trim().split(/\s*,\s*/g);
+				for(var di = 0; di < dispColArr.length; di++) {
+					dispCls += '-'+dispColArr[di];
+				}
+				// generate css class and svg pattern for this disputed state
+				defsMap[dispCls] = {
+					css : this.createDisputedCssRule(dispCls),
+					pattern : this.createDisputedPattern(dispCls)
+				}
+
 			}
+			// reset the regex
+			dispRegEx.lastIndex = 0;
 
 			if(systems[i].isCluster) {
 				// cluster ellipse
@@ -294,7 +314,7 @@ module.exports = (function () {
 				rgba = this.hexToRgba(fill + '44');
 				tplObj = {
 					faction : systems[i].col,
-					additionalClasses : '',
+					additionalClasses : dispCls,
 					name : systems[i].name,
 					x : systems[i].centerX.toFixed(3),
 					y : (-systems[i].centerY).toFixed(3),
@@ -344,7 +364,7 @@ module.exports = (function () {
 				// system circle
 				tplObj = {
 					faction : systems[i].col,
-					additionalClasses : '',
+					additionalClasses : dispCls,
 					name : systems[i].name,
 					x : systems[i].centerX.toFixed(3),
 					y : (-systems[i].centerY).toFixed(3),
@@ -375,7 +395,14 @@ module.exports = (function () {
 							${tplObj.name}${tplObj.sup}</text>\n`;
 			}
 		}
-
+		// add the defs that were created along the way
+		for(var dispKey in defsMap) {
+			if(!defsMap.hasOwnProperty(dispKey)) {
+				continue;
+			}
+			this.markup.css += defsMap[dispKey].css;
+			this.markup.defs += defsMap[dispKey].pattern;
+		}
 	};
 
 	/**
@@ -631,6 +658,31 @@ module.exports = (function () {
 			tplObj.r = jumpRingDistances[i];
 			this.markup.jumpRings += `<circle cx="${tplObj.cx}" cy="${tplObj.cy}" r="${tplObj.r}" />\n`;
 		}
+	};
+
+	SvgWriter.prototype.createDisputedCssRule = function (dispCls) {
+		return `g.systems .system.${dispCls} { fill: url('#${dispCls}-fill') !important; }\n`;
+	};
+
+	/**
+	 * @private
+ 	 */
+	SvgWriter.prototype.createDisputedPattern = function (dispCls) {
+		return `<pattern id="${dispCls}-fill" width="1" height="1" viewBox="-1 -1 2 2">
+			<g style="transform:rotate(-90deg)">
+				<path d="M0,-1 L0,1" style="stroke:#000; stroke-width: .5" />
+			</g>
+		</pattern>`;
+
+		/*<pattern id="disputed-fill" width="1" height="1">
+			<circle cx="1" cy="1" r=".1" style="fill: #f00; stroke: #f00; stroke-width: 0">
+				<animate attributeType="CSS"
+					attributeName="stroke-width"
+					keySplines=".5 0 .5 1"
+					from="0" to="2"
+					dur="1.5s" repeatCount="indefinite" />
+			</circle>
+		</pattern>*/
 	};
 
 	/**
