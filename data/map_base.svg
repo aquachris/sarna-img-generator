@@ -48,15 +48,6 @@
 		<pattern id="nebula-fill" width="2" height="2" patternUnits="userSpaceOnUse">
 			<path d="M-.5,.5 l1,-1 M0,2 l2,-2 M1.5,2.5 l1,-1" style="stroke:rgba(0, 0, 0, .075); stroke-width:.6" />
 		</pattern>
-		<pattern id="disputed-fill" width="1" height="1">
-			<circle cx="1" cy="1" r=".1" style="fill: #f00; stroke: #f00; stroke-width: 0">
-				<animate attributeType="CSS"
-					attributeName="stroke-width"
-					keySplines=".5 0 .5 1"
-					from="0" to="2"
-					dur="1.5s" repeatCount="indefinite" />
-			</circle>
-		</pattern>
 		{DEFS}
 	</defs>
 

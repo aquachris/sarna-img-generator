@@ -82,6 +82,21 @@ module.exports = (function () {
     };
 
     /**
+     * Get the point on the unit circle (center at 0,0 and radius 1) that corresponds
+     * to the percent value given.
+     * @see https://hackernoon.com/a-simple-pie-chart-in-svg-dbdd653b6936
+     *
+     * @param {float} The percent value, given as a decimal number between 0 and 1
+     * @returns {Array} The point on the circle
+     */
+    Utils.pointOnUnitCircleWithPercentValue = function (percent) {
+        return {
+            x: Math.cos(2 * Math.PI * percent),
+            y: Math.sin(2 * Math.PI * percent)
+        };
+    };
+
+    /**
      * Calculates the angle between two vectors.
      *
      * @param v1 {Array} a 2D vector
@@ -293,7 +308,7 @@ module.exports = (function () {
 
 		return ret;
 	};
-	 
+
 	/**
 	 * Returns intersection points of a line with an ellipse.
 	 * http://csharphelper.com/blog/2017/08/calculate-where-a-line-segment-and-an-ellipse-intersect-in-c/
@@ -308,16 +323,16 @@ module.exports = (function () {
 		var p2 = { x: line.x2 - ellipse.centerX, y: line.y2 - ellipse.centerY };
 		var ts = [];
 		var ret = [];
-		
+
 		// semimajor and semiminor axes
 		var a = ellipse.radiusX;
 		var b = ellipse.radiusY;
-		
+
 		// calculate quadratic parameters
 		var quadA = Math.pow((p2.x - p1.x), 2) / (a * a) + Math.pow(p2.y - p1.y, 2) / (b * b);
 		var quadB = 2 * p1.x * (p2.x - p1.x) / (a * a) + 2 * p1.y * (p2.y - p1.y) / (b * b);
 		var quadC = Math.pow(p1.x, 2) / (a * a) + Math.pow(p1.y, 2) / (b * b) - 1;
-		
+
 		// calculate discriminant
 		var discriminant = quadB * quadB - 4 * quadA * quadC;
 		if(discriminant === 0) {
@@ -330,7 +345,7 @@ module.exports = (function () {
 		} else {
 			// no intersection
 		}
-		
+
 		// convert t values into points and translate to actual ellipse location
 		for(var i = 0, len = ts.length; i < len; i++) {
 			ret.push({
@@ -340,7 +355,7 @@ module.exports = (function () {
 		}
 		return ret;
 	};
-	 
+
 	/**
      * Returns closest point to p on ellipse's perimeter
 	 *
@@ -353,7 +368,7 @@ module.exports = (function () {
 			x1: p.x, y1: p.y,
 			x2: ellipse.centerX, y2: ellipse.centerY
 		}, ellipse);
-		
+
 		if(iPoints.length === 0) {
 			return null;
 		} else if(iPoints.length === 1) {

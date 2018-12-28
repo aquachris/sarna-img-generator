@@ -99,9 +99,6 @@ module.exports = (function () {
 		elementsStr += this.markup.minimap ? `<g class="minimap">${this.markup.minimap}</g>\n` : '';
 		elementsStr += this.markup.scaleHelp ? `<g class="scale">${this.markup.scaleHelp}</g>\n` : '';
 
-		// remove unnecessary newlines and spaces
-		elementsStr = elementsStr.replace(/\n\s+/gi, ' ');
-
 		// insert markup into base map template
 		tpl = tpl.replace('{WIDTH}', dimensions.w);
 		tpl = tpl.replace('{HEIGHT}', dimensions.h);
@@ -113,6 +110,10 @@ module.exports = (function () {
 			w: viewRect.w,
 			h: viewRect.h
 		};
+		// remove unnecessary newlines and spaces
+		elementsStr = elementsStr.replace(/\n\s+/gi, ' ');
+		//this.markup.defs = this.markup.defs.replace(/\n\s+/gi, ' ');
+
 		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);
 		tpl = tpl.replace('{DEFS}', this.markup.defs);
 		tpl = tpl.replace('{CSS}', this.markup.css);
@@ -300,7 +301,7 @@ module.exports = (function () {
 				// generate css class and svg pattern for this disputed state
 				defsMap[dispCls] = {
 					css : this.createDisputedCssRule(dispCls),
-					pattern : this.createDisputedPattern(dispCls)
+					pattern : this.createDisputedPattern(dispCls, factions)
 				}
 
 			}
@@ -667,22 +668,29 @@ module.exports = (function () {
 	/**
 	 * @private
  	 */
-	SvgWriter.prototype.createDisputedPattern = function (dispCls) {
+	SvgWriter.prototype.createDisputedPattern = function (dispCls, factions) {
+		var p, pctEachSlice, curFaction, factionColor;
+		var paths = '';
+		var dispParts = dispCls.split('-');
+		var curPct = 0;
+		var startPt, endPt;
+		pctEachSlice = 1 / (dispParts.length - 1);
+
+		for(var i = 1, len = dispParts.length; i < len; i++) {
+			curFaction = factions[dispParts[i]];
+			factionColor = curFaction.color || '#000';
+			startPt = Utils.pointOnUnitCircleWithPercentValue(curPct);
+			curPct += pctEachSlice;
+			endPt = Utils.pointOnUnitCircleWithPercentValue(curPct);
+			paths += `<path d="M${startPt.x},${startPt.y} A1,1,0,0,1,${endPt.x},${endPt.y} L0,0"
+						style="fill:${factionColor}; stroke-width: 0;" />\n`;
+		}
+		//'<path d="M1,0 A1,1,0,0,1,x,y L0,0 " style="fill:#f00; stroke-width: 0;" />';
 		return `<pattern id="${dispCls}-fill" width="1" height="1" viewBox="-1 -1 2 2">
 			<g style="transform:rotate(-90deg)">
-				<path d="M0,-1 L0,1" style="stroke:#000; stroke-width: .5" />
+				${paths}
 			</g>
 		</pattern>`;
-
-		/*<pattern id="disputed-fill" width="1" height="1">
-			<circle cx="1" cy="1" r=".1" style="fill: #f00; stroke: #f00; stroke-width: 0">
-				<animate attributeType="CSS"
-					attributeName="stroke-width"
-					keySplines=".5 0 .5 1"
-					from="0" to="2"
-					dur="1.5s" repeatCount="indefinite" />
-			</circle>
-		</pattern>*/
 	};
 
 	/**

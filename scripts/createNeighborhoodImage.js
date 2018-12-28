@@ -86,13 +86,16 @@ var main = function () {
 	//focusedSystemName = 'Naco';
 	//focusedSystemName = 'Rosetta';
 	//focusedSystemName = 'Thala';
-	focusedSystemName = 'Badlands Cluster';
-	focusedSystemName = 'Brocchi\'s Cluster';
-	focusedSystemName = 'Chaine Cluster';
-	focusedSystemName = 'Enders Cluster';
-	focusedSystemName = 'Hyades Cluster';
-	focusedSystemName = 'Pleiades Cluster'
-	focusedSystemName = 'Spica';
+	//focusedSystemName = 'Badlands Cluster';
+	//focusedSystemName = 'Brocchi\'s Cluster';
+	//focusedSystemName = 'Chaine Cluster';
+	//focusedSystemName = 'Enders Cluster';
+	//focusedSystemName = 'Hyades Cluster';
+	//focusedSystemName = 'Pleiades Cluster'
+	//focusedSystemName = 'Spica';
+    //focusedSystemName = 'Sirius';
+    //focusedSystemName = 'Hall';
+    focusedSystemName = 'Angra';
 
     for(var i = 0, len = reader.systems.length; i < len; i++) {
         if(reader.systems[i].name === focusedSystemName) {
@@ -126,7 +129,6 @@ var main = function () {
             curAff = '';
             if(curSys.affiliations[eraI].search(/^D\s*\(/g) >= 0) {
                 curAff = curSys.affiliations[eraI];
-                console.log('AFFILIATION FOR ' + reader.systems[i].name + ' SAVED', curAff);
             } else {
                 curAff = curSys.affiliations[eraI].split(',')[0].trim();
             }
