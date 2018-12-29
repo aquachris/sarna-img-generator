@@ -67,6 +67,8 @@ module.exports = (function () {
     LabelManager.prototype.setInitialState = function () {
         var curObj;
         var curFaction;
+        var centerPoint;
+        var p, pInt;
         this.orderedObjIndices = [];
 
         // private helper function that generates a label object
@@ -142,10 +144,31 @@ module.exports = (function () {
 
         for(var i = 0, len = this.ellipticalObjects.length; i < len; i++) {
             curObj = this.ellipticalObjects[i];
+            centerPoint = { x: curObj.centerX, y: curObj.centerY };
+            p = { x: this.viewRect.x + this.viewRect.w * .5, y:  this.viewRect.y + this.viewRect.h * .5 };
             curObj.centerX = curObj.x + curObj.w * .5;
             curObj.centerY = curObj.y + curObj.h * .5;
             curObj.id = 'obj_e_' + i;
             curObj.label = generateLabelRect.call(this, curObj, i, true);
+            pInt = Utils.getClosestPointOnEllipsePerimeter(p, curObj);
+            curObj.label.l = {
+                x1: this.viewRect.x + this.viewRect.w * .5,
+                y1: this.viewRect.y + this.viewRect.h * .5,
+                x2: curObj.centerX,
+                y2: curObj.centerY,
+                x3: pInt ? pInt.x : undefined,
+                y3: pInt ? pInt.y : undefined
+            };
+            //pInt = Utils.getClosestPointOnRectanglePerimeter(centerPoint, this.viewRect);
+            var intPoints = Utils.lineRectangleIntersection({
+                x1: curObj.centerX, y1: curObj.centerY,
+                x2: this.viewRect.x + this.viewRect.w * .5,
+                y2: this.viewRect.y + this.viewRect.h * .5
+            }, this.viewRect);
+            if(intPoints && intPoints.length > 0) {
+                curObj.label.l.x4 = intPoints[0][0];
+                curObj.label.l.y4 = intPoints[0][1];
+            }
         }
     };
 

@@ -309,6 +309,39 @@ module.exports = (function () {
 		return ret;
 	};
 
+    /**
+     * Returns intersection points of a line with a rectangle.
+     *
+     * @param line {Object} The line (an object with properties x1, y1, x2 and y2)
+     * @param rect {Object} The rectangle (x, y, w, h)
+     * @returns {Array} List of intersection points (x, y)
+     */
+    Utils.lineRectangleIntersection = function (line, rect) {
+        var left = rect.x;
+		var right = left + rect.w;
+		var bottom = rect.y;
+		var top = bottom + rect.h;
+        var lineAsAbc = this.lineFromPoints([line.x1, line.y1], [line.x2, line.y2]);
+        var isec;
+        var isecPoints = [];
+        //
+        var lines = [
+            this.lineFromPoints([left, top], [right, top]),
+            this.lineFromPoints([right, top], [right, bottom]),
+            this.lineFromPoints([right, bottom], [left, bottom]),
+            this.lineFromPoints([left, bottom], [left, top])
+        ];
+        for(var i = 0; i < 4; i++) {
+            isec = Utils.lineLineIntersection(lineAsAbc, lines[i]);
+            if(isec[0] !== Infinity
+                && isec[0] >= left && isec[0] <= right
+                && isec[1] >= bottom && isec[1] <= top) {
+                isecPoints.push(isec);
+            }
+        }
+        return isecPoints;
+    };
+
 	/**
 	 * Returns intersection points of a line with an ellipse.
 	 * http://csharphelper.com/blog/2017/08/calculate-where-a-line-segment-and-an-ellipse-intersect-in-c/
@@ -368,6 +401,8 @@ module.exports = (function () {
 			x1: p.x, y1: p.y,
 			x2: ellipse.centerX, y2: ellipse.centerY
 		}, ellipse);
+
+        console.log(p, ellipse.centerX, ellipse.centerY, ellipse.radiusX, ellipse.radiusY, iPoints);
 
 		if(iPoints.length === 0) {
 			return null;

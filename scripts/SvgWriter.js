@@ -252,10 +252,29 @@ module.exports = (function () {
 			tplObj = {
 				x : nebulae[i].label.x.toFixed(3),
 				y : (-nebulae[i].label.y).toFixed(3),
-				name : nebulae[i].name
+				name : nebulae[i].name,
+				x1 : nebulae[i].label.l.x1.toFixed(3),
+				y1 : (-nebulae[i].label.l.y1).toFixed(3),
+				x2 : nebulae[i].label.l.x2.toFixed(3),
+				y2 : (-nebulae[i].label.l.y2).toFixed(3)
 			};
 			this.markup.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.y}" class="nebulae-label">
 				${tplObj.name}</text>\n`;
+			this.markup.nebulaeLabels += `<line x1="${tplObj.x1}" y1="${tplObj.y1}"
+				x2="${tplObj.x2}" y2="${tplObj.y2}"
+				style="stroke-width: .25px; stroke: #f00;" />`;
+
+			if(nebulae[i].label.l.x3) {
+				tplObj.x3 = nebulae[i].label.l.x3.toFixed(3);
+				tplObj.y3 = (-nebulae[i].label.l.y3).toFixed(3);
+				this.markup.nebulaeLabels += `<circle cx="${tplObj.x3}" cy="${tplObj.y3}" r=".5" />`;
+			} else {
+				console.log(nebulae[i].name + ': ' + 'no intersection point');
+			}
+
+			tplObj.x4 = nebulae[i].label.l.x4.toFixed(3);
+			tplObj.y4 = (-nebulae[i].label.l.y4).toFixed(3);
+			this.markup.nebulaeLabels += `<circle cx="${tplObj.x4}" cy="${tplObj.y4}" r=".5" />`;
 		}
 	};
 
