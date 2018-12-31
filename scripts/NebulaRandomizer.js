@@ -153,11 +153,11 @@ module.exports = (function () {
 			};
 		}
     };
-	
+
 	/**
-	 * Reduces the amount of points in a nebula polygon path to only those that are actually displayed, 
+	 * Reduces the amount of points in a nebula polygon path to only those that are actually displayed,
 	 * and also adds connecting "off-screen" lines to maintain shape closure.
-	 * 
+	 *
 	 * This is an optional step that reduces file size.
 	 *
 	 * @param rect {Object} The bounding box (x, y, w, h in map space)
@@ -174,7 +174,7 @@ module.exports = (function () {
 		var boundedNebulae = [];
 		var outsidePoints = [];
 		var aggregatedOutsidePoints = [];
-		
+
 		tolerance === undefined ? tolerance = 10 : false;
 		tRect = {
             x: rect.x - tolerance,
@@ -182,7 +182,7 @@ module.exports = (function () {
             w: rect.w + tolerance * 2,
             h: rect.h + tolerance * 2
         };
-		
+
 		// private helper function that constrains a point to the given rectangle
         var clampPoint = function(x, y, rect) {
             return {
@@ -190,11 +190,11 @@ module.exports = (function () {
                 y: Math.min(Math.max(y, rect.y), rect.y + rect.h)
             };
         };
-		
+
 		// private helper function that aggregates outside points
 		var aggregateOutsidePoints  = function (points) {
 			var resultingPoints = [];
-			
+
             var p1, p2, p3;
             var newEdge;
 
@@ -204,10 +204,14 @@ module.exports = (function () {
 				resultingPoints.push(Utils.deepCopy(points[0]));
 			}
 
+            // make sure p1 and p2 are set
+            p1 = points[0];
+            p2 = points[1];
+
             // Remove points one by one:
             // If the array's first three points are on a common line along the
             // x or y direction, the middle point can be removed.
-            // If not, point 1 will be added to the resulting array and removed 
+            // If not, point 1 will be added to the resulting array and removed
 			// from the list
             while(points.length > 2) {
                 p1 = points[0];
@@ -230,7 +234,7 @@ module.exports = (function () {
 			resultingPoints.push(p2);
 			return resultingPoints;
 		};
-		
+
 		// iterate over all nebulae
 		for(var i = 0; i < this.nebulae.length; i++) {
 			curNebula = this.nebulae[i];
@@ -242,16 +246,16 @@ module.exports = (function () {
 			curPointVisible = false;
 			prevPointVisible = false;
 			outsidePoints = [];
-			
-			
+
+
 			// iterate over the current nebula's points
 			for(var j = 0; j < curNebula.points.length; j++) {
 				prevPoint = curPoint;
 				curPoint = curNebula.points[j];
 				prevPointVisible = !!prevPoint ? Utils.pointInRectangle(prevPoint, tRect) : false;
 				curPointVisible = Utils.pointInRectangle(curPoint, tRect);
-				
-				// either the current point or the previous point is visible 
+
+				// either the current point or the previous point is visible
 				// --> add current point to list, after adding any outside points that precede it
 				if(prevPointVisible || curPointVisible) {
 					aggregatedOutsidePoints = aggregateOutsidePoints(outsidePoints);
@@ -261,7 +265,7 @@ module.exports = (function () {
 					outsidePoints = [];
 					curBoundedNeb.points.push(Utils.deepCopy(curPoint));
 					curNebulaIsVisible = true;
-				
+
 				// both the previous and the current point are invisible
                 // --> add the current edge's first point to a list of outside points
                 //     that will be aggregated and re-assembled to shorter path parts later
@@ -269,7 +273,7 @@ module.exports = (function () {
                     outsidePoints.push(clampPoint(curPoint.x, curPoint.y, tRect));
 				}
 			}
-			
+
 			// add remaining outside points
 			aggregatedOutsidePoints = aggregateOutsidePoints(outsidePoints);
 			if(curNebulaIsVisible || aggregatedOutsidePoints.length >= 4) {
@@ -277,12 +281,12 @@ module.exports = (function () {
 					curBoundedNeb.points.push(aggregatedOutsidePoints[oi]);
 				}
 			}
-			
+
 			if(curBoundedNeb.points.length > 0) {
 				boundedNebulae.push(curBoundedNeb);
 			}
 		}
-		
+
 		return boundedNebulae;
 	};
 

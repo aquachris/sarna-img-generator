@@ -171,7 +171,13 @@ module.exports = (function () {
                 Utils.radToDeg(
                     Utils.angleBetweenVectors([1,0],[pInt.x - pInt2.x, pInt.y - pInt2.y])
                 )
-            );
+            ) - 90;
+            /*if(curObj.label.l.angle > 90) {
+                curObj.label.l.angle -= 180;
+            }*/
+            var centroid = Utils.polygonCentroid(this.ellipticalObjects[i].points);
+            curObj.label.l.x6 = centroid.x;
+            curObj.label.l.y6 = centroid.y;
         }
     };
 

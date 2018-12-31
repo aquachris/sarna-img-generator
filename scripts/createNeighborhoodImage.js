@@ -107,6 +107,14 @@ var main = function () {
     //focusedSystems.push('Pleiades Cluster');
 
     focusedSystems.push('Angra');
+    focusedSystems.push('Cohagen');
+    focusedSystems.push('Serenity');
+
+    // generate points randomly scattered in 2D space
+    pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
+
+    // randomize nebulae
+    nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
 
     for(var fsi = 0; fsi < focusedSystems.length; fsi++) {
         focusedSystemName = focusedSystems[fsi];
@@ -121,12 +129,7 @@ var main = function () {
             }
         }
 
-    	// generate points randomly scattered in 2D space
-        pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
-
-    	// randomize and clamp nebulae
-        nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
-    	//clampedNebulae = Utils.clampObjects(nebulaeRandomizer.nebulae, viewRect, 0);
+        // clamp nebulae to view box
     	clampedNebulae = nebulaeRandomizer.generateBoundedNebulae(viewRect);
     	minimapNebulae = nebulaeRandomizer.generateBoundedNebulae(minimapViewRect);
 

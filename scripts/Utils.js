@@ -81,6 +81,7 @@ module.exports = (function () {
         return p;
     };
 
+
     /**
      * Get the point on the unit circle (center at 0,0 and radius 1) that corresponds
      * to the percent value given.
@@ -554,6 +555,47 @@ module.exports = (function () {
      */
     Utils.radToDeg = function (angleInRadians) {
         return angleInRadians * 180 / Math.PI;
+    };
+
+    /**
+     * Calculates a simple polygon centroid.
+     * @returns {Object} The centroid
+     */
+    Utils.simplePolygonCentroid = function (points) {
+        var centroid = {x: 0,y:0};
+        for(var i = 0, len = points.length; i < len; i++) {
+            centroid.x += points[i].x;
+            centroid.y += points[i].y;
+        }
+        centroid.x /= points.length;
+        centroid.y /= points.length;
+        return centroid;
+    };
+
+    /**
+     * Calculates the centroid (barycenter) of a polygon.
+     *
+     * @param points {Array} The polygon's points, in object form (properties x and y)
+     * @returns {Object} The polygon centroid in object form
+     * @see https://en.wikipedia.org/wiki/Centroid
+     */
+    Utils.polygonCentroid = function (points) {
+        var A = 0;
+        var centroid = {x: 0, y: 0};
+        var ip1;
+        for(var i = 0, len = points.length; i < len; i++) {
+            ip1 = (i + 1) % len;
+            A += points[i].x * points[ip1].y - points[ip1].x * points[i].y;
+        }
+        A *= .5;
+        for(var i = 0, len = points.length; i < len; i++) {
+            ip1 = (i + 1) % len;
+            centroid.x += (points[i].x + points[ip1].x)*(points[i].x*points[ip1].y - points[ip1].x*points[i].y);
+            centroid.y += (points[i].y + points[ip1].y)*(points[i].x*points[ip1].y - points[ip1].x*points[i].y);
+        }
+        centroid.x /= 6 * A;
+        centroid.y /= 6 * A;
+        return centroid;
     };
 
     return Utils;

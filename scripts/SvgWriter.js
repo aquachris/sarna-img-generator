@@ -285,6 +285,10 @@ module.exports = (function () {
 			this.markup.nebulaeLabels += `<g style="transform:translate(${tplObj.x5}px, ${tplObj.y5}px)">
 				<text style="transform:rotate(${tplObj.angle}deg)" class="nebulae-label" text-anchor="middle" alignment-baseline="middle">
 				${tplObj.name}</text></g>`;
+
+			tplObj.x6 = nebulae[i].label.l.x6.toFixed(3);
+			tplObj.y6 = (-nebulae[i].label.l.y6).toFixed(3);
+			this.markup.nebulaeLabels += `<circle cx="${tplObj.x6}" cy="${tplObj.y6}" r=".5" style="fill:red" />`;
 		}
 	};
 
