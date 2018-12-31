@@ -324,7 +324,7 @@ module.exports = (function () {
         var lineAsAbc = this.lineFromPoints([line.x1, line.y1], [line.x2, line.y2]);
         var isec;
         var isecPoints = [];
-        //
+
         var lines = [
             this.lineFromPoints([left, top], [right, top]),
             this.lineFromPoints([right, top], [right, bottom]),
@@ -402,7 +402,7 @@ module.exports = (function () {
 			x2: ellipse.centerX, y2: ellipse.centerY
 		}, ellipse);
 
-        console.log(p, ellipse.centerX, ellipse.centerY, ellipse.radiusX, ellipse.radiusY, iPoints);
+        //console.log(p, ellipse.centerX, ellipse.centerY, ellipse.radiusX, ellipse.radiusY, iPoints);
 
 		if(iPoints.length === 0) {
 			return null;
@@ -418,6 +418,42 @@ module.exports = (function () {
 			}
 		}
 	};
+
+    /**
+     * Returns the intersection point of the line between the point p and the center
+     * point of rectangle rect, and the perimeter of rect.
+     *
+     * @param {Object} p
+     * @param {Object} rect
+     * @returns {Object} The intersection point
+     */
+    Utils.pointRectangleIntersection = function (p, rect) {
+        var intPoints = this.lineRectangleIntersection({
+            x1: p.x, y1: p.y,
+            x2: rect.x + rect.w * .5, y2: rect.y + rect.h * .5
+        }, rect);
+        if(intPoints && intPoints.length > 1) {
+            if(this.distance(intPoints[0][0], intPoints[0][1], p.x, p.y)
+                <= this.distance(intPoints[1][0], intPoints[1][1], p.x, p.y)) {
+                return {
+                    x: intPoints[0][0],
+                    y: intPoints[0][1]
+                };
+            } else {
+                return {
+                    x: intPoints[1][0],
+                    y: intPoints[1][1]
+                };
+            }
+        } else if(intPoints && intPoints.length === 1) {
+            return {
+                x: intPoints[0][0],
+                y: intPoints[0][1]
+            };
+        } else {
+            return null;
+        }
+    };
 
     /**
      * A rectangle is defined by its bottom left corner (x,y) and its

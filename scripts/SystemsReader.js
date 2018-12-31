@@ -182,9 +182,6 @@ module.exports = (function () {
 			curSystem.radiusY = parseFloat(curScale[1], 10);
 			curSystem.rotation = parseFloat(curScale[2], 10);
 			curSystem.isCluster = curSystem.radiusX !== 1.0 || curSystem.radiusY !== 1.0;
-            if(curSystem.name === 'Hyades Cluster') {
-                console.log('Hyades', curSystem.radiusX, curSystem.radiusY);
-            }
 
             // era affiliations
 			curSystem.affiliations = [];

@@ -160,15 +160,18 @@ module.exports = (function () {
                 y3: pInt ? pInt.y : undefined
             };
             //pInt = Utils.getClosestPointOnRectanglePerimeter(centerPoint, this.viewRect);
-            var intPoints = Utils.lineRectangleIntersection({
-                x1: curObj.centerX, y1: curObj.centerY,
-                x2: this.viewRect.x + this.viewRect.w * .5,
-                y2: this.viewRect.y + this.viewRect.h * .5
+            var pInt2 = Utils.pointRectangleIntersection({
+                x: curObj.centerX, y: curObj.centerY
             }, this.viewRect);
-            if(intPoints && intPoints.length > 0) {
-                curObj.label.l.x4 = intPoints[0][0];
-                curObj.label.l.y4 = intPoints[0][1];
-            }
+            curObj.label.l.x4 = pInt2.x;
+            curObj.label.l.y4 = pInt2.y;
+            curObj.label.l.x5 = (pInt.x + pInt2.x) * .5;
+            curObj.label.l.y5 = (pInt.y + pInt2.y) * .5;
+            curObj.label.l.angle = Math.round(
+                Utils.radToDeg(
+                    Utils.angleBetweenVectors([1,0],[pInt.x - pInt2.x, pInt.y - pInt2.y])
+                )
+            );
         }
     };
 

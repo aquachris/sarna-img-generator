@@ -275,6 +275,16 @@ module.exports = (function () {
 			tplObj.x4 = nebulae[i].label.l.x4.toFixed(3);
 			tplObj.y4 = (-nebulae[i].label.l.y4).toFixed(3);
 			this.markup.nebulaeLabels += `<circle cx="${tplObj.x4}" cy="${tplObj.y4}" r=".5" />`;
+
+			tplObj.x5 = nebulae[i].label.l.x5.toFixed(3);
+			tplObj.y5 = (-nebulae[i].label.l.y5).toFixed(3);
+			this.markup.nebulaeLabels += `<circle cx="${tplObj.x5}" cy="${tplObj.y5}" r=".5" />`;
+
+			tplObj.angle = nebulae[i].label.l.angle;
+
+			this.markup.nebulaeLabels += `<g style="transform:translate(${tplObj.x5}px, ${tplObj.y5}px)">
+				<text style="transform:rotate(${tplObj.angle}deg)" class="nebulae-label" text-anchor="middle" alignment-baseline="middle">
+				${tplObj.name}</text></g>`;
 		}
 	};
 
