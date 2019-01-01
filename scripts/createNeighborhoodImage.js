@@ -106,9 +106,17 @@ var main = function () {
 	//focusedSystems.push('Hyades Cluster');
     //focusedSystems.push('Pleiades Cluster');
 
-    focusedSystems.push('Angra');
-    focusedSystems.push('Cohagen');
+    // Nebula neighborhood
+    //focusedSystems.push('Able\'s Glory')
+    //focusedSystems.push('Desolate Plains');
+    //focusedSystems.push('Angra');
+    //focusedSystems.push('Belle Isle');
+    //focusedSystems.push('Cohagen');
+    //focusedSystems.push('Cyrton');
+    //focusedSystems.push('Fiery Plains');
+    //focusedSystems.push('Sebha');
     focusedSystems.push('Serenity');
+    //focusedSystems.push('Timbuktu');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);

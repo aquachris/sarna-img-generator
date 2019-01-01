@@ -68,7 +68,8 @@ module.exports = (function () {
         var curObj;
         var curFaction;
         var centerPoint;
-        var p, pInt;
+        var closestPoint;
+        var viewRectCenter, centroid;
         this.orderedObjIndices = [];
 
         // private helper function that generates a label object
@@ -144,40 +145,46 @@ module.exports = (function () {
 
         for(var i = 0, len = this.ellipticalObjects.length; i < len; i++) {
             curObj = this.ellipticalObjects[i];
-            centerPoint = { x: curObj.centerX, y: curObj.centerY };
-            p = { x: this.viewRect.x + this.viewRect.w * .5, y:  this.viewRect.y + this.viewRect.h * .5 };
+            viewRectCenter = { x: this.viewRect.x + this.viewRect.w * .5, y:  this.viewRect.y + this.viewRect.h * .5 };
             curObj.centerX = curObj.x + curObj.w * .5;
             curObj.centerY = curObj.y + curObj.h * .5;
             curObj.id = 'obj_e_' + i;
             curObj.label = generateLabelRect.call(this, curObj, i, true);
-            pInt = Utils.getClosestPointOnEllipsePerimeter(p, curObj);
-            curObj.label.l = {
-                x1: this.viewRect.x + this.viewRect.w * .5,
-                y1: this.viewRect.y + this.viewRect.h * .5,
-                x2: curObj.centerX,
-                y2: curObj.centerY,
-                x3: pInt ? pInt.x : undefined,
-                y3: pInt ? pInt.y : undefined
-            };
-            //pInt = Utils.getClosestPointOnRectanglePerimeter(centerPoint, this.viewRect);
-            var pInt2 = Utils.pointRectangleIntersection({
-                x: curObj.centerX, y: curObj.centerY
-            }, this.viewRect);
-            curObj.label.l.x4 = pInt2.x;
-            curObj.label.l.y4 = pInt2.y;
-            curObj.label.l.x5 = (pInt.x + pInt2.x) * .5;
-            curObj.label.l.y5 = (pInt.y + pInt2.y) * .5;
-            curObj.label.l.angle = Math.round(
-                Utils.radToDeg(
-                    Utils.angleBetweenVectors([1,0],[pInt.x - pInt2.x, pInt.y - pInt2.y])
-                )
-            ) - 90;
-            /*if(curObj.label.l.angle > 90) {
-                curObj.label.l.angle -= 180;
-            }*/
-            var centroid = Utils.polygonCentroid(this.ellipticalObjects[i].points);
-            curObj.label.l.x6 = centroid.x;
-            curObj.label.l.y6 = centroid.y;
+            if(Utils.convexPolygonArea(this.ellipticalObjects[i].points) > 800) {
+                // large label
+                centroid = Utils.polygonCentroid(this.ellipticalObjects[i].points);
+                curObj.label.isLarge = true;
+                curObj.label.vcx = viewRectCenter.x;
+                curObj.label.vcy = viewRectCenter.y;
+                curObj.label.pcx = centroid.x;
+                curObj.label.pcy = centroid.y;
+                curObj.label.h *= 1.6;
+                curObj.label.w *= 1.6;
+                curObj.label.lx = centroid.x - curObj.label.w * .5;
+                curObj.label.ly = centroid.y - curObj.label.h * .5;
+                curObj.label.x = curObj.label.lx;
+                curObj.label.y = curObj.label.ly;
+
+                curObj.label.baseAngle = Utils.radToDeg(
+                    Utils.angleBetweenVectors([1, 0],[centroid.x-viewRectCenter.x, centroid.y-viewRectCenter.y])
+                );
+                if(curObj.label.baseAngle <= 35 || curObj.label.baseAngle >= 145) {
+                    curObj.label.angle = 90;
+                } else if(curObj.label.baseAngle <= 55 || curObj.label.baseAngle >= 125) {
+                    if( (viewRectCenter.x < centroid.x && viewRectCenter.y > centroid.y)
+                        || (viewRectCenter.x > centroid.x && viewRectCenter.y < centroid.y) ) {
+                        curObj.label.angle = -55;
+                    } else {
+                        curObj.label.angle = 55;
+                    }
+                } else {
+                    curObj.label.angle = 0;
+                }
+            } else {
+                closestPoint = Utils.closestPoint(viewRectCenter, this.ellipticalObjects[i].points);
+                curObj.label.cpx = closestPoint.x;
+                curObj.label.cpy = closestPoint.y;
+            }
         }
     };
 

@@ -598,5 +598,74 @@ module.exports = (function () {
         return centroid;
     };
 
+    /**
+     * Calculates a convex polygon's area. Note that the points have to be in order, either
+     * clockwise or counterclockwise.
+     *
+     * @param points {Array} The polygon's points, in object form (properties x and y)
+     * @returns {float} The polygon's area
+     * @see http://www.mathwords.com/a/area_convex_polygon.htm
+     */
+    Utils.convexPolygonArea = function (points) {
+        var sum1 = 0, sum2 = 0;
+        var ip1;
+
+        for(var i = 0, len = points.length; i < len; i++) {
+            ip1 = (i + 1) % len;
+            sum1 += points[i].x * points[ip1].y;
+            sum2 += points[i].y * points[ip1].x;
+        }
+        return Math.abs(0.5 * (sum1 - sum2));
+    };
+
+    /**
+     * Finds the closest point to p, from the set of provided points. The distance metric
+     * used is euclidean.
+     *
+     * @param p {Object} The origin point, in object form (properties x and y)
+     * @param points {Array} The candidate points, in object form (properties x and y)
+     * @returns {Object} The closest point to p
+     */
+    Utils.closestPoint = function (p, points) {
+        var dist;
+        var minDist = Infinity;
+        var closest = null;
+        for(var i = 0, len = points.length; i < len; i++) {
+            dist = Utils.distance(p.x, p.y, points[i].x, points[i].y);
+            if(dist < minDist) {
+                minDist = dist;
+                closest = points[i];
+            }
+        }
+        return closest;
+    };
+
+    /**
+     * @param mat {Array} The matrix to rotate
+     * @param angle {Number} The angle in radians
+     * @returns {Array} The rotated matrix, a new object
+     */
+    Utils.matrix2dRotate = function (mat, angle) {
+        var rot = [
+            Math.cos(angle), Math.sin(angle),
+            -Math.sin(angle), Math.cos(angle)
+        ];
+        return this.matrix2dMultiply(mat, rot);
+    };
+
+    /**
+     * Matrix indices are row-based:
+     * | 0 1 |
+     * | 2 3 |
+     * @param mat1 {Array} The first matrix
+     * @param mat2 {Array} The second matrix
+     * @returns {Array} The multiplied 2d matrix, a new object
+     */
+    Utils.matrix2dMultiply = function (mat1, mat2) {
+        return [mat1[0] * mat2[0] + mat1[1] * mat2[2], mat1[0] * mat2[1] + mat1[1] * mat2[3],
+                    mat1[2] * mat2[0] + mat1[3] * mat2[2], mat1[2] * mat2[1] + mat1[3] * mat2[3]];
+
+    };
+
     return Utils;
 })();

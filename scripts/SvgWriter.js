@@ -249,46 +249,68 @@ module.exports = (function () {
 						d="${curD}" />\n`;
 
 			// nebula label
-			tplObj = {
+			if(!nebulae[i].label.isLarge) {
+				tplObj = {
+					x: nebulae[i].label.x.toFixed(3),
+					y: (-nebulae[i].label.y).toFixed(3),
+					cpx : nebulae[i].label.cpx.toFixed(3),
+					cpy : (-nebulae[i].label.cpy).toFixed(3),
+					name: nebulae[i].name,
+					cls : 'nebulae-label'
+				};
+				this.markup.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.y}" class="${tplObj.cls}">
+					${tplObj.name}</text>\n`;
+				this.markup.nebulaeLabels += `<circle cx="${tplObj.cpx}" cy="${tplObj.cpy}" r=".5" style="fill:#a00" />`;
+			} else {
+				/*tplObj = {
+					x: nebulae[i].label.pcx.toFixed(3),
+					y: (-nebulae[i].label.pcy).toFixed(3),
+					name: nebulae[i].name,
+					cls : 'nebulae-label large'
+				};
+				tplObj.angle = Math.round(nebulae[i].label.angle); //-90;
+				this.markup.nebulaeLabels += `<g style="transform:translate(${tplObj.x}px, ${tplObj.y}px)">
+					<text style="transform:rotate(${tplObj.angle}deg)" class="${tplObj.cls}" text-anchor="middle" alignment-baseline="middle">
+					${tplObj.name}</text></g>`;*/
+
+				tplObj = {
+					x : -nebulae[i].label.w * .5,
+					y : -nebulae[i].label.h * .5,
+					txtY : nebulae[i].label.h * .5,
+					//txtY : -nebulae[i].label.h * .5,
+					w : nebulae[i].label.w.toFixed(2),
+					h : nebulae[i].label.h.toFixed(2),
+					tx : nebulae[i].label.pcx.toFixed(3),
+					ty : (-nebulae[i].label.pcy).toFixed(3),
+					m : Utils.matrix2dRotate([1,0,0,1], Utils.degToRad(-nebulae[i].label.angle)),
+					name: nebulae[i].name,
+					cls : 'nebulae-label large'
+				};
+				this.markup.nebulaeLabels += `<rect x="${tplObj.x}" y="${tplObj.y}"
+					width="${tplObj.w}" height="${tplObj.h}"
+					style="transform: matrix(${tplObj.m[0]},${tplObj.m[2]},${tplObj.m[1]},${tplObj.m[3]},${tplObj.tx},${tplObj.ty});  fill: #a00a"></rect>`;
+				this.markup.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.txtY}"
+					style="transform: matrix(${tplObj.m[0]},${tplObj.m[2]},${tplObj.m[1]},${tplObj.m[3]},${tplObj.tx},${tplObj.ty});"
+					class="${tplObj.cls}">${tplObj.name}</text>`;
+			}
+			/*tplObj = {
 				x : nebulae[i].label.x.toFixed(3),
 				y : (-nebulae[i].label.y).toFixed(3),
 				name : nebulae[i].name,
-				x1 : nebulae[i].label.l.x1.toFixed(3),
-				y1 : (-nebulae[i].label.l.y1).toFixed(3),
-				x2 : nebulae[i].label.l.x2.toFixed(3),
-				y2 : (-nebulae[i].label.l.y2).toFixed(3)
-			};
-			this.markup.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.y}" class="nebulae-label">
-				${tplObj.name}</text>\n`;
-			this.markup.nebulaeLabels += `<line x1="${tplObj.x1}" y1="${tplObj.y1}"
-				x2="${tplObj.x2}" y2="${tplObj.y2}"
-				style="stroke-width: .25px; stroke: #f00;" />`;
+				vcx : nebulae[i].label.vcx.toFixed(3),
+				vcy : (-nebulae[i].label.vcy).toFixed(3),
+				pcx : nebulae[i].label.pcx.toFixed(3),
+				pcy : (-nebulae[i].label.pcy).toFixed(3)
+			};*/
+			/*this.markup.nebulaeLabels += `<line x1="${tplObj.vcx}" y1="${tplObj.vcy}"
+				x2="${tplObj.pcx}" y2="${tplObj.pcy}"
+				style="stroke-width: .25px; stroke: #f00;" />`;*/
 
-			if(nebulae[i].label.l.x3) {
-				tplObj.x3 = nebulae[i].label.l.x3.toFixed(3);
-				tplObj.y3 = (-nebulae[i].label.l.y3).toFixed(3);
-				this.markup.nebulaeLabels += `<circle cx="${tplObj.x3}" cy="${tplObj.y3}" r=".5" />`;
-			} else {
-				console.log(nebulae[i].name + ': ' + 'no intersection point');
-			}
+			//tplObj.angle = -90;//nebulae[i].label.l.angle;
 
-			tplObj.x4 = nebulae[i].label.l.x4.toFixed(3);
-			tplObj.y4 = (-nebulae[i].label.l.y4).toFixed(3);
-			this.markup.nebulaeLabels += `<circle cx="${tplObj.x4}" cy="${tplObj.y4}" r=".5" />`;
-
-			tplObj.x5 = nebulae[i].label.l.x5.toFixed(3);
-			tplObj.y5 = (-nebulae[i].label.l.y5).toFixed(3);
-			this.markup.nebulaeLabels += `<circle cx="${tplObj.x5}" cy="${tplObj.y5}" r=".5" />`;
-
-			tplObj.angle = nebulae[i].label.l.angle;
-
-			this.markup.nebulaeLabels += `<g style="transform:translate(${tplObj.x5}px, ${tplObj.y5}px)">
-				<text style="transform:rotate(${tplObj.angle}deg)" class="nebulae-label" text-anchor="middle" alignment-baseline="middle">
-				${tplObj.name}</text></g>`;
-
-			tplObj.x6 = nebulae[i].label.l.x6.toFixed(3);
-			tplObj.y6 = (-nebulae[i].label.l.y6).toFixed(3);
-			this.markup.nebulaeLabels += `<circle cx="${tplObj.x6}" cy="${tplObj.y6}" r=".5" style="fill:red" />`;
+			/*tplObj.x6 = nebulae[i].label.l.x6.toFixed(3);
+			tplObj.y6 = (-nebulae[i].label.l.y6).toFixed(3);*/
+			//this.markup.nebulaeLabels += `<circle cx="${tplObj.x6}" cy="${tplObj.y6}" r=".5" style="fill:red" />`;
 		}
 	};
 

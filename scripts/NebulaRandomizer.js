@@ -175,7 +175,7 @@ module.exports = (function () {
 		var outsidePoints = [];
 		var aggregatedOutsidePoints = [];
 
-		tolerance === undefined ? tolerance = 10 : false;
+		tolerance === undefined ? tolerance = 3 : false;
 		tRect = {
             x: rect.x - tolerance,
             y: rect.y - tolerance,
