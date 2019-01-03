@@ -150,40 +150,59 @@ module.exports = (function () {
             curObj.centerY = curObj.y + curObj.h * .5;
             curObj.id = 'obj_e_' + i;
             curObj.label = generateLabelRect.call(this, curObj, i, true);
-            if(Utils.convexPolygonArea(this.ellipticalObjects[i].points) > 800) {
+			if(curObj.w > 30 || curObj.h > 30) {
+				if(Utils.convexPolygonArea(curObj.points) > 800) {
+					curObj.label.isLarge = true;
+					curObj.label.h *= 1.6;
+					curObj.label.w *= 1.6;
+                }
+				
+				centroid = Utils.polygonCentroid(curObj.points);
+				
+				// prevent nebula labels in the view box's center:
+				// check if label distance is at least 25% the view rect's width from center
+				var minDist = this.viewRect.w * .2;
+				if(Utils.distance(centroid.x, centroid.y, viewRectCenter.x, viewRectCenter.y) < minDist) {
+					// distance is too small to be comfortable --> move label toward nebula's center
+					var moveVect = [curObj.centerX - centroid.x, curObj.centerY - centroid.y];
+					if(moveVect[0] == 0 || moveVect[1] == 0) {
+						moveVect[1] = 1;
+					}
+					Utils.scaleVector2d(moveVect, minDist);
+					centroid.x += moveVect[0];
+					centroid.y += moveVect[1];
+					//curObj.label.baseAngle = 90;
+				}
+				
                 // large label
-                centroid = Utils.polygonCentroid(this.ellipticalObjects[i].points);
-                curObj.label.isLarge = true;
                 curObj.label.vcx = viewRectCenter.x;
                 curObj.label.vcy = viewRectCenter.y;
                 curObj.label.pcx = centroid.x;
                 curObj.label.pcy = centroid.y;
-                curObj.label.h *= 1.6;
-                curObj.label.w *= 1.6;
                 curObj.label.lx = centroid.x - curObj.label.w * .5;
                 curObj.label.ly = centroid.y - curObj.label.h * .5;
                 curObj.label.x = curObj.label.lx;
                 curObj.label.y = curObj.label.ly;
-
-                curObj.label.baseAngle = Utils.radToDeg(
-                    Utils.angleBetweenVectors([1, 0],[centroid.x-viewRectCenter.x, centroid.y-viewRectCenter.y])
-                );
+				curObj.label.isAngledLabel = true;
+				
+				curObj.label.baseAngle = Utils.radToDeg(
+					Utils.angleBetweenVectors([1, 0],[centroid.x-viewRectCenter.x, centroid.y-viewRectCenter.y])
+				);
                 if(curObj.label.baseAngle <= 35 || curObj.label.baseAngle >= 145) {
+				//if(curObj.label.baseAngle <= 50 || curObj.label.baseAngle >= 140) {
                     curObj.label.angle = 90;
                 } else if(curObj.label.baseAngle <= 55 || curObj.label.baseAngle >= 125) {
                     if( (viewRectCenter.x < centroid.x && viewRectCenter.y > centroid.y)
                         || (viewRectCenter.x > centroid.x && viewRectCenter.y < centroid.y) ) {
-                        curObj.label.angle = -55;
+                        curObj.label.angle = -70;
                     } else {
-                        curObj.label.angle = 55;
+                        curObj.label.angle = 70;
                     }
                 } else {
                     curObj.label.angle = 0;
                 }
             } else {
-                closestPoint = Utils.closestPoint(viewRectCenter, this.ellipticalObjects[i].points);
-                curObj.label.cpx = closestPoint.x;
-                curObj.label.cpy = closestPoint.y;
+				// use regular system-style labels
             }
         }
     };

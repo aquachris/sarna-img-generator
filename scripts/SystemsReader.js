@@ -257,7 +257,7 @@ module.exports = (function () {
             curNeb.x = curNeb.centerX - curNeb.w * .5;
             curNeb.y = curNeb.centerY - curNeb.h * .5;
             curNeb.radiusX = curNeb.w * .5;
-            curNeb.radiusY = curNeb.y * .5;
+            curNeb.radiusY = curNeb.h * .5;
 			this.nebulae.push(curNeb);
 		}
     };

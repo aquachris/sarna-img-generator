@@ -60,8 +60,8 @@
 		g.jump-radius-rings circle { fill: none; stroke: rgba(80,80,80,.5); stroke-width: .25 }
 		g.nebulae ellipse { fill: rgba(0, 0, 0, .1); stroke: rgba(0, 0, 0, .3); stroke-width: .25 }
 		g.nebulae path { fill: url(#nebula-fill); stroke: rgba(0, 0, 0, .5); stroke-width: .25 }
-		text.nebulae-label { font-size: 2.5px; fill: #777; }
-		text.nebulae-label.large { font-size: 4px; fill: #aaa; }
+		text.nebulae-label { font-size: 2.5px; fill: #999; }
+		text.nebulae-label.large { font-size: 4px; fill: #999; }
 		text.system-label { font-size: 2.5px; text-shadow: 1px 1px 0 #fff, -1px 1px 0 #fff, 1px -1px 0 #fff, -1px -1px 0 #fff; }
 		text.system-label.abandoned { fill: #555; font-style: italic; }
 		text.system-label.undiscovered { fill: #555; font-style: italic; }

@@ -249,18 +249,15 @@ module.exports = (function () {
 						d="${curD}" />\n`;
 
 			// nebula label
-			if(!nebulae[i].label.isLarge) {
+			if(!nebulae[i].label.isAngledLabel) {
 				tplObj = {
 					x: nebulae[i].label.x.toFixed(3),
 					y: (-nebulae[i].label.y).toFixed(3),
-					cpx : nebulae[i].label.cpx.toFixed(3),
-					cpy : (-nebulae[i].label.cpy).toFixed(3),
 					name: nebulae[i].name,
 					cls : 'nebulae-label'
 				};
 				this.markup.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.y}" class="${tplObj.cls}">
 					${tplObj.name}</text>\n`;
-				this.markup.nebulaeLabels += `<circle cx="${tplObj.cpx}" cy="${tplObj.cpy}" r=".5" style="fill:#a00" />`;
 			} else {
 				/*tplObj = {
 					x: nebulae[i].label.pcx.toFixed(3),
@@ -284,11 +281,14 @@ module.exports = (function () {
 					ty : (-nebulae[i].label.pcy).toFixed(3),
 					m : Utils.matrix2dRotate([1,0,0,1], Utils.degToRad(-nebulae[i].label.angle)),
 					name: nebulae[i].name,
-					cls : 'nebulae-label large'
+					cls : 'nebulae-label'
 				};
-				this.markup.nebulaeLabels += `<rect x="${tplObj.x}" y="${tplObj.y}"
+				if(nebulae[i].label.isLarge) {
+					tplObj.cls += ' large';
+				}
+				/*this.markup.nebulaeLabels += `<rect x="${tplObj.x}" y="${tplObj.y}"
 					width="${tplObj.w}" height="${tplObj.h}"
-					style="transform: matrix(${tplObj.m[0]},${tplObj.m[2]},${tplObj.m[1]},${tplObj.m[3]},${tplObj.tx},${tplObj.ty});  fill: #a00a"></rect>`;
+					style="transform: matrix(${tplObj.m[0]},${tplObj.m[2]},${tplObj.m[1]},${tplObj.m[3]},${tplObj.tx},${tplObj.ty});  fill: #a00a"></rect>;*/
 				this.markup.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.txtY}"
 					style="transform: matrix(${tplObj.m[0]},${tplObj.m[2]},${tplObj.m[1]},${tplObj.m[3]},${tplObj.tx},${tplObj.ty});"
 					class="${tplObj.cls}">${tplObj.name}</text>`;
