@@ -156,12 +156,12 @@ module.exports = (function () {
 					curObj.label.h *= 1.6;
 					curObj.label.w *= 1.6;
                 }
-				
+
 				centroid = Utils.polygonCentroid(curObj.points);
-				
+
 				// prevent nebula labels in the view box's center:
 				// check if label distance is at least 25% the view rect's width from center
-				var minDist = this.viewRect.w * .2;
+				var minDist = this.viewRect.w * .16;
 				if(Utils.distance(centroid.x, centroid.y, viewRectCenter.x, viewRectCenter.y) < minDist) {
 					// distance is too small to be comfortable --> move label toward nebula's center
 					var moveVect = [curObj.centerX - centroid.x, curObj.centerY - centroid.y];
@@ -173,7 +173,7 @@ module.exports = (function () {
 					centroid.y += moveVect[1];
 					//curObj.label.baseAngle = 90;
 				}
-				
+
                 // large label
                 curObj.label.vcx = viewRectCenter.x;
                 curObj.label.vcy = viewRectCenter.y;
@@ -184,13 +184,20 @@ module.exports = (function () {
                 curObj.label.x = curObj.label.lx;
                 curObj.label.y = curObj.label.ly;
 				curObj.label.isAngledLabel = true;
-				
+
 				curObj.label.baseAngle = Utils.radToDeg(
 					Utils.angleBetweenVectors([1, 0],[centroid.x-viewRectCenter.x, centroid.y-viewRectCenter.y])
 				);
                 if(curObj.label.baseAngle <= 35 || curObj.label.baseAngle >= 145) {
 				//if(curObj.label.baseAngle <= 50 || curObj.label.baseAngle >= 140) {
-                    curObj.label.angle = 90;
+
+                    if(viewRectCenter.y < centroid.y) {
+                        // centroid is above the viewBox's center
+                        curObj.label.angle = 90 - curObj.label.baseAngle;
+                    } else { // if(viewRectCenter.y > centroid.y) {
+                        // centroid is below the viewBox's center
+                        curObj.label.angle = -90 + curObj.label.baseAngle;
+                    }
                 } else if(curObj.label.baseAngle <= 55 || curObj.label.baseAngle >= 125) {
                     if( (viewRectCenter.x < centroid.x && viewRectCenter.y > centroid.y)
                         || (viewRectCenter.x > centroid.x && viewRectCenter.y < centroid.y) ) {
