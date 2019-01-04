@@ -107,26 +107,39 @@ var main = function () {
     //focusedSystems.push('Pleiades Cluster');
 
     // Nebula neighborhood
-    focusedSystems.push('Able\'s Glory')
+    //focusedSystems.push('Able\'s Glory')
 	//focusedSystems.push('Albaracht');
     //focusedSystems.push('Althea\'s Choice');
-    focusedSystems.push('Angra');
+    //focusedSystems.push('Angra');
     //focusedSystems.push('Basantapur');
 	//focusedSystems.push('Beckars');
     //focusedSystems.push('Belle Isle');
     //focusedSystems.push('Carvajal');
-    focusedSystems.push('Cohagen');
+    //focusedSystems.push('Cohagen');
     //focusedSystems.push('Cyrton');
     //focusedSystems.push('Desolate Plains');
     //focusedSystems.push('Fiery Plains');
-    focusedSystems.push('Heathville');
+    //focusedSystems.push('Heathville');
 	//focusedSystems.push('Naka Pabni');
+	//focusedSystems.push('Porthos');
     //focusedSystems.push('Sebha');
     //focusedSystems.push('Serenity');
-    focusedSystems.push('Simone');
-    focusedSystems.push('Thala');
+	//focusedSystems.push('Sappir');
+    //focusedSystems.push('Simone');
+    //focusedSystems.push('Thala');
     //focusedSystems.push('Timbuktu');
-	focusedSystems.push('Verdigreis');
+	//focusedSystems.push('Trell');
+	//focusedSystems.push('Verdigreis');
+	
+	// minimap Terra reference
+	focusedSystems.push('Caripare');
+	focusedSystems.push('Luthien');
+	focusedSystems.push('Bannerhoft');
+	focusedSystems.push('New Avalon');
+	focusedSystems.push('Agliana');
+	focusedSystems.push('Jardangal');
+	focusedSystems.push('Nito');
+	focusedSystems.push('Bergen');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -146,7 +159,7 @@ var main = function () {
                 break;
             }
         }
-
+		
         // clamp nebulae to view box
     	clampedNebulae = nebulaeRandomizer.generateBoundedNebulae(viewRect);
     	minimapNebulae = nebulaeRandomizer.generateBoundedNebulae(minimapViewRect);

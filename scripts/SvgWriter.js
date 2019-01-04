@@ -588,24 +588,46 @@ module.exports = (function () {
 							style="fill: none; stroke: #a00; stroke-width: 3;" />\n`;
 
 		// Terra indicator
+		// TODO this whole section works with magic numbers
 		focusedCoords = [viewRect.x+viewRect.w*.5,-viewRect.y-viewRect.h*.5];
 		if(Utils.pointInRectangle({x:0, y:0}, minimapSettings.viewRect)) {
-			/*els.minimap += '<circle cx="0" cy="0" r="8" style="fill: transparent; stroke: #fff; stroke-width: 8;" />'
-			els.minimap += '<circle cx="0" cy="0" r="20" style="fill: transparent; stroke: #fff; stroke-width: 8;" />'
-			els.minimap += '<circle cx="0" cy="0" r="8" style="fill: transparent; stroke: #000; stroke-width: 3;" />'
-			els.minimap += '<circle cx="0" cy="0" r="20" style="fill: transparent; stroke: #000; stroke-width: 3;" />'*/
-			//els.minimap += '<circle cx="0" cy="0" r="32" style="fill: transparent; stroke: #000; stroke-width: 3;" />'
+			// Terra lies within the minimap's displayed coordinates: 
+			// Show it as a red dot, along with the label "Terra".
+			tplObj = {
+				x: 20,
+				y: 20
+			};
+			if(minimapSettings.viewRect.y + minimapSettings.viewRect.h <= 30) {
+				// top edge of the minimap
+				//tplObj.y += Math.round(minimapSettings.viewRect.y + minimapSettings.viewRect.h) - 30;
+				tplObj.x = -75;
+				tplObj.y = 65;
+			} else if(minimapSettings.viewRect.y >= -30) {
+				// bottom edge of the minimap
+				//tplObj.y -= Math.round(minimapSettings.viewRect.y) + 30;
+				tplObj.x = -75;
+				tplObj.y = -25;
+			}
+			tplObj.x = Math.max(tplObj.x, minimapSettings.viewRect.x);
+			if(minimapSettings.viewRect.x > tplObj.x - 10) {
+				// left edge of the map
+				tplObj.x = minimapSettings.viewRect.x + 10;
+			} else if(minimapSettings.viewRect.x + minimapSettings.viewRect.w < tplObj.x + 150) {
+				// right edge of the map
+				if(tplObj.y === 20) {
+					tplObj.x -= 190;
+				} else {
+					tplObj.x = minimapSettings.viewRect.x + minimapSettings.viewRect.w - 150;
+				}
+			}
+			console.log(minimapSettings.viewRect);
+			this.markup.minimap += `<circle cx="0" cy="0" r="15" style="stroke-width: 4; stroke: #fff; fill: #a00;" />`;
+			this.markup.minimap += `<text x="${tplObj.x}" y="${tplObj.y}">Terra</text>`
 		} else {
-			// line to origin
-			/*var lineToOrigin = Utils.lineFromPoints(focusedCoords, [0,0]);
-			var distToOrigin = Utils.distance(focusedCoords[0], focusedCoords[1], 0, 0);*/
-
-			/*var p1, p2;
-			var rTop = -minimapSettings.viewRect.y - minimapSettings.viewRect.h;
-			var rRight = minimapSettings.viewRect.x + minimapSettings.viewRect.w;
-			var rBottom = -minimapSettings.viewRect.y;
-			var rLeft = minimapSettings.viewRect.x;*/
-
+			// Terra lies outside the minimap's displayed coordinates: 
+			// Show an arrow pointing towards Terra, along with the label "Terra" and the approximate 
+			// distance in LY from the arrow's tip
+			
 			// closest perimeter point from origin
 			var periPoint = Utils.getClosestPointOnRectanglePerimeter({x:0,y:0}, minimapSettings.viewRect);
 			var pPointDist = Utils.distance(periPoint.x, periPoint.y, 0, 0);
