@@ -237,8 +237,10 @@ module.exports = (function () {
                             };
                             this.borderEdges[col1] = this.borderEdges[col1] || [];
                             this.borderEdges[col2] = this.borderEdges[col2] || [];
+                            this.borderEdges['_ALL_'] = this.borderEdges['_ALL_'] || [];
                             this.borderEdges[col1].push(borderEdge);
                             this.borderEdges[col2].push(borderEdge);
+                            this.borderEdges['_ALL_'].push(borderEdge);
                         }
                     }
                 }
@@ -609,7 +611,7 @@ module.exports = (function () {
 			curEdge = null;
 			curEdgeVisible = false;
 			curLoopVisible = false;
-			
+
 			var numLoops = 0;
 			for(var i = 0, len = this.borderEdges[col].length; i < len; i++) {
 				//if(i >= 31) break;
@@ -652,7 +654,7 @@ module.exports = (function () {
                         outsideEdgeIsFirst = false;
                     }
 					newEdge = Utils.deepCopy(curEdge);
-					if(!prevEdgeVisible && curColEdges.length > 0 
+					if(!prevEdgeVisible && curColEdges.length > 0
 						&& !!curColEdges[curColEdges.length - 1].isOutside
 						&& !curEdge.isFirstInLoop) {
 							outsideEdge = curColEdges[curColEdges.length - 1];
@@ -692,7 +694,7 @@ module.exports = (function () {
 				boundedBorderEdges[col] = curColEdges;
 			}
 		};
-		
+
 		return boundedBorderEdges;
 	};
 

@@ -76,7 +76,6 @@ var main = function () {
     var focusedSystems = [];
     var focusedSystemName;
     //focusedSystemName = 'Janina';
-	//focusedSystemName = 'Desolate Plains';
 	//focusedSystemName = 'Ferihegy';
 	//focusedSystemName = 'Apollo';
 	//focusedSystemName = 'Butler';
@@ -88,12 +87,6 @@ var main = function () {
 	//focusedSystemName = 'Naco';
 	//focusedSystemName = 'Rosetta';
 	//focusedSystemName = 'Thala';
-	//focusedSystemName = 'Badlands Cluster';
-	//focusedSystemName = 'Brocchi\'s Cluster';
-	//focusedSystemName = 'Chaine Cluster';
-	//focusedSystemName = 'Enders Cluster';
-	//focusedSystemName = 'Hyades Cluster';
-	//focusedSystemName = 'Pleiades Cluster'
 	//focusedSystemName = 'Spica';
     //focusedSystemName = 'Sirius';
     //focusedSystemName = 'Hall';
@@ -130,16 +123,17 @@ var main = function () {
     //focusedSystems.push('Timbuktu');
 	//focusedSystems.push('Trell');
 	//focusedSystems.push('Verdigreis');
-	
+
 	// minimap Terra reference
-	focusedSystems.push('Caripare');
-	focusedSystems.push('Luthien');
-	focusedSystems.push('Bannerhoft');
-	focusedSystems.push('New Avalon');
-	focusedSystems.push('Agliana');
-	focusedSystems.push('Jardangal');
-	focusedSystems.push('Nito');
-	focusedSystems.push('Bergen');
+	//focusedSystems.push('Caripare');
+	//focusedSystems.push('Luthien');
+	//focusedSystems.push('Bannerhoft');
+	//focusedSystems.push('New Avalon');
+	//focusedSystems.push('Agliana');
+	//focusedSystems.push('Jardangal');
+	//focusedSystems.push('Nito');
+	//focusedSystems.push('Bergen');
+    focusedSystems.push('Greifswald');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -159,7 +153,7 @@ var main = function () {
                 break;
             }
         }
-		
+
         // clamp nebulae to view box
     	clampedNebulae = nebulaeRandomizer.generateBoundedNebulae(viewRect);
     	minimapNebulae = nebulaeRandomizer.generateBoundedNebulae(minimapViewRect);
