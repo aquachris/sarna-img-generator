@@ -357,11 +357,11 @@ module.exports = (function () {
 		var p2 = { x: line.x2 - ellipse.centerX, y: line.y2 - ellipse.centerY };
 		var ts = [];
 		var ret = [];
-		
+
 		// semimajor and semiminor axes
 		var a = ellipse.radiusX;
 		var b = ellipse.radiusY;
-		
+
 		// calculate quadratic parameters
 		var quadA = Math.pow((p2.x - p1.x), 2) / (a * a) + Math.pow(p2.y - p1.y, 2) / (b * b);
 		var quadB = 2 * p1.x * (p2.x - p1.x) / (a * a) + 2 * p1.y * (p2.y - p1.y) / (b * b);
@@ -479,6 +479,19 @@ module.exports = (function () {
             && rect1.x + rect1.w > rect2.x
             && rect1.y < rect2.y + rect2.h
             && rect1.y + rect1.h > rect2.y );*/
+    };
+
+    /**
+     * Checks if a given point lies to the left of a line.
+     *
+     * @param p {Object} The point
+     * @param lineSPt {Object} The line's start point
+     * @param lineEPt {Object} The line's end point
+     * @see http://alienryderflex.com/point_left_of_ray/
+     */
+    Utils.pointIsLeftOfLine = function (p, lineSPt, lineEPt) {
+        return (p.y - lineSPt.y) * (lineEPt.x - lineSPt.x)
+                > (p.x - lineSPt.x) * (lineEPt.y - lineSPt.y);
     };
 
 	/**

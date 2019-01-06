@@ -7,7 +7,7 @@ module.exports = (function () {
 	 * An instance of this class uses the algorithm outlined in the paper below in
      * order to place labels pairwise on a border line between two state entities.
      *
-     * Reference paper:
+     * Algorithm paper:
      * http://www.cartographicperspectives.org/index.php/journal/article/view/cp79-rylov-reimer/1374
 	 */
 	var BorderLabeler = function (logger) {
@@ -30,35 +30,47 @@ module.exports = (function () {
         return this;
     };
 
-    //BorderLabeler.prototype.
     /**
      * @param edges {Array} The edges in the given polyline
      */
-    BorderLabeler.prototype.run = function (edges, fac1, fac2) {
-        var fac1Label = '', fac2Label = '';
+    BorderLabeler.prototype.run = function (edges) {
         var lineH = this.glyphSettings.lineHeight;
         var charDefaultWidth = this.glyphSettings.widths.default;
         var labelWidth = 0;
         var wMax = 0;
+        var sDistance = 0;
+        var pPoints = [];
+        var pLineLength = 0;
+        var leftFac, rightFac;
+        var leftFacLabel = '', rightFacLabel = '';
 
-        if(this.factions.hasOwnProperty(fac1)) {
-            fac1Label = this.factions[fac1].longName;
-        }
-        if(this.factions.hasOwnProperty(fac2)) {
-            fac2Label = this.factions[fac2].longName;
-        }
-
-        for(var i = 0; i < fac1Label.length; i++) {
-            wMax += this.glyphSettings.widths[fac1Label[i]] || defaultWidth;
-        }
-        for(var i = 0; i < fac2Label.length; i++) {
-            labelWidth += this.glyphSettings.widths[fac2Label[i]] || defaultWidth;
-        }
-        wMax = Math.max(wMax, labelWidth);
-
-        // iterate over the edges
+        // iterate over the edges to assemble all points and calculate the polyline's length
         for(var i = 0, len = edges.length; i < len; i++) {
-            
+            if(i === 0) {
+                pPoints.push(edges[i].n1);
+                leftFac = edges[i].leftCol;
+                rightFac = edges[i].rightCol;
+            }
+            pPoints.push(edges[i].n2);
+            pLineLength += edges[i].length;
         }
+
+        if(this.factions.hasOwnProperty(leftFac)) {
+            leftFacLabel = this.factions[leftFac].longName;
+        }
+        if(this.factions.hasOwnProperty(rightFac)) {
+            rightFacLabel = this.factions[rightFac].longName;
+        }
+
+        for(var i = 0; i < leftFacLabel.length; i++) {
+            wMax += this.glyphSettings.widths[leftFacLabel[i]] || defaultWidth;
+        }
+        for(var i = 0; i < rightFacLabel.length; i++) {
+            labelWidth += this.glyphSettings.widths[rightFacLabel[i]] || defaultWidth;
+        }
+        // maximum label length
+        wMax = Math.max(wMax, labelWidth);
+        // minimum distance between q candidates
+        sDistance = 2 * wMax;
     };
 });

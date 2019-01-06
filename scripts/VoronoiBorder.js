@@ -233,7 +233,8 @@ module.exports = (function () {
                                 col1: col1,
                                 col2: col2,
                                 p1: curNode,
-                                p2: curNeighbor
+                                p2: curNeighbor,
+                                length: Utils.distance(curNode.x, curNode.y, curNeighbor.x, curNeighbor.y)
                             };
                             this.borderEdges[col1] = this.borderEdges[col1] || [];
                             this.borderEdges[col2] = this.borderEdges[col2] || [];
@@ -312,6 +313,14 @@ module.exports = (function () {
                         curEdge = oriColArr.splice(0, 1)[0];
                         curEdge.isFirstInLoop = true;
                     }
+                }
+                // determine left / right col
+                if(Utils.pointIsLeftOfLine(this.objects[curEdge.obj1], curEdge.n1, curEdge.n2)) {
+                    curEdge.leftCol = curEdge.col1;
+                    curEdge.rightCol = curEdge.col2;
+                } else {
+                    curEdge.leftCol = curEdge.col2;
+                    curEdge.rightCol = curEdge.col1;
                 }
                 newColArr.push(curEdge);
             }
