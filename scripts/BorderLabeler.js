@@ -55,6 +55,24 @@ module.exports = (function () {
             pLineLength += edges[i].length;
         }
 
+        var calculateLengths = function (label1, label2) {
+            wMax = 0;
+            for(var i = 0; i < label1.length; i++) {
+                wMax += this.glyphSettings.widths[label1[i]] || charDefaultWidth;
+            }
+            labelWidth = 0;
+            for(var i = 0; i < label2.length; i++) {
+                labelWidth += this.glyphSettings.widths[label2[i]] || charDefaultWidth;
+            }
+            // maximum label length
+            wMax = Math.max(wMax, labelWidth);
+            // minimum distance between q candidates
+            sDistance = 2 * wMax;
+
+            leftFacLabel = label1;
+            rightFacLabel = label1;
+        };
+
         if(this.factions.hasOwnProperty(leftFac)) {
             leftFacLabel = this.factions[leftFac].longName;
         }
@@ -62,15 +80,17 @@ module.exports = (function () {
             rightFacLabel = this.factions[rightFac].longName;
         }
 
-        for(var i = 0; i < leftFacLabel.length; i++) {
-            wMax += this.glyphSettings.widths[leftFacLabel[i]] || defaultWidth;
+        calculateLengths(leftFacLabel, rightFacLabel);
+        if(pLineLength < 2 * sDistance + wMax) {
+            // long labels are too long - try short ones
+            calculateLengths(leftFac, rightFac);
+            if(pLineLength < 2 * sDistance + wMax) {
+                // short labels are too short also - no labeling
+                return;
+            }
         }
-        for(var i = 0; i < rightFacLabel.length; i++) {
-            labelWidth += this.glyphSettings.widths[rightFacLabel[i]] || defaultWidth;
-        }
-        // maximum label length
-        wMax = Math.max(wMax, labelWidth);
-        // minimum distance between q candidates
-        sDistance = 2 * wMax;
+
+        // find candidate locations along the polyline
+        
     };
 });
