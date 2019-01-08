@@ -5,6 +5,7 @@ var Utils = require('./Utils.js');
 var SystemsReader = require('./SystemsReader.js');
 var PoissonDisc = require('./PoissonDisc.js');
 var VoronoiBorder = require('./VoronoiBorder.js');
+var BorderLabeler = require('./BorderLabeler.js');
 var NebulaRandomizer = require('./NebulaRandomizer.js');
 var LabelManager = require('./LabelManager.js');
 var SvgWriter = require('./SvgWriter.js');
@@ -18,6 +19,7 @@ var main = function () {
 	var pDisc;
 	var nebulaeRandomizer;
 	var vBorder;
+	var borderLabeler;
     var labelMgr;
 	var curEra;
     var reservedPoints;
@@ -133,7 +135,11 @@ var main = function () {
 	//focusedSystems.push('Jardangal');
 	//focusedSystems.push('Nito');
 	//focusedSystems.push('Bergen');
-    focusedSystems.push('Greifswald');
+    //focusedSystems.push('Greifswald');
+	
+	// border labelling
+	focusedSystems.push('Sol');
+	focusedSystems.push('Cassias');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -152,6 +158,7 @@ var main = function () {
                 minimapViewRect.y = reader.systems[i].y - 300;
                 break;
             }
+			if(reader.systems[i].name.startsWith('Sol')) console.log(reader.systems[i].name);
         }
 
         // clamp nebulae to view box
@@ -224,9 +231,21 @@ var main = function () {
 
     		// minimap borders
     		minimapBorders = vBorder.generateBoundedBorders(minimapViewRect);
+			
+			// add border labels
+			borderLabeler = new BorderLabeler(logger).init(
+				vBorder, 
+				labelMgr.factions, 
+				viewRect,
+				reader.labelConfig._glyphSettings || {}, 
+				1
+			);
+			borderLabeler.extractPolylines(vBorder.borderEdges, viewRect);
+			borderLabeler.generateCandidates();
+			borderLabeler.findCenterlines();
 
     		// create an svg with a universe picture
-            writer.writeSystemNeighborhoodSvg(
+            writer.writeBorderSvg(
                 focusedSystemName,
     			dimensions,
     			viewRect,
@@ -234,6 +253,7 @@ var main = function () {
     			labelMgr.objects,
     			labelMgr.factions,
     			clampedBorders,
+				borderLabeler.polylines,
                 labelMgr.ellipticalObjects,
     			{
     				dimensions : minimapDimensions,

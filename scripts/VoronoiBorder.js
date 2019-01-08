@@ -238,10 +238,8 @@ module.exports = (function () {
                             };
                             this.borderEdges[col1] = this.borderEdges[col1] || [];
                             this.borderEdges[col2] = this.borderEdges[col2] || [];
-                            this.borderEdges['_ALL_'] = this.borderEdges['_ALL_'] || [];
                             this.borderEdges[col1].push(borderEdge);
                             this.borderEdges[col2].push(borderEdge);
-                            this.borderEdges['_ALL_'].push(borderEdge);
                         }
                     }
                 }

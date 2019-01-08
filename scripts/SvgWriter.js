@@ -43,7 +43,20 @@ module.exports = (function () {
 	SvgWriter.prototype.writeSystemNeighborhoodSvg = function (name, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings, jumpRings) {
 		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
 		var filename = this.baseDir + '/output/'+name.replace(/\s/g, '_')+'_' +era.year + '_' + safeEraName + '.svg';
-		this.writeSvg(filename, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings, jumpRings);
+		this.writeSvg(null, filename, dimensions, viewRect, era, systems, factions, borders, null, nebulae, minimapSettings, jumpRings);
+	};
+	
+	SvgWriter.prototype.writeBorderSvg = function (name, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings) {
+		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
+		var filename = this.baseDir + '/output/'+name.replace(/\s/g, '_')+'_' +era.year + '_' + safeEraName + '_borders.svg';
+		this.writeSvg({
+			renderSystems : false,
+			renderSystemLabels : false,
+			renderClusters : false,
+			renderClusterLabels : false,
+			renderMinimap : false,
+			renderScaleHelp : false
+		}, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings);
 	};
 
 	/**
@@ -60,32 +73,45 @@ module.exports = (function () {
 	 * @param minimapSettings {Object} Settings for an optional minimap (dimensions, viewRect and borders)
 	 * @param jumpRings {Array} List of jump ring radii
 	 */
-	SvgWriter.prototype.writeSvg = function (filename, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings, jumpRings) {
+	SvgWriter.prototype.writeSvg = function (settings, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings) {
 		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf-8' });
 		var viewBox;
 		var elementsStr;
 		var pxPerLy = dimensions.w / viewRect.w;
+		
+		settings = settings || {};
+		settings.renderFactions = settings.renderFactions === undefined ? true : false;
+		settings.renderBorderLabels = settings.renderBorderLabels === undefined ? true : false; 
+		settings.renderNebulae = settings.renderNebulae === undefined ? true : false;
+		settings.renderNebulaLabels = settings.renderNebulaLabels === undefined ? true : false;
+		settings.renderJumpRings = settings.renderJumpRings === undefined ? true : false;
+		settings.renderSystems = settings.renderSystems === undefined ? true : false;
+		settings.renderSystemLabels = settings.renderSystemLabels === undefined ? true : false;
+		settings.renderClusters = settings.renderClusters === undefined ? true : false;
+		settings.renderClusterLabels = settings.renderClusterLabels === undefined ? true : false;
+		settings.renderMinimap = settings.renderMinimap === undefined ? true : false;
+		settings.renderScaleHelp = settings.renderScaleHelp === undefined ? true : false;
 
 		// reset markup
 		this.initMarkup();
 
 		// render faction borders and state areas
-		this.renderFactions(factions, borders);
+		this.renderFactions(settings, factions, borders, borderLabelLines || []);
 
 		// render nebulae
-		this.renderNebulae(nebulae);
+		this.renderNebulae(settings, nebulae);
 
 		// render systems and clusters
-		this.renderSystemsAndClusters(factions, systems);
+		this.renderSystemsAndClusters(settings, factions, systems);
 
 		// render jump rings
-		this.renderJumpRings(viewRect, jumpRings || []);
+		this.renderJumpRings(settings, viewRect, jumpRings || []);
 
 		// render the minimap
-		this.renderMinimap(minimapSettings, viewRect, pxPerLy, factions, nebulae);
+		this.renderMinimap(settings, minimapSettings, viewRect, pxPerLy, factions, nebulae);
 
 		// render scale help
-		this.renderScaleHelp(viewRect, pxPerLy);
+		this.renderScaleHelp(settings, viewRect, pxPerLy);
 
 		// concatenate markup
 		elementsStr = '';
@@ -128,7 +154,7 @@ module.exports = (function () {
 	/**
 	 * @private
 	 */
-	SvgWriter.prototype.renderFactions = function (factions, borders) {
+	SvgWriter.prototype.renderFactions = function (settings, factions, borders, borderLabelLines) {
 		var borderEdges;
 		var curEdge, curD;
 		var rgba, tplObj;
@@ -201,9 +227,53 @@ module.exports = (function () {
 				fill : factions[faction].fill,
 				d : curD
 			};
-			this.markup.borders += `<path fill-rule="evenodd" class="border ${tplObj.faction}"
+			if(settings.renderFactions) {
+				this.markup.borders += `<path fill-rule="evenodd" class="border ${tplObj.faction}"
 						style="stroke: ${tplObj.stroke}; stroke-width: 1px; fill: ${tplObj.fill};"
 						d="${tplObj.d}" />\n`;
+			}
+		}
+
+		if(settings.renderBorderLabels) {
+			for(var i = 0, len = borderLabelLines.length; i < len; i++) {
+				for(var j = 0; j < borderLabelLines[i].lineParts.length; j++) {
+					tplObj = {
+						x1 : borderLabelLines[i].lineParts[j].p1.x,
+						y1 : (-borderLabelLines[i].lineParts[j].p1.y).toFixed(3),
+						x2 : borderLabelLines[i].lineParts[j].p2.x,
+						y2 : (-borderLabelLines[i].lineParts[j].p2.y).toFixed(3),
+						info : borderLabelLines[i].borderId + ' ' + i
+					};
+					this.markup.borders += `<line x1="${tplObj.x1}" y1="${tplObj.y1}" x2="${tplObj.x2}" y2="${tplObj.y2}" 
+						style="stroke-width: .25px; stroke: #333" data-info="${tplObj.info}" />`;
+				}
+				for(var j = 0; j < borderLabelLines[i].candidates.length; j++) {
+					tplObj = {
+						x: borderLabelLines[i].candidates[j].x.toFixed(3),
+						y: (-borderLabelLines[i].candidates[j].y).toFixed(3),
+						info: i + ' ' + borderLabelLines[i].leftCol + ' ' + borderLabelLines[i].rightCol
+					};
+					this.markup.borders += `<circle cx="${tplObj.x}" cy="${tplObj.y}" r=".5" 
+						style="stroke-width: 0; fill: #000" data-info="${tplObj.info}" />\n`;
+					tplObj = {
+						x1: borderLabelLines[i].candidates[j].rLine.x1.toFixed(3),
+						y1: (-borderLabelLines[i].candidates[j].rLine.y1).toFixed(3),
+						x2: borderLabelLines[i].candidates[j].rLine.x2.toFixed(3),
+						y2: (-borderLabelLines[i].candidates[j].rLine.y2).toFixed(3),
+					};
+					this.markup.borders += `<line x1="${tplObj.x1}" y1="${tplObj.y1}" 
+						x2="${tplObj.x2}" y2="${tplObj.y2}" 
+						style="stroke: #888; stroke-width: .4" />`
+					for(var k = 0; k < borderLabelLines[i].candidates[j].iPoints.length; k++) {
+						tplObj = {
+							x: borderLabelLines[i].candidates[j].iPoints[k].x.toFixed(3),
+							y: (-borderLabelLines[i].candidates[j].iPoints[k].y).toFixed(3)
+						};
+						this.markup.borders += `<circle cx="${tplObj.x}" cy="${tplObj.y}" r=".4" 
+							style="stroke-width: .1; stroke: #fff; fill: #f00" />\n`;
+					}
+				}
+			}
 		}
 	};
 
@@ -211,106 +281,111 @@ module.exports = (function () {
 	 * Renders nebula objects.
 	 * @private
 	 */
-	SvgWriter.prototype.renderNebulae = function (nebulae) {
+	SvgWriter.prototype.renderNebulae = function (settings, nebulae) {
 		var tplObj, curD;
 		var prevPoint, curPoint;
 
 		for(var i = 0, len = nebulae.length; i < len; i++) {
-			// nebula ellipse / polygon
-			tplObj = {
-				name : nebulae[i].name,
-				x : nebulae[i].centerX.toFixed(3),
-				y : (-nebulae[i].centerY).toFixed(3),
-				rx : nebulae[i].w*.5,
-				ry : nebulae[i].h*.5
-			};
-			/*els.nebulae += `<ellipse data-name="${tplObj.name}"
-						cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.rx}" ry="${tplObj.ry}" />\n`;*/
+			
+			if(settings.renderNebulae) {
+				// nebula ellipse / polygon
+				tplObj = {
+					name : nebulae[i].name,
+					x : nebulae[i].centerX.toFixed(3),
+					y : (-nebulae[i].centerY).toFixed(3),
+					rx : nebulae[i].w*.5,
+					ry : nebulae[i].h*.5
+				};
+				/*els.nebulae += `<ellipse data-name="${tplObj.name}"
+							cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.rx}" ry="${tplObj.ry}" />\n`;*/
 
-			curD = '';
-			for(var j = 0, jlen = nebulae[i].points.length; j <= jlen; j++) {
-				curPoint = nebulae[i].points[j % jlen];
-				(j > 0) && (prevPoint = nebulae[i].points[j-1]);
-				if(j === 0) {
-					curD += 'M' + curPoint.x.toFixed(2) + ',' + (-curPoint.y).toFixed(2);
-				} else if(!prevPoint.c2 || !curPoint.c1) {
-					curD += ' L' + curPoint.x.toFixed(2) + ',' + (-curPoint.y).toFixed(2);
+				curD = '';
+				for(var j = 0, jlen = nebulae[i].points.length; j <= jlen; j++) {
+					curPoint = nebulae[i].points[j % jlen];
+					(j > 0) && (prevPoint = nebulae[i].points[j-1]);
+					if(j === 0) {
+						curD += 'M' + curPoint.x.toFixed(2) + ',' + (-curPoint.y).toFixed(2);
+					} else if(!prevPoint.c2 || !curPoint.c1) {
+						curD += ' L' + curPoint.x.toFixed(2) + ',' + (-curPoint.y).toFixed(2);
 
-				} else {
-					prevPoint = nebulae[i].points[j-1];
-					curD += ' C' + prevPoint.c2.x.toFixed(2) + ',' + (-prevPoint.c2.y).toFixed(2);
-					curD += ' ' + curPoint.c1.x.toFixed(2) + ',' + (-curPoint.c1.y).toFixed(2);
-					curD += ' ' + curPoint.x.toFixed(2) + ',' + (-curPoint.y).toFixed(2);
+					} else {
+						prevPoint = nebulae[i].points[j-1];
+						curD += ' C' + prevPoint.c2.x.toFixed(2) + ',' + (-prevPoint.c2.y).toFixed(2);
+						curD += ' ' + curPoint.c1.x.toFixed(2) + ',' + (-curPoint.c1.y).toFixed(2);
+						curD += ' ' + curPoint.x.toFixed(2) + ',' + (-curPoint.y).toFixed(2);
+					}
 				}
-			}
 
-			this.markup.nebulae += `<path fill-rule="evenodd" class="nebula"
-						data-name="${tplObj.name}"
-						d="${curD}" />\n`;
+				this.markup.nebulae += `<path fill-rule="evenodd" class="nebula"
+							data-name="${tplObj.name}"
+							d="${curD}" />\n`;
+			}
 
 			// nebula label
-			if(!nebulae[i].label.isAngledLabel) {
-				tplObj = {
-					x: nebulae[i].label.x.toFixed(3),
-					y: (-nebulae[i].label.y).toFixed(3),
-					name: nebulae[i].name,
-					cls : 'nebulae-label'
-				};
-				this.markup.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.y}" class="${tplObj.cls}">
-					${tplObj.name}</text>\n`;
-			} else {
-				/*tplObj = {
-					x: nebulae[i].label.pcx.toFixed(3),
-					y: (-nebulae[i].label.pcy).toFixed(3),
-					name: nebulae[i].name,
-					cls : 'nebulae-label large'
-				};
-				tplObj.angle = Math.round(nebulae[i].label.angle); //-90;
-				this.markup.nebulaeLabels += `<g style="transform:translate(${tplObj.x}px, ${tplObj.y}px)">
-					<text style="transform:rotate(${tplObj.angle}deg)" class="${tplObj.cls}" text-anchor="middle" alignment-baseline="middle">
-					${tplObj.name}</text></g>`;*/
+			if(settings.renderNebulaLabels) {
+				if(!nebulae[i].label.isAngledLabel) {
+					tplObj = {
+						x: nebulae[i].label.x.toFixed(3),
+						y: (-nebulae[i].label.y).toFixed(3),
+						name: nebulae[i].name,
+						cls : 'nebulae-label'
+					};
+					this.markup.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.y}" class="${tplObj.cls}">
+						${tplObj.name}</text>\n`;
+				} else {
+					/*tplObj = {
+						x: nebulae[i].label.pcx.toFixed(3),
+						y: (-nebulae[i].label.pcy).toFixed(3),
+						name: nebulae[i].name,
+						cls : 'nebulae-label large'
+					};
+					tplObj.angle = Math.round(nebulae[i].label.angle); //-90;
+					this.markup.nebulaeLabels += `<g style="transform:translate(${tplObj.x}px, ${tplObj.y}px)">
+						<text style="transform:rotate(${tplObj.angle}deg)" class="${tplObj.cls}" text-anchor="middle" alignment-baseline="middle">
+						${tplObj.name}</text></g>`;*/
 
-				tplObj = {
-					x : -nebulae[i].label.w * .5,
-					y : -nebulae[i].label.h * .5,
-					txtY : nebulae[i].label.h * .5,
-					//txtY : -nebulae[i].label.h * .5,
-					w : nebulae[i].label.w.toFixed(2),
-					h : nebulae[i].label.h.toFixed(2),
-					tx : nebulae[i].label.pcx.toFixed(3),
-					ty : (-nebulae[i].label.pcy).toFixed(3),
-					m : Utils.matrix2dRotate([1,0,0,1], Utils.degToRad(-nebulae[i].label.angle)),
-					name: nebulae[i].name,
-					cls : 'nebulae-label'
-				};
-				if(nebulae[i].label.isLarge) {
-					tplObj.cls += ' large';
+					tplObj = {
+						x : -nebulae[i].label.w * .5,
+						y : -nebulae[i].label.h * .5,
+						txtY : nebulae[i].label.h * .5,
+						//txtY : -nebulae[i].label.h * .5,
+						w : nebulae[i].label.w.toFixed(2),
+						h : nebulae[i].label.h.toFixed(2),
+						tx : nebulae[i].label.pcx.toFixed(3),
+						ty : (-nebulae[i].label.pcy).toFixed(3),
+						m : Utils.matrix2dRotate([1,0,0,1], Utils.degToRad(-nebulae[i].label.angle)),
+						name: nebulae[i].name,
+						cls : 'nebulae-label'
+					};
+					if(nebulae[i].label.isLarge) {
+						tplObj.cls += ' large';
+					}
+					/*this.markup.nebulaeLabels += `<rect x="${tplObj.x}" y="${tplObj.y}"
+						width="${tplObj.w}" height="${tplObj.h}"
+						style="transform: matrix(${tplObj.m[0]},${tplObj.m[2]},${tplObj.m[1]},${tplObj.m[3]},${tplObj.tx},${tplObj.ty});  fill: #a00a"></rect>;*/
+					this.markup.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.txtY}"
+						style="transform: matrix(${tplObj.m[0]},${tplObj.m[2]},${tplObj.m[1]},${tplObj.m[3]},${tplObj.tx},${tplObj.ty});"
+						class="${tplObj.cls}">${tplObj.name}</text>`;
 				}
-				/*this.markup.nebulaeLabels += `<rect x="${tplObj.x}" y="${tplObj.y}"
-					width="${tplObj.w}" height="${tplObj.h}"
-					style="transform: matrix(${tplObj.m[0]},${tplObj.m[2]},${tplObj.m[1]},${tplObj.m[3]},${tplObj.tx},${tplObj.ty});  fill: #a00a"></rect>;*/
-				this.markup.nebulaeLabels += `<text x="${tplObj.x}" y="${tplObj.txtY}"
-					style="transform: matrix(${tplObj.m[0]},${tplObj.m[2]},${tplObj.m[1]},${tplObj.m[3]},${tplObj.tx},${tplObj.ty});"
-					class="${tplObj.cls}">${tplObj.name}</text>`;
+				/*tplObj = {
+					x : nebulae[i].label.x.toFixed(3),
+					y : (-nebulae[i].label.y).toFixed(3),
+					name : nebulae[i].name,
+					vcx : nebulae[i].label.vcx.toFixed(3),
+					vcy : (-nebulae[i].label.vcy).toFixed(3),
+					pcx : nebulae[i].label.pcx.toFixed(3),
+					pcy : (-nebulae[i].label.pcy).toFixed(3)
+				};*/
+				/*this.markup.nebulaeLabels += `<line x1="${tplObj.vcx}" y1="${tplObj.vcy}"
+					x2="${tplObj.pcx}" y2="${tplObj.pcy}"
+					style="stroke-width: .25px; stroke: #f00;" />`;*/
+
+				//tplObj.angle = -90;//nebulae[i].label.l.angle;
+
+				/*tplObj.x6 = nebulae[i].label.l.x6.toFixed(3);
+				tplObj.y6 = (-nebulae[i].label.l.y6).toFixed(3);*/
+				//this.markup.nebulaeLabels += `<circle cx="${tplObj.x6}" cy="${tplObj.y6}" r=".5" style="fill:red" />`;
 			}
-			/*tplObj = {
-				x : nebulae[i].label.x.toFixed(3),
-				y : (-nebulae[i].label.y).toFixed(3),
-				name : nebulae[i].name,
-				vcx : nebulae[i].label.vcx.toFixed(3),
-				vcy : (-nebulae[i].label.vcy).toFixed(3),
-				pcx : nebulae[i].label.pcx.toFixed(3),
-				pcy : (-nebulae[i].label.pcy).toFixed(3)
-			};*/
-			/*this.markup.nebulaeLabels += `<line x1="${tplObj.vcx}" y1="${tplObj.vcy}"
-				x2="${tplObj.pcx}" y2="${tplObj.pcy}"
-				style="stroke-width: .25px; stroke: #f00;" />`;*/
-
-			//tplObj.angle = -90;//nebulae[i].label.l.angle;
-
-			/*tplObj.x6 = nebulae[i].label.l.x6.toFixed(3);
-			tplObj.y6 = (-nebulae[i].label.l.y6).toFixed(3);*/
-			//this.markup.nebulaeLabels += `<circle cx="${tplObj.x6}" cy="${tplObj.y6}" r=".5" style="fill:red" />`;
 		}
 	};
 
@@ -318,7 +393,7 @@ module.exports = (function () {
 	 * Renders systems and cluster objects.
 	 * @private
 	 */
-	SvgWriter.prototype.renderSystemsAndClusters = function (factions, systems) {
+	SvgWriter.prototype.renderSystemsAndClusters = function (settings, factions, systems) {
 		var tplObj;
 		var fill, rgba;
 		var labelCls;
@@ -383,38 +458,42 @@ module.exports = (function () {
 				if(systems[i].status.toLowerCase() === 'apocryphal') {
 					tplObj.additionalClasses += 'apocryphal';
 				}
-				this.markup.clusters += `<ellipse class="cluster ${tplObj.faction} ${tplObj.additionalClasses}"
-							data-name="${tplObj.name}"
-							cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.radiusX}" ry="${tplObj.radiusY}"
-							transform="rotate(${tplObj.angle}, ${tplObj.x}, ${tplObj.y})"
-							style="fill: ${tplObj.fill};"  />\n`;
-
-				// connector
-				if(systems[i].label.connector) {
-					curD = 'M' + systems[i].label.connector.p1.x.toFixed(2);
-					curD += ',' + (-systems[i].label.connector.p1.y).toFixed(2);
-					curD += ' L' + systems[i].label.connector.p2.x.toFixed(2);
-					curD += ',' + (-systems[i].label.connector.p2.y).toFixed(2);
-					curD += ' L' + systems[i].label.connector.p3.x.toFixed(2);
-					curD += ',' + (-systems[i].label.connector.p3.y).toFixed(2);
-					this.markup.clusters += `<path d="${curD}" class="label-connector" />\n`;
+				if(settings.renderClusters) {
+					this.markup.clusters += `<ellipse class="cluster ${tplObj.faction} ${tplObj.additionalClasses}"
+								data-name="${tplObj.name}"
+								cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.radiusX}" ry="${tplObj.radiusY}"
+								transform="rotate(${tplObj.angle}, ${tplObj.x}, ${tplObj.y})"
+								style="fill: ${tplObj.fill};"  />\n`;
 				}
 
-				tplObj = {
-					x : systems[i].label.x.toFixed(3),
-					y: (-systems[i].label.y).toFixed(3),
-					labelClass : labelCls,
-					name : systems[i].name,
-					sup : ''
-				};
-				if((systems[i].status || '').toLowerCase() === 'apocryphal') {
-					tplObj.labelClass += ' apocryphal';
-					tplObj.sup = '<tspan class="sup" dx="0.5" dy="1">(apocryphal)</tspan>';
+				if(settings.renderClusterLabels) {
+					// connector
+					if(systems[i].label.connector) {
+						curD = 'M' + systems[i].label.connector.p1.x.toFixed(2);
+						curD += ',' + (-systems[i].label.connector.p1.y).toFixed(2);
+						curD += ' L' + systems[i].label.connector.p2.x.toFixed(2);
+						curD += ',' + (-systems[i].label.connector.p2.y).toFixed(2);
+						curD += ' L' + systems[i].label.connector.p3.x.toFixed(2);
+						curD += ',' + (-systems[i].label.connector.p3.y).toFixed(2);
+						this.markup.clusters += `<path d="${curD}" class="label-connector" />\n`;
+					}
+
+					tplObj = {
+						x : systems[i].label.x.toFixed(3),
+						y: (-systems[i].label.y).toFixed(3),
+						labelClass : labelCls,
+						name : systems[i].name,
+						sup : ''
+					};
+					if((systems[i].status || '').toLowerCase() === 'apocryphal') {
+						tplObj.labelClass += ' apocryphal';
+						tplObj.sup = '<tspan class="sup" dx="0.5" dy="1">(apocryphal)</tspan>';
+					}
+					this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
+											class="system-label ${tplObj.labelClass}" >
+								${tplObj.name}${tplObj.sup}
+								</text>\n`;
 				}
-				this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
-										class="system-label ${tplObj.labelClass}" >
-							${tplObj.name}${tplObj.sup}
-							</text>\n`;
 
 			} else {
 				// system circle
@@ -430,25 +509,29 @@ module.exports = (function () {
 				if(systems[i].status.toLowerCase() === 'apocryphal') {
 					tplObj.additionalClasses += 'apocryphal';
 				}
-				this.markup.systems += `<circle class="system ${tplObj.faction} ${tplObj.additionalClasses}"
-							data-name="${tplObj.name}" cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r}"
-							style="fill: ${tplObj.fill}" />\n`;
-
-				// system label
-				tplObj = {
-					x : systems[i].label.x.toFixed(3),
-					y : (-systems[i].label.y).toFixed(3),
-					labelClass : labelCls,
-					name : systems[i].name,
-					sup : ''
-				};
-				if((systems[i].status || '').toLowerCase() === 'apocryphal') {
-					tplObj.labelClass += ' apocryphal';
-					tplObj.sup = '<tspan class="sup" dx="0.5" dy="-1">(apocryphal)</tspan>';
+				if(settings.renderSystems) {
+					this.markup.systems += `<circle class="system ${tplObj.faction} ${tplObj.additionalClasses}"
+								data-name="${tplObj.name}" cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r}"
+								style="fill: ${tplObj.fill}" />\n`;
 				}
-				this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
-										class="system-label ${tplObj.labelClass}">
-							${tplObj.name}${tplObj.sup}</text>\n`;
+
+				if(settings.renderSystemLabels) {
+					// system label
+					tplObj = {
+						x : systems[i].label.x.toFixed(3),
+						y : (-systems[i].label.y).toFixed(3),
+						labelClass : labelCls,
+						name : systems[i].name,
+						sup : ''
+					};
+					if((systems[i].status || '').toLowerCase() === 'apocryphal') {
+						tplObj.labelClass += ' apocryphal';
+						tplObj.sup = '<tspan class="sup" dx="0.5" dy="-1">(apocryphal)</tspan>';
+					}
+					this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
+											class="system-label ${tplObj.labelClass}">
+								${tplObj.name}${tplObj.sup}</text>\n`;
+				}
 			}
 		}
 		// add the defs that were created along the way
@@ -465,7 +548,7 @@ module.exports = (function () {
 	 * Renders the minimap.
 	 * @private
 	 */
-	SvgWriter.prototype.renderMinimap = function (minimapSettings, viewRect, pxPerLy, factions) {
+	SvgWriter.prototype.renderMinimap = function (settings, minimapSettings, viewRect, pxPerLy, factions) {
 		var pxPerLyMinimap, minimapScale, minimapMargin;
 		var tplObj;
 		var borderEdges, prevEdge, curEdge;
@@ -474,7 +557,7 @@ module.exports = (function () {
 		var focusedCoords;
 		var nebulae;
 
-		if(!minimapSettings) {
+		if(!settings.renderMinimap || !minimapSettings) {
 			return;
 		}
 
@@ -670,7 +753,7 @@ module.exports = (function () {
 	 * Renders the scale help.
 	 * @private
 	 */
-	SvgWriter.prototype.renderScaleHelp = function (viewRect, pxPerLy) {
+	SvgWriter.prototype.renderScaleHelp = function (settings, viewRect, pxPerLy) {
 		var scaleMargin = 10 / pxPerLy;
 		var tplObj = {
 			tX  : viewRect.x + scaleMargin,
@@ -681,6 +764,10 @@ module.exports = (function () {
 			t40 : 40 - 1.365,
 			t50 : 50 - 1.365
 		};
+		
+		if(!settings.renderScaleHelp) {
+			return;
+		}
 		this.markup.scaleHelp = `<g transform="translate(${tplObj.tX}, ${tplObj.tY})">
 				<rect x="0" y="0" width="50" height="1.5" class="black" />
 				<rect x="10" y="0" width="10" height="1.5" class="white" />
@@ -701,9 +788,9 @@ module.exports = (function () {
 	 * @param jumpRingDistances {Array} The distances to paint jump rings at
 	 * @private
 	 */
-	SvgWriter.prototype.renderJumpRings = function (viewRect, jumpRingDistances) {
+	SvgWriter.prototype.renderJumpRings = function (settings, viewRect, jumpRingDistances) {
 		var tplObj;
-		if(!viewRect || !jumpRingDistances) {
+		if(!settings.renderJumpRings || !viewRect || !jumpRingDistances) {
 			return;
 		}
 		tplObj = {
@@ -716,6 +803,9 @@ module.exports = (function () {
 		}
 	};
 
+	/**
+	 * @private
+	 */
 	SvgWriter.prototype.createDisputedCssRule = function (dispCls) {
 		return `g.systems .system.${dispCls} { fill: url('#${dispCls}-fill') !important; }\n`;
 	};

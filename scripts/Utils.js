@@ -342,16 +342,56 @@ module.exports = (function () {
         }
         return isecPoints;
     };
+	
+	/**
+	 * Returns intersection points of a line with a circle.
+	 *
+	 * @param line {Object} The line (an object with properties x1, y1, x2 and y2)
+	 * @param circle {Object} The circle (centerX, centerY, radius)
+	 * @param dontEnforceSegments {boolean} Do not limit intersection points to the given segment
+	 * @returns {Array} List of intersection points (x, y)
+	 */
+	Utils.lineCircleIntersection = function (line, circle, dontEnforceSegments) {
+		return this.lineEllipseIntersection(line, {
+			centerX : circle.centerX,
+			centerY : circle.centerY,
+			radiusX : circle.radius,
+			radiusY : circle.radius
+		}, !!dontEnforceSegments);
+	};
+	
+	/**
+	 * Finds all intersection points of a polyline and a circle.
+	 *
+	 * @param pLineParts {Array} The parts of the polyline
+	 * @param circle {Object} The circle (centerX, centerY, radius)
+	 * @param dontEnforceSegments {boolean} Do not limit intersection points to the given segment
+	 * @returns {Array} List of intersection points (x, y)
+	 */
+	Utils.polylineCircleIntersection = function (pLineParts, circle, dontEnforceSegments) {
+		var iPoints = [];
+		for(var i = 0, len = pLineParts.length; i < len; i++) {
+			iPoints = iPoints.concat(this.lineCircleIntersection({
+				x1: pLineParts[i].p1.x,
+				y1: pLineParts[i].p1.y,
+				x2: pLineParts[i].p2.x,
+				y2: pLineParts[i].p2.y
+			}, circle, dontEnforceSegments));
+		}
+		return iPoints;
+	};
 
 	/**
 	 * Returns intersection points of a line with an ellipse.
 	 * http://csharphelper.com/blog/2017/08/calculate-where-a-line-segment-and-an-ellipse-intersect-in-c/
+	 * https://stackoverflow.com/questions/1073336/circle-line-segment-collision-detection-algorithm
 	 *
 	 * @param line {Object} The line (an object with properties x1, y1, x2 and y2)
 	 * @param ellipse {Object} The ellipse (centerX, centerY, radiusX, radiusY)
+	 * @param dontEnforceSegments {boolean} Do not limit intersection points to the given segment
 	 * @returns {Array} List of intersection points (x, y)
 	 */
-	Utils.lineEllipseIntersection = function (line, ellipse) {
+	Utils.lineEllipseIntersection = function (line, ellipse, dontEnforceSegments) {
 		// consider the ellipse to be centered at origin for now
 		var p1 = { x: line.x1 - ellipse.centerX, y: line.y1 - ellipse.centerY };
 		var p2 = { x: line.x2 - ellipse.centerX, y: line.y2 - ellipse.centerY };
@@ -382,6 +422,9 @@ module.exports = (function () {
 
 		// convert t values into points and translate to actual ellipse location
 		for(var i = 0, len = ts.length; i < len; i++) {
+			if(!dontEnforceSegments && (ts[i] < 0 || ts[i] > 1)) {
+				continue;
+			}
 			ret.push({
 				x: p1.x + (p2.x - p1.x) * ts[i] + ellipse.centerX,
 				y: p1.y + (p2.y - p1.y) * ts[i] + ellipse.centerY
@@ -652,6 +695,37 @@ module.exports = (function () {
         }
         return closest;
     };
+	
+	/**
+	 * Finds the point that lies at the given distance from the start of a polyline.
+	 *
+	 * @param pLineParts {Array} The polyline, an array of edges
+	 * @param d {Number} The distance from the polyline's start point
+	 * @returns {Object} The point at distance d (or null)
+	 */
+	Utils.pointAlongPolyline = function (pLineParts, d) {
+		var curLine, curLength;
+		var vec;
+		for(var i = 0, len = pLineParts.length; i < len; i++) {
+			curLine = pLineParts[i];
+			curLength = this.distance(curLine.p1.x, curLine.p1.y, curLine.p2.x, curLine.p2.y);
+			if(curLength < d) {
+				// the point lies beyond the current line
+				// subtract the current line's length from the distance and continue with the next line
+				d -= curLength;
+				continue;
+			} else {
+				// the point lies on the current line
+				vec = [curLine.p2.x - curLine.p1.x, curLine.p2.y - curLine.p1.y];
+				this.scaleVector2d(vec, d);
+				return { 
+					x: curLine.p1.x + vec[0], 
+					y: curLine.p1.y + vec[1] 
+				};
+			}
+		}
+		return null;
+	};
 
     /**
      * @param mat {Array} The matrix to rotate
@@ -679,6 +753,126 @@ module.exports = (function () {
                     mat1[2] * mat2[0] + mat1[3] * mat2[2], mat1[2] * mat2[1] + mat1[3] * mat2[3]];
 
     };
+	
+	Utils.basicAvgVector = function (vectors) {
+		var avg = [0, 0];
+		var nVecs = [];
+		for(var i = 0, len = vectors.length; i < len; i++) {
+			nVecs.push(Utils.deepCopy(vectors[i]));
+			this.scaleVector2d(nVecs[i], 1);
+			avg[0] += nVecs[i][0];
+			avg[1] += nVecs[i][1];
+		}
+		this.scaleVector2d(avg, 1);
+		console.log(avg);
+		return avg;
+	};
+	
+	/**
+	 *
+	 */
+	Utils.simpleLinearRegression = function (samples) {
+		var alpha, beta;
+		var xAvg = 0;
+		var x2Avg = 0;
+		var yAvg = 0;
+		var y2Avg = 0;
+		var xyAvg = 0;
+		var sx = 0;
+		var sy = 0;
+		var rxy;
+		
+		for(var i = 0, len = samples.length; i < len; i++) {
+			xAvg += samples[i].x;
+			x2Avg += samples[i].x * samples[i].x;
+			yAvg += samples[i].y;
+			y2Avg += samples[i].y * samples[i].y;
+			xyAvg += samples[i].x * samples[i].y;
+		}
+		xAvg /= samples.length;
+		x2Avg /= samples.length;
+		yAvg /= samples.length;
+		y2Avg /= samples.length;
+		xyAvg /= samples.length;
+		
+		// deviations
+		for(var i = 0, len = samples.length; i < len; i++) {
+			sx += Math.pow(samples[i].x - xAvg, 2);
+			sy += Math.pow(samples[i].y - yAvg, 2);
+		}
+		sx = Math.sqrt(sx / samples.length);
+		sy = Math.sqrt(sy / samples.length);
+		
+		rxy = (xyAvg - xAvg * yAvg) / Math.sqrt((x2Avg - xAvg * xAvg) * (y2Avg - yAvg * yAvg));
+		beta = rxy * sy / sx;
+		alpha = yAvg - beta * xAvg;
+		return {
+			alpha: alpha,
+			beta: beta
+		};
+	};
+	
+	
+	Utils.findLineByLeastSquares = function(values_x, values_y) {
+		var sum_x = 0;
+		var sum_y = 0;
+		var sum_xy = 0;
+		var sum_xx = 0;
+		var count = 0;
+
+		/*
+		 * We'll use those variables for faster read/write access.
+		 */
+		var x = 0;
+		var y = 0;
+		var values_length = values_x.length;
+
+		if (values_length != values_y.length) {
+			throw new Error('The parameters values_x and values_y need to have same size!');
+		}
+
+		/*
+		 * Nothing to do.
+		 */
+		if (values_length === 0) {
+			return [ [], [] ];
+		}
+
+		/*
+		 * Calculate the sum for each of the parts necessary.
+		 */
+		for (var v = 0; v &lt; values_length; v++) {
+			x = values_x[v];
+			y = values_y[v];
+			sum_x += x;
+			sum_y += y;
+			sum_xx += x*x;
+			sum_xy += x*y;
+			count++;
+		}
+
+		/*
+		 * Calculate m and b for the formular:
+		 * y = x * m + b
+		 */
+		var m = (count*sum_xy - sum_x*sum_y) / (count*sum_xx - sum_x*sum_x);
+		var b = (sum_y/count) - (m*sum_x)/count;
+
+		/*
+		 * We will make the x and y result line now
+		 */
+		var result_values_x = [];
+		var result_values_y = [];
+
+		for (var v = 0; v &lt; values_length; v++) {
+			x = values_x[v];
+			y = x * m + b;
+			result_values_x.push(x);
+			result_values_y.push(y);
+		}
+
+		return [result_values_x, result_values_y];
+	};
 
     return Utils;
 })();
