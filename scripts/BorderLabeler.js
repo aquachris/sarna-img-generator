@@ -31,7 +31,7 @@ module.exports = (function () {
 		this.polylines = [];
         return this;
     };
-	
+
 	/**
 	 * Extract polylines from border polygons
 	 */
@@ -40,9 +40,9 @@ module.exports = (function () {
 		var otherCol;
 		var curEdge, curPolyline, nextPolyline;
 		var borderId;
-		
+
 		this.polylines = [];
-		
+
 		for(var col in borderPolygonMap) {
 			borderEdges = borderPolygonMap[col];
 			if(curPolyline) {
@@ -110,13 +110,13 @@ module.exports = (function () {
 				continue;
 			}
 			console.log('possible merge opportunity for ' + curPolyline.borderId);
-			if(curPolyline.lineParts[curPolyline.lineParts.length - 1].p2.x === nextPolyline.lineParts[0].p1.x 
+			if(curPolyline.lineParts[curPolyline.lineParts.length - 1].p2.x === nextPolyline.lineParts[0].p1.x
 				&& curPolyline.lineParts[curPolyline.lineParts.length - 1].p2.y === nextPolyline.lineParts[0].p1.y) {
 				console.log('MERGE end to start');
 				curPolyline.lineParts = curPolyline.lineParts.concat(nextPolyline.lineParts);
 				// remove merged polyline
 				this.polylines.splice(i + 1, 1);
-			} else if(curPolyline.lineParts[0].p1.x === nextPolyline.lineParts[nextPolyline.lineParts.length - 1].p2.x 
+			} else if(curPolyline.lineParts[0].p1.x === nextPolyline.lineParts[nextPolyline.lineParts.length - 1].p2.x
 				&& curPolyline.lineParts[0].p1.y === nextPolyline.lineParts[nextPolyline.lineParts.length - 1].p2.y) {
 				console.log('MERGE start to end');
 				curPolyline.lineParts = nextPolyline.lineParts.concat(curPolyline.lineParts);
@@ -125,7 +125,7 @@ module.exports = (function () {
 			}
 		}
 	};
-	
+
 	/**
 	 * Generate candidate positions
 	 */
@@ -222,7 +222,7 @@ module.exports = (function () {
 		}
 		return candidates;
     };
-	
+
 	/**
 	 * Corresponds to Phase II in the linked algorithm paper.
 	 */
@@ -233,26 +233,26 @@ module.exports = (function () {
 			}
 		}
 	};
-	
+
 	/**
-	 * 
+	 *
 	 */
 	BorderLabeler.prototype.findCenterlineForCandidate = function (polyline, candidate) {
 		var t1, t2;
 		var radius = 0;
 		var cur, curDist, min1, min2, minDist1, minDist2;
-		var iPoints = Utils.polylineCircleIntersection(polyline.lineParts, { 
-			centerX : candidate.x, 
-			centerY : candidate.y, 
+		var iPoints = Utils.polylineCircleIntersection(polyline.lineParts, {
+			centerX : candidate.x,
+			centerY : candidate.y,
 			radius : radius
 		});
 		candidate.iPoints = [];
 		// find t1 and t2
 		for(var i = .6; i <= 1; i += .1) {
 			radius = polyline.wMax * i;
-			var iPoints = Utils.polylineCircleIntersection(polyline.lineParts, { 
-				centerX : candidate.x, 
-				centerY : candidate.y, 
+			var iPoints = Utils.polylineCircleIntersection(polyline.lineParts, {
+				centerX : candidate.x,
+				centerY : candidate.y,
 				radius : radius
 			});
 			// use only the two closest intersection points
@@ -306,20 +306,52 @@ module.exports = (function () {
 		var reg = Utils.simpleLinearRegression(iPoints);
 		//var vec = [1, reg.alpha + reg.beta];
 		var iVecs = [];
+        var xs = [];
+        var ys = [];
 		for(var i = 0, len = iPoints.length; i < len; i++) {
+            xs.push(iPoints[i].x);
+            ys.push(iPoints[i].y);
 			iVecs.push([
 				candidate.x - iPoints[i].x,
 				candidate.y - iPoints[i].y
 			]);
 		}
 		var vec = Utils.basicAvgVector(iVecs);
-		Utils.scaleVector2d(vec, polyline.wMax * .5);
-		var rLine = { 
-			x1: candidate.x - vec[0], y1: candidate.y - vec[1], 
-			x2: candidate.x + vec[0], y2: candidate.y + vec[1] 
-		};
+        var vec2 = Utils.findLineByLeastSquares(xs, ys);
+		//Utils.scaleVector2d(vec, polyline.wMax * .5);
+		/*var rLine = {
+			x1: candidate.x - vec2[0], y1: candidate.y - vec2[1],
+			x2: candidate.x + vec2[0], y2: candidate.y + vec2[1]
+		};*/
+        var rLine = {
+            x1: vec2[0][0], y1: vec2[1][0],
+            x2: vec2[0][1], y2: vec2[1][1]
+        };
+        var rLineAsLine = Utils.lineFromPoints([rLine.x1, rLine.y1], [rLine.x2, rLine.y2]);
+        //console.log('rLine', rLine);
+        var perp = Utils.perpendicularFromLineToPoint(rLineAsLine, candidate);
+        var perpLine = {
+            x1: rLine.x1, y1: -perp[0]*rLine.x1 + perp[2],
+            x2: rLine.x2, y2: -perp[0]*rLine.x2 + perp[2]
+        };
+        var perpIPoint = Utils.lineLineIntersection(rLineAsLine, perp);
+        var perpIVec = [perpLine.x1 - perpIPoint[0], perpLine.y1 - perpIPoint[1]];
+        Utils.scaleVector2d(perpIVec, polyline.wMax * .5);
+        perpLine = {
+            x1 : perpIPoint[0] + perpIVec[0],
+            y1 : perpIPoint[1] + perpIVec[1],
+            x2 : perpIPoint[0] - perpIVec[0],
+            y2 : perpIPoint[1] - perpIVec[1]
+        };
+        /*Utils.perpendicularBisectorFromLine(
+            [1, 1], [0, 0], pBiLine
+        );
+        console.log('perpBis', pBiLine);*/
+        //var pp1 = { x: candidate.x - 10, y: perp[0]
 		candidate.rLine = rLine;
+        candidate.perpLine = perpLine;
+        candidate.perpIPoint = {x: perpIPoint[0], y: perpIPoint[1]};
 	};
-	
+
 	return BorderLabeler;
 })();

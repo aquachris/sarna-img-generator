@@ -137,6 +137,21 @@ module.exports = (function () {
     };
 
     /**
+     * Find a line that is perpendicular to the given line and goes through
+     * point p.
+     *
+     * @param line {Array} The line, represented as line[0]x + line[1]y = line[2]
+     * @param p {Object} The point, an object with properties x and y
+     * @returns {Object} The resulting line, represented as ret[0]x + ret[1]y = ret[2]
+     */
+    Utils.perpendicularFromLineToPoint = function (line, p) {
+        var ret = [1, 1, 0];
+        ret[0] = -line[1] / line[0]; // perpendicular slope
+        ret[2] = p.y + ret[0] * p.x;
+        return ret;
+    };
+
+    /**
      * Converts the input line to its perpendicular bisector.
      * Param abc will be modified.
      *
@@ -342,7 +357,7 @@ module.exports = (function () {
         }
         return isecPoints;
     };
-	
+
 	/**
 	 * Returns intersection points of a line with a circle.
 	 *
@@ -359,7 +374,7 @@ module.exports = (function () {
 			radiusY : circle.radius
 		}, !!dontEnforceSegments);
 	};
-	
+
 	/**
 	 * Finds all intersection points of a polyline and a circle.
 	 *
@@ -695,7 +710,7 @@ module.exports = (function () {
         }
         return closest;
     };
-	
+
 	/**
 	 * Finds the point that lies at the given distance from the start of a polyline.
 	 *
@@ -718,9 +733,9 @@ module.exports = (function () {
 				// the point lies on the current line
 				vec = [curLine.p2.x - curLine.p1.x, curLine.p2.y - curLine.p1.y];
 				this.scaleVector2d(vec, d);
-				return { 
-					x: curLine.p1.x + vec[0], 
-					y: curLine.p1.y + vec[1] 
+				return {
+					x: curLine.p1.x + vec[0],
+					y: curLine.p1.y + vec[1]
 				};
 			}
 		}
@@ -753,7 +768,7 @@ module.exports = (function () {
                     mat1[2] * mat2[0] + mat1[3] * mat2[2], mat1[2] * mat2[1] + mat1[3] * mat2[3]];
 
     };
-	
+
 	Utils.basicAvgVector = function (vectors) {
 		var avg = [0, 0];
 		var nVecs = [];
@@ -764,10 +779,10 @@ module.exports = (function () {
 			avg[1] += nVecs[i][1];
 		}
 		this.scaleVector2d(avg, 1);
-		console.log(avg);
+		//console.log(avg);
 		return avg;
 	};
-	
+
 	/**
 	 *
 	 */
@@ -781,7 +796,7 @@ module.exports = (function () {
 		var sx = 0;
 		var sy = 0;
 		var rxy;
-		
+
 		for(var i = 0, len = samples.length; i < len; i++) {
 			xAvg += samples[i].x;
 			x2Avg += samples[i].x * samples[i].x;
@@ -794,7 +809,7 @@ module.exports = (function () {
 		yAvg /= samples.length;
 		y2Avg /= samples.length;
 		xyAvg /= samples.length;
-		
+
 		// deviations
 		for(var i = 0, len = samples.length; i < len; i++) {
 			sx += Math.pow(samples[i].x - xAvg, 2);
@@ -802,7 +817,7 @@ module.exports = (function () {
 		}
 		sx = Math.sqrt(sx / samples.length);
 		sy = Math.sqrt(sy / samples.length);
-		
+
 		rxy = (xyAvg - xAvg * yAvg) / Math.sqrt((x2Avg - xAvg * xAvg) * (y2Avg - yAvg * yAvg));
 		beta = rxy * sy / sx;
 		alpha = yAvg - beta * xAvg;
@@ -811,8 +826,8 @@ module.exports = (function () {
 			beta: beta
 		};
 	};
-	
-	
+
+
 	Utils.findLineByLeastSquares = function(values_x, values_y) {
 		var sum_x = 0;
 		var sum_y = 0;
@@ -841,7 +856,7 @@ module.exports = (function () {
 		/*
 		 * Calculate the sum for each of the parts necessary.
 		 */
-		for (var v = 0; v &lt; values_length; v++) {
+		for (var v = 0; v < values_length; v++) {
 			x = values_x[v];
 			y = values_y[v];
 			sum_x += x;
@@ -864,7 +879,7 @@ module.exports = (function () {
 		var result_values_x = [];
 		var result_values_y = [];
 
-		for (var v = 0; v &lt; values_length; v++) {
+		for (var v = 0; v < values_length; v++) {
 			x = values_x[v];
 			y = x * m + b;
 			result_values_x.push(x);

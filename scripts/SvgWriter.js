@@ -45,7 +45,7 @@ module.exports = (function () {
 		var filename = this.baseDir + '/output/'+name.replace(/\s/g, '_')+'_' +era.year + '_' + safeEraName + '.svg';
 		this.writeSvg(null, filename, dimensions, viewRect, era, systems, factions, borders, null, nebulae, minimapSettings, jumpRings);
 	};
-	
+
 	SvgWriter.prototype.writeBorderSvg = function (name, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings) {
 		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
 		var filename = this.baseDir + '/output/'+name.replace(/\s/g, '_')+'_' +era.year + '_' + safeEraName + '_borders.svg';
@@ -78,10 +78,10 @@ module.exports = (function () {
 		var viewBox;
 		var elementsStr;
 		var pxPerLy = dimensions.w / viewRect.w;
-		
+
 		settings = settings || {};
 		settings.renderFactions = settings.renderFactions === undefined ? true : false;
-		settings.renderBorderLabels = settings.renderBorderLabels === undefined ? true : false; 
+		settings.renderBorderLabels = settings.renderBorderLabels === undefined ? true : false;
 		settings.renderNebulae = settings.renderNebulae === undefined ? true : false;
 		settings.renderNebulaLabels = settings.renderNebulaLabels === undefined ? true : false;
 		settings.renderJumpRings = settings.renderJumpRings === undefined ? true : false;
@@ -244,7 +244,7 @@ module.exports = (function () {
 						y2 : (-borderLabelLines[i].lineParts[j].p2.y).toFixed(3),
 						info : borderLabelLines[i].borderId + ' ' + i
 					};
-					this.markup.borders += `<line x1="${tplObj.x1}" y1="${tplObj.y1}" x2="${tplObj.x2}" y2="${tplObj.y2}" 
+					this.markup.borders += `<line x1="${tplObj.x1}" y1="${tplObj.y1}" x2="${tplObj.x2}" y2="${tplObj.y2}"
 						style="stroke-width: .25px; stroke: #333" data-info="${tplObj.info}" />`;
 				}
 				for(var j = 0; j < borderLabelLines[i].candidates.length; j++) {
@@ -253,23 +253,42 @@ module.exports = (function () {
 						y: (-borderLabelLines[i].candidates[j].y).toFixed(3),
 						info: i + ' ' + borderLabelLines[i].leftCol + ' ' + borderLabelLines[i].rightCol
 					};
-					this.markup.borders += `<circle cx="${tplObj.x}" cy="${tplObj.y}" r=".5" 
+					this.markup.borders += `<circle cx="${tplObj.x}" cy="${tplObj.y}" r=".5"
 						style="stroke-width: 0; fill: #000" data-info="${tplObj.info}" />\n`;
+					// r line
 					tplObj = {
 						x1: borderLabelLines[i].candidates[j].rLine.x1.toFixed(3),
 						y1: (-borderLabelLines[i].candidates[j].rLine.y1).toFixed(3),
 						x2: borderLabelLines[i].candidates[j].rLine.x2.toFixed(3),
 						y2: (-borderLabelLines[i].candidates[j].rLine.y2).toFixed(3),
 					};
-					this.markup.borders += `<line x1="${tplObj.x1}" y1="${tplObj.y1}" 
-						x2="${tplObj.x2}" y2="${tplObj.y2}" 
-						style="stroke: #888; stroke-width: .4" />`
+					this.markup.borders += `<line x1="${tplObj.x1}" y1="${tplObj.y1}"
+						x2="${tplObj.x2}" y2="${tplObj.y2}"
+						style="stroke: #888; stroke-width: .4" />`;
+					// perp line
+					tplObj = {
+						x1: borderLabelLines[i].candidates[j].perpLine.x1.toFixed(3),
+						y1: (-borderLabelLines[i].candidates[j].perpLine.y1).toFixed(3),
+						x2: borderLabelLines[i].candidates[j].perpLine.x2.toFixed(3),
+						y2: (-borderLabelLines[i].candidates[j].perpLine.y2).toFixed(3),
+					};
+					this.markup.borders += `<line x1="${tplObj.x1}" y1="${tplObj.y1}"
+						x2="${tplObj.x2}" y2="${tplObj.y2}"
+						style="stroke: #a88; stroke-width: .4" />`;
+
+					tplObj = {
+						x: borderLabelLines[i].candidates[j].perpIPoint.x.toFixed(3),
+						y: (-borderLabelLines[i].candidates[j].perpIPoint.y).toFixed(3)
+					};
+					this.markup.borders += `<circle cx="${tplObj.x}" cy="${tplObj.y}" r=".4"
+							style="stroke-width: .1; stroke: #f00; fill: #ff0" />\n`;
+
 					for(var k = 0; k < borderLabelLines[i].candidates[j].iPoints.length; k++) {
 						tplObj = {
 							x: borderLabelLines[i].candidates[j].iPoints[k].x.toFixed(3),
 							y: (-borderLabelLines[i].candidates[j].iPoints[k].y).toFixed(3)
 						};
-						this.markup.borders += `<circle cx="${tplObj.x}" cy="${tplObj.y}" r=".4" 
+						this.markup.borders += `<circle cx="${tplObj.x}" cy="${tplObj.y}" r=".4"
 							style="stroke-width: .1; stroke: #fff; fill: #f00" />\n`;
 					}
 				}
@@ -286,7 +305,7 @@ module.exports = (function () {
 		var prevPoint, curPoint;
 
 		for(var i = 0, len = nebulae.length; i < len; i++) {
-			
+
 			if(settings.renderNebulae) {
 				// nebula ellipse / polygon
 				tplObj = {
@@ -764,7 +783,7 @@ module.exports = (function () {
 			t40 : 40 - 1.365,
 			t50 : 50 - 1.365
 		};
-		
+
 		if(!settings.renderScaleHelp) {
 			return;
 		}
