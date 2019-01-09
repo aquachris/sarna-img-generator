@@ -255,6 +255,18 @@ module.exports = (function () {
 					};
 					this.markup.borders += `<circle cx="${tplObj.x}" cy="${tplObj.y}" r=".5"
 						style="stroke-width: 0; fill: #000" data-info="${tplObj.info}" />\n`;
+					if(!borderLabelLines[i].candidates[j].rLine) {
+						continue;
+					}
+					// faction labels
+					tplObj = {
+						x : borderLabelLines[i].candidates[j].perpLine.x1.toFixed(3),
+						y : (-borderLabelLines[i].candidates[j].perpLine.y1).toFixed(3),
+						txt: borderLabelLines[i].leftFacLabel
+					};
+					this.markup.borders += `<text text-anchor="middle" x="${tplObj.x}" y="${tplObj.y}">
+						${tplObj.txt}</text>`;
+					
 					// r line
 					tplObj = {
 						x1: borderLabelLines[i].candidates[j].rLine.x1.toFixed(3),

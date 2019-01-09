@@ -203,6 +203,8 @@ module.exports = (function () {
         }
 		polyline.sDistance = sDistance;
 		polyline.wMax = wMax;
+		polyline.rightFacLabel = rightFacLabel;
+		polyline.leftFacLabel = leftFacLabel;
 		if(sDistance <= 0) {
 			// something's funky - abort!
 			this.logger.warn('candidate location generation: sDistance is 0');
@@ -336,18 +338,45 @@ module.exports = (function () {
         };
         var perpIPoint = Utils.lineLineIntersection(rLineAsLine, perp);
         var perpIVec = [perpLine.x1 - perpIPoint[0], perpLine.y1 - perpIPoint[1]];
-        Utils.scaleVector2d(perpIVec, polyline.wMax * .5);
-        perpLine = {
-            x1 : perpIPoint[0] + perpIVec[0],
-            y1 : perpIPoint[1] + perpIVec[1],
-            x2 : perpIPoint[0] - perpIVec[0],
-            y2 : perpIPoint[1] - perpIVec[1]
-        };
+        
         /*Utils.perpendicularBisectorFromLine(
             [1, 1], [0, 0], pBiLine
         );
         console.log('perpBis', pBiLine);*/
         //var pp1 = { x: candidate.x - 10, y: perp[0]
+		
+		// point distances
+		var leftMax = 0, rightMax = 0;
+		var curH;
+		for(var i = 0; i < iPoints.length; i++) {
+			curH = Utils.distanceLineToPoint(rLineAsLine, iPoints[i]);
+			//console.log(rLineAsLine, iPoints[i].x, iPoints[i].y, curH.toFixed(1));
+			//console.log(curH);
+			if(Utils.pointIsLeftOfLine(iPoints[i], {x: rLine.x1, y: rLine.y1}, {x: rLine.x2, y: rLine.y2})) {
+				leftMax = Math.max(leftMax, curH);
+			} else {
+				rightMax = Math.max(rightMax, curH);
+			}
+		}
+		// TODO find correct logic for left side / right side
+		var leftVec = Utils.deepCopy(perpIVec);
+		var rightVec = Utils.deepCopy(perpIVec);
+		console.log(rLineAsLine);
+		var slope = -rLineAsLine[0] / rLineAsLine[1];
+		if(slope <= 0) {
+			Utils.scaleVector2d(leftVec, -leftMax);
+			Utils.scaleVector2d(rightVec, rightMax);
+		} else {
+			Utils.scaleVector2d(leftVec, leftMax);
+			Utils.scaleVector2d(rightVec, -rightMax);
+		}
+        perpLine = {
+            x1 : perpIPoint[0] + leftVec[0],
+            y1 : perpIPoint[1] + leftVec[1],
+			x2 : perpIPoint[0] + rightVec[0],
+			y2 : perpIPoint[1] + rightVec[1]
+        };
+		
 		candidate.rLine = rLine;
         candidate.perpLine = perpLine;
         candidate.perpIPoint = {x: perpIPoint[0], y: perpIPoint[1]};

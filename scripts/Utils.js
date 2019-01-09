@@ -122,6 +122,18 @@ module.exports = (function () {
     Utils.angleBetweenNormalizedVectors = function (v1, v2) {
         return Math.acos(this.dotProduct2d(v1, v2));
     };
+	
+	/**
+	 * Calculates the "true" (360°) angle between two points.
+	 *
+	 * @param p1 {Object} The first point
+	 * @param p2 {Object} The second point
+	 * @returns {Number} The angle in radians (range is [0, 2*PI] or [0°, 360°])
+	 */
+	Utils.angleBetweenPoints = function (p1, p2) {
+		return Math.atan2(p2.y - p1.y, p2.x - p1.x);
+		
+	};
 
     /**
      * @param p {Array} a 2D point
@@ -150,6 +162,18 @@ module.exports = (function () {
         ret[2] = p.y + ret[0] * p.x;
         return ret;
     };
+	
+	/**
+	 * Calculates the euclidean distance between the given line and point.
+	 * 
+	 * @param line {Array} The line, represented as line[0]x + line[1]y = line[2]
+     * @param p {Object} The point, an object with properties x and y
+     * @returns {Object} The resulting line, represented as ret[0]x + ret[1]y = ret[2]
+	 * @see https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+	 */
+	Utils.distanceLineToPoint = function (line, p) {
+		return Math.abs(line[0] * p.x + line[1] * p.y - line[2]) / Math.sqrt(line[0] * line[0] + line[1] * line[1]);
+	};
 
     /**
      * Converts the input line to its perpendicular bisector.
