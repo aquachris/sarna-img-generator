@@ -27,6 +27,7 @@ module.exports = (function () {
         this.glyphSettings = glyphSettings || {};
         this.glyphSettings.lineHeight = this.glyphSettings.lineHeight || 3;
         this.glyphSettings.widths = this.glyphSettings.widths || { default: 1.6 };
+        this.glyphSizeFactor = .8;
 		this.viewRect = viewRect;
 		this.polylines = [];
         return this;
@@ -109,16 +110,16 @@ module.exports = (function () {
 			if(curPolyline.borderId !== nextPolyline.borderId) {
 				continue;
 			}
-			console.log('possible merge opportunity for ' + curPolyline.borderId);
+			//console.log('possible merge opportunity for ' + curPolyline.borderId);
 			if(curPolyline.lineParts[curPolyline.lineParts.length - 1].p2.x === nextPolyline.lineParts[0].p1.x
 				&& curPolyline.lineParts[curPolyline.lineParts.length - 1].p2.y === nextPolyline.lineParts[0].p1.y) {
-				console.log('MERGE end to start');
+				//console.log('MERGE end to start');
 				curPolyline.lineParts = curPolyline.lineParts.concat(nextPolyline.lineParts);
 				// remove merged polyline
 				this.polylines.splice(i + 1, 1);
 			} else if(curPolyline.lineParts[0].p1.x === nextPolyline.lineParts[nextPolyline.lineParts.length - 1].p2.x
 				&& curPolyline.lineParts[0].p1.y === nextPolyline.lineParts[nextPolyline.lineParts.length - 1].p2.y) {
-				console.log('MERGE start to end');
+				//console.log('MERGE start to end');
 				curPolyline.lineParts = nextPolyline.lineParts.concat(curPolyline.lineParts);
 				// remove merged polyline
 				this.polylines.splice(i + 1, 1);
@@ -130,10 +131,8 @@ module.exports = (function () {
 	 * Generate candidate positions
 	 */
 	BorderLabeler.prototype.generateCandidates = function () {
-		console.log(this.polylines.length + ' polylines');
 		for(var i = 0; i < this.polylines.length; i++) {
 			this.polylines[i].candidates = this.generateCandidatesAlongPolyline(this.polylines[i]);
-			//console.log(this.polylines[i].candidates);
 		}
 	};
 
@@ -151,6 +150,7 @@ module.exports = (function () {
         var pLineLength = 0;
         var leftFac, rightFac;
         var leftFacLabel = '', rightFacLabel = '';
+        var leftFacFill = '', rightFacFill = '';
 
         // iterate over the polyline's parts to assemble all points and calculate the polyline's length
         for(var i = 0, len = polyline.lineParts.length; i < len; i++) {
@@ -167,26 +167,28 @@ module.exports = (function () {
         var calculateLengths = function (label1, label2) {
             wMax = 0;
             for(var i = 0; i < label1.length; i++) {
-                wMax += this.glyphSettings.widths[label1[i]] || charDefaultWidth;
+                wMax += (this.glyphSettings.widths[label1[i]] || charDefaultWidth) * this.glyphSizeFactor;
             }
             labelWidth = 0;
             for(var i = 0; i < label2.length; i++) {
-                labelWidth += this.glyphSettings.widths[label2[i]] || charDefaultWidth;
+                labelWidth += (this.glyphSettings.widths[label2[i]] || charDefaultWidth) * this.glyphSizeFactor;
             }
             // maximum label length
             wMax = Math.max(wMax, labelWidth);
             // minimum distance between q candidates
-            sDistance = 1.25 * wMax; // 2 * wMax
+            sDistance = 2 * wMax; // 2 * wMax
 
             leftFacLabel = label1;
-            rightFacLabel = label1;
+            rightFacLabel = label2;
         }.bind(this);
 
         if(this.factions.hasOwnProperty(leftFac)) {
             leftFacLabel = this.factions[leftFac].longName;
+            leftFacFill = this.factions[leftFac].color;
         }
         if(this.factions.hasOwnProperty(rightFac)) {
             rightFacLabel = this.factions[rightFac].longName;
+            rightFacFill = this.factions[rightFac].color;
         }
 
         calculateLengths(leftFacLabel, rightFacLabel);
@@ -195,16 +197,18 @@ module.exports = (function () {
             calculateLengths(leftFac, rightFac);
             if(pLineLength < 2 * sDistance + wMax) {
                 // short labels are too short also - no labeling
-				this.logger.log('candidate location generation: line is too short for ' + polyline.borderId);//, pLineLength, 2*sDistance+wMax);
+				this.logger.info('candidate location generation: line is too short for ' + polyline.borderId);//, pLineLength, 2*sDistance+wMax);
                 return [];
             } else {
-				this.logger.log('candidate location generation: using short labels for ' + polyline.borderId);//, pLineLength, 2*sDistance+wMax);
+				this.logger.info('candidate location generation: using short labels for ' + polyline.borderId);//, pLineLength, 2*sDistance+wMax);
 			}
         }
 		polyline.sDistance = sDistance;
 		polyline.wMax = wMax;
-		polyline.rightFacLabel = rightFacLabel;
 		polyline.leftFacLabel = leftFacLabel;
+        polyline.leftFacFill = leftFacFill;
+        polyline.rightFacLabel = rightFacLabel;
+        polyline.rightFacFill = rightFacFill;
 		if(sDistance <= 0) {
 			// something's funky - abort!
 			this.logger.warn('candidate location generation: sDistance is 0');
@@ -279,11 +283,11 @@ module.exports = (function () {
 				iPoints = [min1, min2];
 			}
 			if(iPoints < 2) {
-				this.logger.log('phase II: <2 intersection points with C for ' + polyline.borderId + ' ' + i + ', r ' + radius);
+				this.logger.info('phase II: <2 intersection points with C for ' + polyline.borderId + ' ' + i + ', r ' + radius);
 				continue;
 			}
 			if(polyline.wMax > Utils.distance(iPoints[0].x, iPoints[0].y, iPoints[1].x, iPoints[1].y)) {
-				this.logger.log('phase II: circle radius too small for ' + polyline.borderId + ' ' + i + ', r ' + radius);
+				this.logger.info('phase II: circle radius too small for ' + polyline.borderId + ' ' + i + ', r ' + radius);
 				continue;
 			}
 			break;
@@ -338,13 +342,13 @@ module.exports = (function () {
         };
         var perpIPoint = Utils.lineLineIntersection(rLineAsLine, perp);
         var perpIVec = [perpLine.x1 - perpIPoint[0], perpLine.y1 - perpIPoint[1]];
-        
+
         /*Utils.perpendicularBisectorFromLine(
             [1, 1], [0, 0], pBiLine
         );
         console.log('perpBis', pBiLine);*/
         //var pp1 = { x: candidate.x - 10, y: perp[0]
-		
+
 		// point distances
 		var leftMax = 0, rightMax = 0;
 		var curH;
@@ -358,10 +362,14 @@ module.exports = (function () {
 				rightMax = Math.max(rightMax, curH);
 			}
 		}
-		// TODO find correct logic for left side / right side
+        // add additional padding
+        // TODO make this a user parameter
+        leftMax += this.glyphSettings.lineHeight * 1.25;
+        rightMax += this.glyphSettings.lineHeight * 1.25;
+
 		var leftVec = Utils.deepCopy(perpIVec);
 		var rightVec = Utils.deepCopy(perpIVec);
-		console.log(rLineAsLine);
+		//console.log(rLineAsLine);
 		var slope = -rLineAsLine[0] / rLineAsLine[1];
 		if(slope <= 0) {
 			Utils.scaleVector2d(leftVec, -leftMax);
@@ -376,7 +384,18 @@ module.exports = (function () {
 			x2 : perpIPoint[0] + rightVec[0],
 			y2 : perpIPoint[1] + rightVec[1]
         };
-		
+
+        // text angle
+        var textAngle = -1 * Utils.radToDeg(Utils.angleBetweenPoints({
+            x: rLine.x1, y: rLine.y1
+        }, {
+            x: rLine.x2, y: rLine.y2
+        }));
+        if(textAngle > 90 && textAngle < 270) {
+            textAngle -= 180;
+        }
+
+        candidate.textAngle = textAngle;
 		candidate.rLine = rLine;
         candidate.perpLine = perpLine;
         candidate.perpIPoint = {x: perpIPoint[0], y: perpIPoint[1]};

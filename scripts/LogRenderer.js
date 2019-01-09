@@ -20,6 +20,7 @@ module.exports = (function () {
         this.logger.time();
 
         var classes = {};
+        classes[Logger.INFO] = 'info';
         classes[Logger.MESSAGE] = 'msg';
         classes[Logger.WARNING] = 'warn';
         classes[Logger.ERROR] = 'err';

@@ -259,14 +259,32 @@ module.exports = (function () {
 						continue;
 					}
 					// faction labels
+					// left-side faction label
 					tplObj = {
 						x : borderLabelLines[i].candidates[j].perpLine.x1.toFixed(3),
 						y : (-borderLabelLines[i].candidates[j].perpLine.y1).toFixed(3),
-						txt: borderLabelLines[i].leftFacLabel
+						rot : borderLabelLines[i].candidates[j].textAngle.toFixed(2),
+						txt: borderLabelLines[i].leftFacLabel,
+						fill: borderLabelLines[i].leftFacFill
 					};
-					this.markup.borders += `<text text-anchor="middle" x="${tplObj.x}" y="${tplObj.y}">
-						${tplObj.txt}</text>`;
-					
+					this.markup.borders += `<text text-anchor="middle" x="0" y="0"
+						class="border-label"
+						style="transform: translate(${tplObj.x}px, ${tplObj.y}px) rotate(${tplObj.rot}deg);
+						fill:${tplObj.fill}">${tplObj.txt}</text>`;
+
+					// right-side faction label
+					tplObj = {
+						x : borderLabelLines[i].candidates[j].perpLine.x2.toFixed(3),
+						y : (-borderLabelLines[i].candidates[j].perpLine.y2).toFixed(3),
+						rot : borderLabelLines[i].candidates[j].textAngle.toFixed(2),
+						txt: borderLabelLines[i].rightFacLabel,
+						fill: borderLabelLines[i].rightFacFill
+					};
+					this.markup.borders += `<text text-anchor="middle" x="0" y="0"
+						class="border-label"
+						style="transform: translate(${tplObj.x}px, ${tplObj.y}px) rotate(${tplObj.rot}deg);
+						fill:${tplObj.fill}">${tplObj.txt}</text>`;
+
 					// r line
 					tplObj = {
 						x1: borderLabelLines[i].candidates[j].rLine.x1.toFixed(3),

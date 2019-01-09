@@ -12,7 +12,7 @@ var SvgWriter = require('./SvgWriter.js');
 
 var main = function () {
     // initialize objects
-    var logger = new Logger();
+    var logger = new Logger(Logger.MESSAGE);
     var logRenderer = new LogRenderer(logger, '../data/script_log.html', '../data/log.tpl.html');
     var reader = new SystemsReader(logger);
 	var writer = new SvgWriter(logger);
@@ -136,7 +136,7 @@ var main = function () {
 	//focusedSystems.push('Nito');
 	//focusedSystems.push('Bergen');
     //focusedSystems.push('Greifswald');
-	
+
 	// border labelling
 	focusedSystems.push('Sol');
 	focusedSystems.push('Cassias');
@@ -231,13 +231,13 @@ var main = function () {
 
     		// minimap borders
     		minimapBorders = vBorder.generateBoundedBorders(minimapViewRect);
-			
+
 			// add border labels
 			borderLabeler = new BorderLabeler(logger).init(
-				vBorder, 
-				labelMgr.factions, 
+				vBorder,
+				labelMgr.factions,
 				viewRect,
-				reader.labelConfig._glyphSettings || {}, 
+				reader.labelConfig._glyphSettings || {},
 				1
 			);
 			borderLabeler.extractPolylines(vBorder.borderEdges, viewRect);

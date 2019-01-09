@@ -9,10 +9,11 @@ module.exports = (function () {
     };
 
     Logger.ALL = 0;
-    Logger.MESSAGE = 1;
-    Logger.WARNING = 2;
-    Logger.ERROR = 3;
-    Logger.SILENT = 4;
+    Logger.INFO = 1;
+    Logger.MESSAGE = 2;
+    Logger.WARNING = 3;
+    Logger.ERROR = 4;
+    Logger.SILENT = 5;
 
     /**
      * @private
@@ -31,6 +32,9 @@ module.exports = (function () {
         this.logIndex++;
     };
 
+    Logger.prototype.info = function () {
+        this.addEntry(Logger.INFO, Array.prototype.slice.call(arguments));
+    };
 
     Logger.prototype.log = function () {
         this.addEntry(Logger.MESSAGE, Array.prototype.slice.call(arguments));
