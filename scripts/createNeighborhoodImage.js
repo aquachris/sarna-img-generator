@@ -216,7 +216,8 @@ var main = function () {
 
     		// clamp the systems and borders to the image's viewBox
     		clampedSystems = Utils.clampObjects(reader.systems, viewRect, 0);
-    		clampedBorders = vBorder.generateBoundedBorders(viewRect);
+    		//clampedBorders = vBorder.generateBoundedBorderLoops(viewRect);
+            clampedBorders = vBorder.borderEdgeLoops;
 
     		// initiate and execute the label manager
             labelMgr = new LabelManager(logger).init(
@@ -230,10 +231,10 @@ var main = function () {
             );
 
     		// minimap borders
-    		minimapBorders = vBorder.generateBoundedBorders(minimapViewRect);
+    		minimapBorders = vBorder.generateBoundedBorderLoops(minimapViewRect);
 
 			// add border labels
-			borderLabeler = new BorderLabeler(logger).init(
+			/*borderLabeler = new BorderLabeler(logger).init(
 				vBorder,
 				labelMgr.factions,
 				viewRect,
@@ -242,7 +243,7 @@ var main = function () {
 			);
 			borderLabeler.extractPolylines(vBorder.borderEdges, viewRect);
 			borderLabeler.generateCandidates();
-			borderLabeler.findCenterlines();
+			borderLabeler.findCenterlines();*/
 
     		// create an svg with a universe picture
             writer.writeBorderSvg(
@@ -253,7 +254,7 @@ var main = function () {
     			labelMgr.objects,
     			labelMgr.factions,
     			clampedBorders,
-				borderLabeler.polylines,
+                [],//borderLabeler.polylines,
                 labelMgr.ellipticalObjects,
     			{
     				dimensions : minimapDimensions,

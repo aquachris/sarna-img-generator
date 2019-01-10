@@ -23,7 +23,7 @@ module.exports = (function () {
         // array of voronoi nodes
         this.nodes = null;
         // map of border edges for each color
-        this.borderEdges = null;
+        this.borderEdgeLoops = null;
         // map of border node indices
         this.borderNodeIndices = null;
         // distance between border lines
@@ -62,10 +62,11 @@ module.exports = (function () {
         var obj1, obj2, obj3;
         var col1, col2;
         var borderEdge;
+        var borderEdges = {};
 
         this.points = [];
         this.nodes = [];
-        this.borderEdges = {};
+        this.borderEdgeLoops = {};
         this.borderNodeIndices = {};
 
         // Step 1: Iterate over all objects and generate a point array
@@ -236,39 +237,49 @@ module.exports = (function () {
                                 p2: curNeighbor,
                                 length: Utils.distance(curNode.x, curNode.y, curNeighbor.x, curNeighbor.y)
                             };
-                            this.borderEdges[col1] = this.borderEdges[col1] || [];
-                            this.borderEdges[col2] = this.borderEdges[col2] || [];
-                            this.borderEdges[col1].push(borderEdge);
-                            this.borderEdges[col2].push(borderEdge);
+                            borderEdges[col1] = borderEdges[col1] || [];
+                            borderEdges[col2] = borderEdges[col2] || [];
+                            borderEdges[col1].push(borderEdge);
+                            borderEdges[col2].push(borderEdge);
                         }
                     }
                 }
             }
         }
 
-        this.sortBorderEdges();
+        this.generateBorderLoops(borderEdges);
 		this.separateEdges(this.borderSeparation);
         this.generateEdgeControlPoints();
     };
 
     /**
-     * Sort the borderEdge arrays such that each edge is either followed
-     * by its next neighbor (direction is undefined), or - if no such neighbor can be
+     * Sorts the borderEdge arrays such that each edge is either followed
+     * by its next clockwise neighbor, or - if no such neighbor can be
      * found - by another edge loop's random starting edge. It should be possible
      * to iterate over the edges via e1.p2 = e2.p1, e2.p2 = e3.p1 etc.
      */
-    VoronoiBorder.prototype.sortBorderEdges = function () {
+    VoronoiBorder.prototype.generateBorderLoops = function (borderEdges) {
         var oriColArr, newColArr;
         var curEdge, prevEdge, cmpEdge, adjacent;
+        var colLoops, curLoop;
+        var curEdgeMinX, curEdgeMinY;
 
-        for(var col in this.borderEdges) {
-            if(!this.borderEdges.hasOwnProperty(col)) {
+        this.borderEdgeLoops = {};
+        for(var col in borderEdges) {
+            if(!borderEdges.hasOwnProperty(col)) {
                 continue;
             }
-            oriColArr = Utils.deepCopy(this.borderEdges[col]);
+            oriColArr = Utils.deepCopy(borderEdges[col]);
             newColArr = [];
             curEdge = null;
             prevEdge = null;
+            colLoops = [];
+            curLoop = {
+                edges : [],
+                minX : Infinity,
+                minY : Infinity,
+                minEdgeIdx : null
+            };
             while(oriColArr.length > 0) {
                 if(!curEdge) {
                     curEdge = oriColArr.splice(0, 1)[0];
@@ -310,19 +321,50 @@ module.exports = (function () {
                         // no neighbor found -  start a new loop
                         curEdge = oriColArr.splice(0, 1)[0];
                         curEdge.isFirstInLoop = true;
+                        colLoops.push(curLoop);
+                        curLoop = {
+                            edges : [],
+                            minX : Infinity,
+                            minY : Infinity,
+                            minEdgeIdx : null
+                        };
                     }
                 }
                 // determine left / right col
-                if(Utils.pointIsLeftOfLine(this.objects[curEdge.obj1], curEdge.n1, curEdge.n2)) {
+                /*if(Utils.pointIsLeftOfLine(this.objects[curEdge.obj1], curEdge.n1, curEdge.n2)) {
                     curEdge.leftCol = curEdge.col1;
                     curEdge.rightCol = curEdge.col2;
                 } else {
                     curEdge.leftCol = curEdge.col2;
                     curEdge.rightCol = curEdge.col1;
+                }*/
+                curLoop.minX = Math.min(curLoop.minX, curEdge.n2.x);
+                if(curLoop.minX === curEdge.n2.x) {
+                    curLoop.minY = Math.min(curLoop.minY, curEdge.n2.y);
+                    if(curLoop.minY === curEdge.n2.y) {
+                        curLoop.minEdgeIdx = curLoop.edges.length;
+                    }
                 }
-                newColArr.push(curEdge);
+                curLoop.edges.push(curEdge);
+                //newColArr.push(curEdge);
             }
-            this.borderEdges[col] = newColArr;
+            // we now have neat loops, but they are not guaranteed to be in clockwise order
+            // loop over the loops again (ha!), and make them clockwise if necessary
+            for(var i = 0; i < colLoops.length; i++) {
+                var minEdge = colLoops[i].edges[colLoops[i].minEdgeIdx];
+                var nextEdge = colLoops[i].edges[(colLoops[i].minEdgeIdx + 1) % colLoops[i].edges.length];
+                var p1 = minEdge.n1;
+                var p2 = minEdge.n2;
+                var p3 = nextEdge.n2;
+                var cProd = Utils.crossProduct2d([p1.x - p2.x, p1.y - p2.y], [p3.x - p2.x, p3.y - p2.y]);
+                if(cProd > 0)  {
+                    console.log('loop is CW');
+                } else {
+                    console.log('loop is CCW');
+                }
+            }
+
+            this.borderEdgeLoops[col] = colLoops;
         }
     };
 
@@ -349,8 +391,8 @@ module.exports = (function () {
      */
     VoronoiBorder.prototype.separateEdges = function (pullDist) {
         var oriEdges;
-        var curLoopStartIdx;
-        var curEdge, nextEdge;
+        var curLoop, curEdge, nextEdge;
+        var oriLoop, oriEdge;
         var curO, nextO;
 		var p1, p2, p3;
 		var vec1, perp1, vec2, perp2;
@@ -358,82 +400,80 @@ module.exports = (function () {
         var adjVector;
         var dotProduct;
 		var extFactor;
-        for(var col in this.borderEdges) {
-            if(!this.borderEdges.hasOwnProperty(col)) {
+        for(var col in this.borderEdgeLoops) {
+            if(!this.borderEdgeLoops.hasOwnProperty(col)) {
                 continue;
             }
-            curLoopStartIdx = -1;
-			oriEdges = Utils.deepCopy(this.borderEdges[col]);
-            for(var i = 0, len = this.borderEdges[col].length; i < len; i++) {
-                curEdge = this.borderEdges[col][i];
-                if(curEdge.isFirstInLoop) {
-                    curLoopStartIdx = i;
-                }
-                nextEdge = this.borderEdges[col][i+1];
-                if(!nextEdge || nextEdge.isFirstInLoop) {
-                    nextEdge = this.borderEdges[col][curLoopStartIdx];
-                }
-                curO = curEdge.col1 === col ? this.objects[curEdge.obj1] : this.objects[curEdge.obj2];
-                nextO = nextEdge.col1 === col ? this.objects[nextEdge.obj1] : this.objects[nextEdge.obj2];
+			//oriEdges = Utils.deepCopy(this.borderEdgeLoops[col]);
+            for(var i = 0, len = this.borderEdgeLoops[col].length; i < len; i++) {
+                curLoop = this.borderEdgeLoops[col][i];
+                oriLoop = Utils.deepCopy(curLoop);
+                for(var li = 0; li < curLoop.edges.length; li++) {
+                    curEdge = curLoop.edges[li];
+                    oriEdge = oriLoop.edges[li];
+                    nextEdge = curLoop.edges[(li+1) % curLoop.edges.length];
+                    curO = curEdge.col1 === col ? this.objects[curEdge.obj1] : this.objects[curEdge.obj2];
+                    nextO = nextEdge.col1 === col ? this.objects[nextEdge.obj1] : this.objects[nextEdge.obj2];
 
-				p1 = { x: oriEdges[i].n1.x, y: oriEdges[i].n1.y };
-				p2 = { x: oriEdges[i].n2.x, y: oriEdges[i].n2.y };
-				p3 = { x: nextEdge.n2.x, y: nextEdge.n2.y };
+    				p1 = { x: curEdge.p1.x, y: curEdge.p1.y };
+    				p2 = { x: curEdge.p2.x, y: curEdge.p2.y };
+    				p3 = { x: nextEdge.p2.x, y: nextEdge.p2.y };
 
-				vec1 = [p2.x - p1.x, p2.y - p1.y];
-				Utils.normalizeVector2d(vec1);
-				/*centerPoint = {
-                    x: (p1.x + p2.x) / 2,
-                    y: (p1.y + p2.y) / 2
-                };*/
-				perp1 = [-vec1[1], vec1[0]];
-                // TODO there must be a more elegant way to determine this
-				if(Utils.distance(curO.x, curO.y, p2.x, p2.y) < Utils.distance(curO.x, curO.y, p2.x + perp1[0], p2.y + perp1[1])) {
-					perp1 = [vec1[1], -vec1[0]];
-				}
-				Utils.normalizeVector2d(perp1);
-
-				vec2 = [p3.x - p2.x, p3.y - p2.y];
-				Utils.normalizeVector2d(vec2);
-				centerPoint = {
-                    x: (p3.x + p2.x) / 2,
-                    y: (p3.y + p2.y) / 2
-                };
-				perp2 = [-vec2[1], vec2[0]];
-                // TODO there must be a more elegant way to determine this
-				if(Utils.distance(nextO.x, nextO.y, p2.x, p2.y) < Utils.distance(nextO.x, nextO.y, p2.x + perp2[0], p2.y + perp2[1])) {
-					perp2 = [vec2[1], -vec2[0]];
-				}
-				Utils.normalizeVector2d(perp2);
-
-				dotProduct = Utils.dotProduct2d(perp1, perp2);
-
-				extFactor = 1;
-				// case 1: the angle between the two vectors is <= 90°
-				if(dotProduct >= 0) {
-					adjVector = [perp1[0] + perp2[0], perp1[1] + perp2[1]];
-
-				// case 2: the angle between the two vectors is > 90°
-				} else {
-					// case 2a: the angle between curEdge and nextEdge is < 90°
+    				vec1 = [p2.x - p1.x, p2.y - p1.y];
+    				Utils.normalizeVector2d(vec1);
+    				/*centerPoint = {
+                        x: (p1.x + p2.x) / 2,
+                        y: (p1.y + p2.y) / 2
+                    };*/
+    				perp1 = [-vec1[1], vec1[0]];
                     // TODO there must be a more elegant way to determine this
-					if(Utils.distance(curO.x, curO.y, centerPoint.x, centerPoint.y) < Utils.distance(curO.x, curO.y, centerPoint.x + perp2[0], centerPoint.y + perp2[1])) {
-						//adjVector = [p2.x - p1.x + p2.x - p3.x, p2.y - p1.y + p2.y - p3.y];
-						adjVector = [perp1[0] + perp2[0], perp1[1] + perp2[1]];
+    				if(Utils.distance(curO.x, curO.y, p2.x, p2.y) < Utils.distance(curO.x, curO.y, p2.x + perp1[0], p2.y + perp1[1])) {
+    					perp1 = [vec1[1], -vec1[0]];
+    				}
+    				Utils.normalizeVector2d(perp1);
 
-					// case 2b: the angle between curEdge and nextEdge is > 180°
-					} else {
-						adjVector = [p1.x - p2.x + p3.x - p2.x, p1.y - p2.y + p3.y - p2.y];
-					}
-					extFactor =	0.6 * (1 - dotProduct); // TODO magic numbers. Also, this doesn't really have a big effect - leave out?
-				}
-				// scale the vector to be pullDist units long
-				//Utils.normalizeVector2d(adjVector);
-				Utils.scaleVector2d(adjVector, pullDist /* *extFactor */);
+    				vec2 = [p3.x - p2.x, p3.y - p2.y];
+    				Utils.normalizeVector2d(vec2);
+    				centerPoint = {
+                        x: (p3.x + p2.x) / 2,
+                        y: (p3.y + p2.y) / 2
+                    };
+    				perp2 = [-vec2[1], vec2[0]];
+                    // TODO there must be a more elegant way to determine this
+    				if(Utils.distance(nextO.x, nextO.y, p2.x, p2.y) < Utils.distance(nextO.x, nextO.y, p2.x + perp2[0], p2.y + perp2[1])) {
+    					perp2 = [vec2[1], -vec2[0]];
+    				}
+    				Utils.normalizeVector2d(perp2);
 
-				// move the point in question
-				curEdge.n2.x = nextEdge.n1.x = oriEdges[i].n2.x + adjVector[0];
-                curEdge.n2.y = nextEdge.n1.y = oriEdges[i].n2.y + adjVector[1];
+    				dotProduct = Utils.dotProduct2d(perp1, perp2);
+
+    				extFactor = 1;
+    				// case 1: the angle between the two vectors is <= 90°
+    				if(dotProduct >= 0) {
+    					adjVector = [perp1[0] + perp2[0], perp1[1] + perp2[1]];
+
+    				// case 2: the angle between the two vectors is > 90°
+    				} else {
+    					// case 2a: the angle between curEdge and nextEdge is < 90°
+                        // TODO there must be a more elegant way to determine this
+    					if(Utils.distance(curO.x, curO.y, centerPoint.x, centerPoint.y) < Utils.distance(curO.x, curO.y, centerPoint.x + perp2[0], centerPoint.y + perp2[1])) {
+    						//adjVector = [p2.x - p1.x + p2.x - p3.x, p2.y - p1.y + p2.y - p3.y];
+    						adjVector = [perp1[0] + perp2[0], perp1[1] + perp2[1]];
+
+    					// case 2b: the angle between curEdge and nextEdge is > 180°
+    					} else {
+    						adjVector = [p1.x - p2.x + p3.x - p2.x, p1.y - p2.y + p3.y - p2.y];
+    					}
+    					extFactor =	0.6 * (1 - dotProduct); // TODO magic numbers. Also, this doesn't really have a big effect - leave out?
+    				}
+    				// scale the vector to be pullDist units long
+    				//Utils.normalizeVector2d(adjVector);
+    				Utils.scaleVector2d(adjVector, pullDist /* *extFactor */);
+
+    				// move the point in question
+    				curEdge.n2.x = nextEdge.n1.x = curEdge.p2.x + adjVector[0];
+                    curEdge.n2.y = nextEdge.n1.y = curEdge.p2.y + adjVector[1];
+                }
             }
         }
     };
@@ -447,63 +487,59 @@ module.exports = (function () {
     VoronoiBorder.prototype.generateEdgeControlPoints = function () {
         var curEdge, nextEdge;
         var p1, p2, p3, dist12, dist23, w, h;
-        var curLoopStartIdx;
+        var curLoop;
         var fa, fb;
         var tension = .35;//.65;
 
         // each color is treated separately
-        for(var col in this.borderEdges) {
-            if(!this.borderEdges.hasOwnProperty(col)) {
+        for(var col in this.borderEdgeLoops) {
+            if(!this.borderEdgeLoops.hasOwnProperty(col)) {
                 continue;
             }
 
-            curLoopStartIdx = -1;
-            for(var i = 0, len = this.borderEdges[col].length; i < len; i++) {
-                curEdge = this.borderEdges[col][i];
-                if(curEdge.isFirstInLoop) {
-                    curLoopStartIdx = i;
-                }
-                nextEdge = this.borderEdges[col][i+1];
-                if(!nextEdge || nextEdge.isFirstInLoop) {
-                    nextEdge = this.borderEdges[col][curLoopStartIdx];
-                }
-                p1 = { x: curEdge.n1.x, y: curEdge.n1.y };
-                p2 = { x: nextEdge.n1.x, y: nextEdge.n1.y }; // curEdge.p2 = nextEdge.p1
-                p3 = { x: nextEdge.n2.x, y: nextEdge.n2.y };
+            for(var i = 0, len = this.borderEdgeLoops[col].length; i < len; i++) {
+                curLoop = this.borderEdgeLoops[col][i];
+                for(var li = 0; li < curLoop.edges.length; li++) {
+                    curEdge = curLoop.edges[li];
+                    nextEdge = curLoop.edges[(li+1) % curLoop.edges.length];
+                    p1 = { x: curEdge.n1.x, y: curEdge.n1.y };
+                    p2 = { x: nextEdge.n1.x, y: nextEdge.n1.y }; // curEdge.p2 = nextEdge.p1
+                    p3 = { x: nextEdge.n2.x, y: nextEdge.n2.y };
 
-                // for border edge points that border on 3 different colors
-                if(Object.keys(nextEdge.p1.borderColors).length > 2 && !(nextEdge.p1.borderColors['DUMMY'] && nextEdge.p1.borderColors['I'])) {// && !nextEdge.p1.borderColors['I']) {
-                    curEdge.n1c2 = { x: p1.x, y: p1.y };
-                    curEdge.n2c1 = curEdge.n2c2 = nextEdge.n1c1 = nextEdge.n1c2 = { x: p2.x, y: p2.y };
-                    nextEdge.n2c1 = { x: p3.x, y: p3.y };
-				}
+                    // for border edge points that border on 3 different colors
+                    if(Object.keys(nextEdge.p1.borderColors).length > 2 && !(nextEdge.p1.borderColors['DUMMY'] && nextEdge.p1.borderColors['I'])) {// && !nextEdge.p1.borderColors['I']) {
+                        curEdge.n1c2 = { x: p1.x, y: p1.y };
+                        curEdge.n2c1 = curEdge.n2c2 = nextEdge.n1c1 = nextEdge.n1c2 = { x: p2.x, y: p2.y };
+                        nextEdge.n2c1 = { x: p3.x, y: p3.y };
+    				}
 
-                dist12 = Utils.distance(p1.x, p1.y, p2.x, p2.y);
-                dist23 = Utils.distance(p2.x, p2.y, p3.x, p3.y);
+                    dist12 = Utils.distance(p1.x, p1.y, p2.x, p2.y);
+                    dist23 = Utils.distance(p2.x, p2.y, p3.x, p3.y);
 
-                // generate two control points for the looked at point (p2)
-                // see http://walter.bislins.ch/blog/index.asp?page=JavaScript%3A+Bezier%2DSegmente+f%FCr+Spline+berechnen
-                fa = tension * dist12 / (dist12 + dist23);
-                fb = tension * dist23 / (dist12 + dist23);
+                    // generate two control points for the looked at point (p2)
+                    // see http://walter.bislins.ch/blog/index.asp?page=JavaScript%3A+Bezier%2DSegmente+f%FCr+Spline+berechnen
+                    fa = tension * dist12 / (dist12 + dist23);
+                    fb = tension * dist23 / (dist12 + dist23);
 
-                w = p3.x - p1.x;
-                h = p3.y - p1.y;
+                    w = p3.x - p1.x;
+                    h = p3.y - p1.y;
 
-                if(curEdge.n2c1 === undefined && nextEdge.n1c1 === undefined) {
-                    curEdge.n2c1 = nextEdge.n1c1 = {
-                        x: p2.x - fa * w,
-                        y: p2.y - fa * h
-                    };
-                } else {
-                    curEdge.n2c1 = nextEdge.n1c1 = (curEdge.n2c1 || nextEdge.n1c1);
-                }
-                if(curEdge.n2c2 === undefined && nextEdge.n1c2 === undefined) {
-                    curEdge.n2c2 = nextEdge.n1c2 = {
-                        x: p2.x + fb * w,
-                        y: p2.y + fb * h
-                    };
-                } else {
-                    curEdge.n2c2 = nextEdge.n1c2 = (curEdge.n2c2 || nextEdge.n1c2);
+                    if(curEdge.n2c1 === undefined && nextEdge.n1c1 === undefined) {
+                        curEdge.n2c1 = nextEdge.n1c1 = {
+                            x: p2.x - fa * w,
+                            y: p2.y - fa * h
+                        };
+                    } else {
+                        curEdge.n2c1 = nextEdge.n1c1 = (curEdge.n2c1 || nextEdge.n1c1);
+                    }
+                    if(curEdge.n2c2 === undefined && nextEdge.n1c2 === undefined) {
+                        curEdge.n2c2 = nextEdge.n1c2 = {
+                            x: p2.x + fb * w,
+                            y: p2.y + fb * h
+                        };
+                    } else {
+                        curEdge.n2c2 = nextEdge.n1c2 = (curEdge.n2c2 || nextEdge.n1c2);
+                    }
                 }
             }
         }
@@ -518,17 +554,17 @@ module.exports = (function () {
      * @param tolerance {Number} Bounding box tolerance, default is 10
 	 * @returns {Object} Map of bounded borders for each faction
 	 */
-	VoronoiBorder.prototype.generateBoundedBorders = function (rect, tolerance) {
-		var curColEdges;
+	VoronoiBorder.prototype.generateBoundedBorderLoops = function (rect, tolerance) {
+		var curLoopEdges;
 		var outsideEdgePoints, outsideEdges;
 		var prevEdge, curEdge, outsideEdge;
 		var prevEdgeVisible, curEdgeVisible;
-		var curLoopStartIdx;
+		var curLoop;
 		var curLoopVisible;
 		var newEdge;
         var tRect;
         var outsideEdgeIsFirst;
-		var boundedBorderEdges = {}; // return map
+		var boundedBorderEdgeLoops = {}; // return map
 
         tolerance === undefined ? tolerance = 10 : false;
         tRect = {
@@ -608,11 +644,10 @@ module.exports = (function () {
             return edges;
         };
 
-		for(var col in this.borderEdges) {
-			if(!this.borderEdges.hasOwnProperty(col)) {
+		for(var col in this.borderEdgeLoops) {
+			if(!this.borderEdgeLoops.hasOwnProperty(col)) {
 				continue;
 			}
-			curColEdges = [];
             outsideEdgePoints = [];
 
 			curEdge = null;
@@ -620,72 +655,82 @@ module.exports = (function () {
 			curLoopVisible = false;
 
 			var numLoops = 0;
-			for(var i = 0, len = this.borderEdges[col].length; i < len; i++) {
-				//if(i >= 31) break;
-				prevEdge = curEdge;
-				prevEdgeVisible = !!prevEdge && curEdgeVisible;
+			for(var i = 0, len = this.borderEdgeLoops[col].length; i < len; i++) {
+                curLoop = this.borderEdgeLoops[col][i];
+                curLoopEdges = [];
+                for(var li = 0; li < curLoop.edges.length; li++) {
+    				//if(i >= 31) break;
+    				prevEdge = curEdge;
+    				prevEdgeVisible = !!prevEdge && curEdgeVisible;
 
-                curEdge = this.borderEdges[col][i];
-				curEdgeVisible = Utils.pointInRectangle(curEdge.n1, tRect) || Utils.pointInRectangle(curEdge.n2, tRect);
+                    curEdge = curLoop.edges[li];
+    				curEdgeVisible = Utils.pointInRectangle(curEdge.n1, tRect) || Utils.pointInRectangle(curEdge.n2, tRect);
 
-				if(curEdge.isFirstInLoop) {
-                    // add 'dangling' outside edges from the previous loop
-                    if(outsideEdgePoints.length > 0) {
+    				if(li === 0) { // curEdge.isFirstInLoop) {
+                        curLoopVisible = false;
+                        outsideEdgePoints = [];
+                        prevEdge = null;
+                        prevEdgeVisible = false;
+                        outsideEdgeIsFirst = false;
+    				}
+
+    			    // either the previous or the current edge is visible
+                    // --> add the current edge to the list as is, after adding
+                    //     any outside edges that precede it (if applicable)
+    				if(prevEdgeVisible || curEdgeVisible) {
+                        if(outsideEdgePoints.length > 0) {
+                            // edge loop is coming back into view
+                            // --> resolve all outside edge points that were added for the current edge loop
+                            outsideEdges = aggregatePointsToEdges(outsideEdgePoints, outsideEdgeIsFirst);
+                            for(var j = 0, jlen = outsideEdges.length; j < jlen; j++) {
+                                curLoopEdges.push(outsideEdges[j]);
+                            }
+                            outsideEdgePoints = [];
+                            outsideEdgeIsFirst = false;
+                        }
+    					newEdge = Utils.deepCopy(curEdge);
+    					if(!prevEdgeVisible && curLoopEdges.length > 0
+    						&& !!curLoopEdges[curLoopEdges.length - 1].isOutside
+    						&& li > 0) { //!curEdge.isFirstInLoop) {
+    							outsideEdge = curLoopEdges[curLoopEdges.length - 1];
+    							outsideEdge.n2 = newEdge.n1;
+    							outsideEdge.p2 = newEdge.p2;
+    					}
+                        curLoopEdges.push(newEdge);
+                        if(!curLoopVisible) {
+    						curLoopVisible = true;
+    					}
+
+                    // both the previous and the current edge are invisible
+                    // --> add the current edge's first point to a list of outside points
+                    //     that will be aggregated and re-assembled to shorter path parts later
+                    } else {
+                        if(li === 0) { //curEdge.isFirstInLoop) {
+                            outsideEdgeIsFirst = true;
+                        }
+                        outsideEdgePoints.push(clampPoint(curEdge.n1.x, curEdge.n1.y, tRect));
+    				}
+
+                    // add 'dangling' outside edges at the end of the loop
+                    if(li >= curLoop.length - 1 && outsideEdgePoints.length > 0) {
                         outsideEdges = aggregatePointsToEdges(outsideEdgePoints, outsideEdgeIsFirst);
                         if(curLoopVisible || outsideEdges.length >= 4) {
                             for(var j = 0, jlen = outsideEdges.length; j < jlen; j++) {
-                                curColEdges.push(outsideEdges[j]);
+                                curLoopEdges.push(outsideEdges[j]);
                             }
                         }
                     }
-
-                    curLoopVisible = false;
-                    outsideEdgePoints = [];
-                    prevEdge = null;
-                    prevEdgeVisible = false;
-                    outsideEdgeIsFirst = false;
-				}
-
-			    // either the previous or the current edge is visible
-                // --> add the current edge to the list as is, after adding
-                //     any outside edges that precede it (if applicable)
-				if(prevEdgeVisible || curEdgeVisible) {
-                    if(outsideEdgePoints.length > 0) {
-                        // edge loop is coming back into view
-                        // --> resolve all outside edge points that were added for the current edge loop
-                        outsideEdges = aggregatePointsToEdges(outsideEdgePoints, outsideEdgeIsFirst);
-                        for(var j = 0, jlen = outsideEdges.length; j < jlen; j++) {
-                            curColEdges.push(outsideEdges[j]);
-                        }
-                        outsideEdgePoints = [];
-                        outsideEdgeIsFirst = false;
-                    }
-					newEdge = Utils.deepCopy(curEdge);
-					if(!prevEdgeVisible && curColEdges.length > 0
-						&& !!curColEdges[curColEdges.length - 1].isOutside
-						&& !curEdge.isFirstInLoop) {
-							outsideEdge = curColEdges[curColEdges.length - 1];
-							outsideEdge.n2 = newEdge.n1;
-							outsideEdge.p2 = newEdge.p2;
-					}
-                    curColEdges.push(newEdge);
-                    if(!curLoopVisible) {
-						curLoopVisible = true;
-					}
-
-                // both the previous and the current edge are invisible
-                // --> add the current edge's first point to a list of outside points
-                //     that will be aggregated and re-assembled to shorter path parts later
-                } else {
-                    if(curEdge.isFirstInLoop) {
-                        outsideEdgeIsFirst = true;
-                    }
-                    outsideEdgePoints.push(clampPoint(curEdge.n1.x, curEdge.n1.y, tRect));
-				}
+                }
+                if(curLoopEdges.length > 0) {
+                    boundedBorderEdgeLoops[col] = boundedBorderEdgeLoops[col] || [];
+                    boundedBorderEdgeLoops[col].push({
+                        edges : curLoopEdges
+                    });
+                }
 			}
 
             // add remaining outside edges
-            if(outsideEdgePoints.length > 0) {
+            /*if(outsideEdgePoints.length > 0) {
                 outsideEdges = aggregatePointsToEdges(outsideEdgePoints, outsideEdgeIsFirst);
                 if(curLoopVisible || outsideEdges.length >= 4) {
                     for(var j = 0, jlen = outsideEdges.length; j < jlen; j++) {
@@ -694,15 +739,15 @@ module.exports = (function () {
                 }
                 outsideEdgePoints = [];
                 outsideEdgeIsFirst = false;
-            }
+            }*/
 
 
-			if(curColEdges.length > 0) {
+			/*if(curColEdges.length > 0) {
 				boundedBorderEdges[col] = curColEdges;
-			}
+			}*/
 		};
 
-		return boundedBorderEdges;
+		return boundedBorderEdgeLoops;
 	};
 
     return VoronoiBorder;

@@ -122,7 +122,7 @@ module.exports = (function () {
     Utils.angleBetweenNormalizedVectors = function (v1, v2) {
         return Math.acos(this.dotProduct2d(v1, v2));
     };
-	
+
 	/**
 	 * Calculates the "true" (360°) angle between two points.
 	 *
@@ -132,7 +132,7 @@ module.exports = (function () {
 	 */
 	Utils.angleBetweenPoints = function (p1, p2) {
 		return Math.atan2(p2.y - p1.y, p2.x - p1.x);
-		
+
 	};
 
     /**
@@ -162,10 +162,10 @@ module.exports = (function () {
         ret[2] = p.y + ret[0] * p.x;
         return ret;
     };
-	
+
 	/**
 	 * Calculates the euclidean distance between the given line and point.
-	 * 
+	 *
 	 * @param line {Array} The line, represented as line[0]x + line[1]y = line[2]
      * @param p {Object} The point, an object with properties x and y
      * @returns {Object} The resulting line, represented as ret[0]x + ret[1]y = ret[2]
@@ -269,6 +269,17 @@ module.exports = (function () {
      */
     Utils.dotProduct2d = function (v1, v2) {
         return v1[0] * v2[0] + v1[1] * v2[1];
+    };
+
+    /**
+     * Cross product between two 2d vectors.
+     *
+     * @param v1 {Array} 2-piece array representing the first vector
+     * @param v2 {Array} 2-piece array representing the second vector
+     * @returns {Number} cross product of v1 and v2
+     */
+    Utils.crossProduct2d = function (v1, v2) {
+        return v1[0] * v2[1] - v1[1] * v2[0];
     };
 
 	/**

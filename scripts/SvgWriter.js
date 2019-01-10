@@ -50,6 +50,7 @@ module.exports = (function () {
 		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
 		var filename = this.baseDir + '/output/'+name.replace(/\s/g, '_')+'_' +era.year + '_' + safeEraName + '_borders.svg';
 		this.writeSvg({
+			renderBorderLabels : false,
 			renderSystems : false,
 			renderSystemLabels : false,
 			renderClusters : false,
@@ -155,6 +156,7 @@ module.exports = (function () {
 	 * @private
 	 */
 	SvgWriter.prototype.renderFactions = function (settings, factions, borders, borderLabelLines) {
+		var borderLoops, curLoop;
 		var borderEdges;
 		var curEdge, curD;
 		var rgba, tplObj;
@@ -187,8 +189,8 @@ module.exports = (function () {
 			}*/
 
 			// add borders (if faction borders have been passed)
-			borderEdges = borders[faction];
-			if(!borderEdges || borderEdges.length === 0) {
+			borderLoops = borders[faction];
+			if(!borderLoops || borderLoops.length === 0) {
 				continue;
 			}
 			// don't paint borders for independent planets
@@ -202,20 +204,24 @@ module.exports = (function () {
 
 			// trace borders one edge at a time
 			curD = '';
-			for(var i = 0, len = borderEdges.length; i < len; i++) {
-				curEdge = borderEdges[i];
-				if(curEdge.isFirstInLoop) {
-					curD += ' M'+curEdge.n1.x.toFixed(2)+','+(-curEdge.n1.y).toFixed(2);
-				}
-				if(curEdge.n1c2 === null || curEdge.n1c2 === undefined ||
-					curEdge.n2c1 === null || curEdge.n2c1 === undefined) {
-					curD += ' L' + borderEdges[i].n2.x.toFixed(2)+','+(-borderEdges[i].n2.y).toFixed(2);
-				} else {
-					curD += ' C' + borderEdges[i].n1c2.x.toFixed(2)+','+(-borderEdges[i].n1c2.y).toFixed(2);
-					curD += ' ' + borderEdges[i].n2c1.x.toFixed(2)+','+(-borderEdges[i].n2c1.y).toFixed(2);
-					curD += ' ' + borderEdges[i].n2.x.toFixed(2)+','+(-borderEdges[i].n2.y).toFixed(2);
+			for(var i = 0, len = borderLoops.length; i < len; i++) {
+				curLoop = borderLoops[i];
+				for(var li = 0; li < curLoop.edges.length; li++) {
+					curEdge = curLoop.edges[li];
+					if(li === 0) { //curEdge.isFirstInLoop) {
+						curD += ' M'+curEdge.n1.x.toFixed(2)+','+(-curEdge.n1.y).toFixed(2);
+					}
+					if(curEdge.n1c2 === null || curEdge.n1c2 === undefined ||
+						curEdge.n2c1 === null || curEdge.n2c1 === undefined) {
+						curD += ' L' + curEdge.n2.x.toFixed(2)+','+(-curEdge.n2.y).toFixed(2);
+					} else {
+						curD += ' C' + curEdge.n1c2.x.toFixed(2)+','+(-curEdge.n1c2.y).toFixed(2);
+						curD += ' ' + curEdge.n2c1.x.toFixed(2)+','+(-curEdge.n2c1.y).toFixed(2);
+						curD += ' ' + curEdge.n2.x.toFixed(2)+','+(-curEdge.n2.y).toFixed(2);
+					}
 				}
 			}
+
 			if(curD.length === 0) {
 				continue;
 			}
