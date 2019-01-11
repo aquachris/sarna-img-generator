@@ -237,6 +237,12 @@ module.exports = (function () {
 				this.markup.borders += `<path fill-rule="evenodd" class="border ${tplObj.faction}"
 						style="stroke: ${tplObj.stroke}; stroke-width: 1px; fill: ${tplObj.fill};"
 						d="${tplObj.d}" />\n`;
+				/*this.markup.defs += `<path id="label-path-${tplObj.faction}"
+					d="${tplObj.d}" />`;
+				this.markup.borders += `<text dy="-2">
+    				<textPath startOffset="2" spacing="auto" xlink:href="#label-path-${tplObj.faction}">
+						<tspan>${tplObj.faction}</tspan></textPath>
+  				</text>`;*/
 			}
 		}
 

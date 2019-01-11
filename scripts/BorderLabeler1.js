@@ -4,25 +4,11 @@ module.exports = (function () {
     var Utils = require('./Utils.js');
 
     /**
-	 * An instance of this class uses the algorithm outlined below in
-     * order to place labels on a border line between two state entities.
+	 * An instance of this class uses the algorithm outlined in the paper below in
+     * order to place labels pairwise on a border line between two state entities.
      *
-     * Algorithm idea:
-     * For each faction border (retrievable as an array of clockwise edge loops):
-     * - generate polylines that are long enough to put the faction label next to
-     *      at least once. Ideally, restrict a polyline to a single border.
-     * - generate preliminary label positions for each polyline
-     * - for each preliminary position, generate a number of alternate candidates
-     * - evaluate all candidates using the weighted metric described below, and pick the
-     *      best one (or none, if none of them is good enough)
-     * - candidate metric conditions:
-     *      - minimal overlap with other labels
-     *      - mostly straight labels
-     *      - horizontal labels preferred over vertical labels
-     *      - middle of the polyline is preferred to the edges
-     *    --> all of these conditions are weighted, weights sum to 1
-     * - for the selected candidate, use the closest polyline points and svg text-path
-     *      to achieve the desired result
+     * Algorithm paper:
+     * http://www.cartographicperspectives.org/index.php/journal/article/view/cp79-rylov-reimer/1374
 	 */
 	var BorderLabeler = function (logger) {
         this.logger = logger || console;
@@ -35,43 +21,22 @@ module.exports = (function () {
      *
      * @returns {Object} this object
      */
-    BorderLabeler.prototype.init = function (factions, viewRect, glyphSettings, distanceBetweenLabels) {
+    BorderLabeler.prototype.init = function (vBorders, factions, viewRect, glyphSettings, distanceBetweenLabels) {
+        this.vBorders = vBorders;
         this.factions = factions;
-        this.viewRect = viewRect;
         this.glyphSettings = glyphSettings || {};
         this.glyphSettings.lineHeight = this.glyphSettings.lineHeight || 3;
         this.glyphSettings.widths = this.glyphSettings.widths || { default: 1.6 };
         this.glyphSizeFactor = .8;
-        this.distanceBetweenLabels = distanceBetweenLabels;
-		this.polylines = {};
+		this.viewRect = viewRect;
+		this.polylines = [];
         return this;
-    };
-
-    /**
-     * Extract polylines from the border loops.
-     */
-    BorderLabeler.prototype.extractPolylines = function (borderLoops) {
-        var curLoop;
-        var curPolyline;
-
-        this.polylines = {};
-        for(var faction in borderLoops) {
-            if(!borderLoops.hasOwnProperty(faction)) {
-                continue;
-            }
-            this.polylines[faction] = [];
-            // iterate over this faction's loops
-            for(var i = 0, len = borderLoops[faction].length; i < len; i++) {
-                curLoop = borderLoops[faction][i];
-            }
-            //curPolyline =
-        }
     };
 
 	/**
 	 * Extract polylines from border polygons
 	 */
-	BorderLabeler.prototype.extractPolylinesOld = function (borderPolygonMap) {
+	BorderLabeler.prototype.extractPolylines = function (borderPolygonMap) {
 		var borderEdges;
 		var otherCol;
 		var curEdge, curPolyline, nextPolyline;

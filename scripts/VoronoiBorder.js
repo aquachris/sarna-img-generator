@@ -278,12 +278,12 @@ module.exports = (function () {
                 edges : [],
                 minX : Infinity,
                 minY : Infinity,
-                minEdgeIdx : null
+                minEdgeIdx : null,
+                innerCol : null
             };
             while(oriColArr.length > 0) {
                 if(!curEdge) {
                     curEdge = oriColArr.splice(0, 1)[0];
-                    curEdge.isFirstInLoop = true;
                 } else {
                     prevEdge = curEdge;
                     curEdge = null;
@@ -320,51 +320,91 @@ module.exports = (function () {
                     if(!curEdge) {
                         // no neighbor found -  start a new loop
                         curEdge = oriColArr.splice(0, 1)[0];
-                        curEdge.isFirstInLoop = true;
                         colLoops.push(curLoop);
                         curLoop = {
                             edges : [],
                             minX : Infinity,
                             minY : Infinity,
-                            minEdgeIdx : null
+                            minEdgeIdx : null,
+                            innerCol : null
                         };
                     }
                 }
-                // determine left / right col
-                /*if(Utils.pointIsLeftOfLine(this.objects[curEdge.obj1], curEdge.n1, curEdge.n2)) {
-                    curEdge.leftCol = curEdge.col1;
-                    curEdge.rightCol = curEdge.col2;
-                } else {
-                    curEdge.leftCol = curEdge.col2;
-                    curEdge.rightCol = curEdge.col1;
-                }*/
-                curLoop.minX = Math.min(curLoop.minX, curEdge.n2.x);
-                if(curLoop.minX === curEdge.n2.x) {
-                    curLoop.minY = Math.min(curLoop.minY, curEdge.n2.y);
-                    if(curLoop.minY === curEdge.n2.y) {
-                        curLoop.minEdgeIdx = curLoop.edges.length;
-                    }
+
+                // Check if the current edge's n2 point is the leftmost, bottom
+                // point in the loop. If it is, then the point is guaranteed to
+                // be on the loop's convex hull, thus making it a possible pivot
+                // point to check the loop's orientation (CW / CCW).
+                if(curEdge.n2.x < curLoop.minX) {
+                    curLoop.minX = curEdge.n2.x;
+                    curLoop.minY = curEdge.n2.y;
+                    curLoop.minEdgeIdx = curLoop.edges.length;
+                } else if(curEdge.n2.x === curLoop.minX && curEdge.n2.y < curLoop.minY) {
+                    curLoop.minY = curEdge.n2.y;
+                    curLoop.minEdgeIdx = curLoop.edges.length;
                 }
                 curLoop.edges.push(curEdge);
-                //newColArr.push(curEdge);
             }
-            // we now have neat loops, but they are not guaranteed to be in clockwise order
-            // loop over the loops again (ha!), and make them clockwise if necessary
+
+            // We now have neat loops, but they are not guaranteed to be in clockwise order
+            // loop over the loops again (ha!), and make them clockwise if necessary.
+            // Once the loop is guaranteed to be clockwise, the loop's inner "col" (faction id)
+            // can be determined by looking at the point that's to any edge's right.
+            curLoop = null;
+            curEdge = null;
             for(var i = 0; i < colLoops.length; i++) {
-                var minEdge = colLoops[i].edges[colLoops[i].minEdgeIdx];
-                var nextEdge = colLoops[i].edges[(colLoops[i].minEdgeIdx + 1) % colLoops[i].edges.length];
+                curLoop = colLoops[i];
+                if(curLoop.edges.length === 0) {
+                    continue;
+                }
+                var minEdge = curLoop.edges[curLoop.minEdgeIdx];
+                //check if the actual min point is the minimum edge's n1 or n2
+                // if it's the n2, use the previous edge as min edge, so that
+                // all min points are n2
+                if(minEdge.n1.x < minEdge.n2.x) {
+                    curLoop.minX = minEdge.n1.x;
+                    curLoop.minY = minEdge.n1.y;
+                    if((curLoop.minEdgeIdx = curLoop.minEdgeIdx - 1) < 0) {
+                        curLoop.minEdgeIdx += curLoop.edges.length;
+                    }
+                }
+                minEdge = curLoop.edges[curLoop.minEdgeIdx];
+                var nextEdge = curLoop.edges[(curLoop.minEdgeIdx + 1) % curLoop.edges.length];
                 var p1 = minEdge.n1;
                 var p2 = minEdge.n2;
                 var p3 = nextEdge.n2;
                 var cProd = Utils.crossProduct2d([p1.x - p2.x, p1.y - p2.y], [p3.x - p2.x, p3.y - p2.y]);
-                if(cProd > 0)  {
-                    console.log('loop is CW');
+                if(cProd < 0)  {
+                    // loop's order is counter-clockwise
+                    // reverse loop's edges to make their order clockwise
+                    this.reverseLoop(curLoop);
+                }
+
+                // add inner "col" to the loop
+                curEdge = curLoop.edges[0];
+                if(Utils.pointIsLeftOfLine(this.objects[curEdge.obj1], curEdge.n1, curEdge.n2)) {
+                    curLoop.innerCol = curEdge.col2;
                 } else {
-                    console.log('loop is CCW');
+                    curLoop.innerCol = curEdge.col1;
                 }
             }
 
             this.borderEdgeLoops[col] = colLoops;
+        }
+    };
+
+    /**
+     * Reverses the order of the edges in a loop.
+     * @param loop {Object}
+     * @private
+     */
+    VoronoiBorder.prototype.reverseLoop = function (loop) {
+        loop.edges.reverse();
+        for(var i = 0, len = loop.edges.length; i < len; i++) {
+            this.swapEdgePoints(loop.edges[i]);
+            if(loop.minX >= loop.edges[i].n2.x && loop.minY >= loop.edges[i].n2.y) {
+                loop.minEdgeIdx = i;
+            }
         }
     };
 
@@ -583,7 +623,7 @@ module.exports = (function () {
         };
 
         // private helper function
-        var aggregatePointsToEdges = function(points, markAsFirst, log) {
+        var aggregatePointsToEdges = function(points, log) {
             var edges = [];
             var p1, p2, p3;
             var newEdge;
@@ -620,10 +660,6 @@ module.exports = (function () {
                         p1: p1,
                         p2: p2,
                     };
-                    if(markAsFirst) {
-                        newEdge.isFirstInLoop = true;
-                        markAsFirst = false;
-                    }
                     edges.push(newEdge);
                     points.shift(); // remove p1
                 }
@@ -636,10 +672,6 @@ module.exports = (function () {
                 p2: points[1],
 				isOutside: true
             };
-            if(markAsFirst) {
-                newEdge.isFirstInLoop = true;
-                markAsFirst = false;
-            }
             edges.push(newEdge);
             return edges;
         };
@@ -681,7 +713,7 @@ module.exports = (function () {
                         if(outsideEdgePoints.length > 0) {
                             // edge loop is coming back into view
                             // --> resolve all outside edge points that were added for the current edge loop
-                            outsideEdges = aggregatePointsToEdges(outsideEdgePoints, outsideEdgeIsFirst);
+                            outsideEdges = aggregatePointsToEdges(outsideEdgePoints);
                             for(var j = 0, jlen = outsideEdges.length; j < jlen; j++) {
                                 curLoopEdges.push(outsideEdges[j]);
                             }
@@ -713,7 +745,7 @@ module.exports = (function () {
 
                     // add 'dangling' outside edges at the end of the loop
                     if(li >= curLoop.length - 1 && outsideEdgePoints.length > 0) {
-                        outsideEdges = aggregatePointsToEdges(outsideEdgePoints, outsideEdgeIsFirst);
+                        outsideEdges = aggregatePointsToEdges(outsideEdgePoints);
                         if(curLoopVisible || outsideEdges.length >= 4) {
                             for(var j = 0, jlen = outsideEdges.length; j < jlen; j++) {
                                 curLoopEdges.push(outsideEdges[j]);
