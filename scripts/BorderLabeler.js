@@ -51,8 +51,9 @@ module.exports = (function () {
      * Extract polylines from the border loops.
      */
     BorderLabeler.prototype.extractPolylines = function (borderLoops) {
-        var curLoop;
+        var curLoop, curEdge;
         var curPolyline;
+        var otherCol;
 
         this.polylines = {};
         for(var faction in borderLoops) {
@@ -63,9 +64,38 @@ module.exports = (function () {
             // iterate over this faction's loops
             for(var i = 0, len = borderLoops[faction].length; i < len; i++) {
                 curLoop = borderLoops[faction][i];
+                otherCol = null;
+                curPolyline = null;
+                for(var ei = 0; ei < curLoop.edges.length; ei++) {
+                    curEdge = curLoop.edges[ei];
+                    if(!Utils.pointInRectangle(curEdge.n1, this.viewRect) && !Utils.pointInRectangle(curEdge.n2, this.viewRect)) {
+    					// skip this edge
+    					continue;
+    				}
+                    // if the border "partner" side changes, open a new polyline
+                    // otherCol is initially blank
+    				if(curEdge.leftCol !== otherCol) {
+    					// close existing polyline
+                        if(curPolyline && curPolyline.edges.length > 0) {
+                            this.polylines[faction].push(curPolyline);
+                        }
+                        // start new polyline
+    					curPolyline = {
+                            loop : curLoop,
+                            edges : []
+                        };
+    				}
+                    otherCol = curEdge.leftCol;
+    				curPolyline.edges.push(curEdge);
+                }
+                if(curPolyline && curPolyline.edges.length > 0) {
+                    this.polylines[faction].push(curPolyline);
+                }
             }
-            //curPolyline =
         }
+        /*for(var i = 0; i < this.polylines['FS'].length; i++) {
+            console.log(this.polylines['FS'][i].edges);
+        }*/
     };
 
 	/**

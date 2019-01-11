@@ -343,6 +343,15 @@ module.exports = (function () {
                     curLoop.minY = curEdge.n2.y;
                     curLoop.minEdgeIdx = curLoop.edges.length;
                 }
+                // find and the edge's left and right "col" (=faction)
+                if(Utils.pointIsLeftOfLine(this.objects[curEdge.obj1], curEdge.n1, curEdge.n2)) {
+                    curEdge.leftCol = curEdge.col1;
+                    curEdge.rightCol = curEdge.col2;
+                } else {
+                    curEdge.leftCol = curEdge.col2;
+                    curEdge.rightCol = curEdge.col1;
+                }
+
                 curLoop.edges.push(curEdge);
             }
 
@@ -382,11 +391,12 @@ module.exports = (function () {
 
                 // add inner "col" to the loop
                 curEdge = curLoop.edges[0];
-                if(Utils.pointIsLeftOfLine(this.objects[curEdge.obj1], curEdge.n1, curEdge.n2)) {
+                curLoop.innerCol = curEdge.rightCol;
+                /*if(Utils.pointIsLeftOfLine(this.objects[curEdge.obj1], curEdge.n1, curEdge.n2)) {
                     curLoop.innerCol = curEdge.col2;
                 } else {
                     curLoop.innerCol = curEdge.col1;
-                }
+                }*/
             }
 
             this.borderEdgeLoops[col] = colLoops;
@@ -420,6 +430,9 @@ module.exports = (function () {
         tmp = e.p1;
         e.p1 = e.p2;
         e.p2 = tmp;
+        tmp = e.leftCol;
+        e.leftCol = e.rightCol;
+        e.rightCol = tmp;
         e.id = e.id.split('-').reverse().join('-');
     };
 

@@ -139,7 +139,7 @@ var main = function () {
 
 	// border labelling
 	focusedSystems.push('Sol');
-	//focusedSystems.push('Cassias');
+	focusedSystems.push('Cassias');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -234,15 +234,14 @@ var main = function () {
     		minimapBorders = vBorder.generateBoundedBorderLoops(minimapViewRect);
 
 			// add border labels
-			/*borderLabeler = new BorderLabeler(logger).init(
-				vBorder,
+			borderLabeler = new BorderLabeler(logger).init(
 				labelMgr.factions,
 				viewRect,
 				reader.labelConfig._glyphSettings || {},
 				1
 			);
-			borderLabeler.extractPolylines(vBorder.borderEdges, viewRect);
-			borderLabeler.generateCandidates();
+			borderLabeler.extractPolylines(clampedBorders);
+			/*borderLabeler.generateCandidates();
 			borderLabeler.findCenterlines();*/
 
     		// create an svg with a universe picture
@@ -254,7 +253,7 @@ var main = function () {
     			labelMgr.objects,
     			labelMgr.factions,
     			clampedBorders,
-                [],//borderLabeler.polylines,
+                borderLabeler.polylines,
                 labelMgr.ellipticalObjects,
     			{
     				dimensions : minimapDimensions,

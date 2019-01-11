@@ -26,6 +26,7 @@ module.exports = (function () {
 			defs : '',
 			css : '',
 			borders: '',
+			borderLabels: '',
 			jumpRings : '',
 			nebulae : '',
 			nebulaeLabels : '',
@@ -50,7 +51,7 @@ module.exports = (function () {
 		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
 		var filename = this.baseDir + '/output/'+name.replace(/\s/g, '_')+'_' +era.year + '_' + safeEraName + '_borders.svg';
 		this.writeSvg({
-			renderBorderLabels : false,
+			//renderBorderLabels : false,
 			renderSystems : false,
 			renderSystemLabels : false,
 			renderClusters : false,
@@ -117,6 +118,7 @@ module.exports = (function () {
 		// concatenate markup
 		elementsStr = '';
 		elementsStr += this.markup.borders ? `<g class="borders">${this.markup.borders}</g>\n` : '';
+		elementsStr += this.markup.borderLabels ? `<g class="border-labels">${this.markup.borderLabels}</g>\n` : '';
 		elementsStr += this.markup.clusters ? `<g class="clusters">${this.markup.clusters}</g>\n` : '';
 		elementsStr += this.markup.nebulae ? `<g class="nebulae">${this.markup.nebulae}</g>\n` : '';
 		elementsStr += this.markup.nebulaeLabels ? `<g class="nebulae-labels">${this.markup.nebulaeLabels}</g>\n` : '';
@@ -247,7 +249,31 @@ module.exports = (function () {
 		}
 
 		if(settings.renderBorderLabels) {
-			for(var i = 0, len = borderLabelLines.length; i < len; i++) {
+			var curPolyline;
+			for(var faction in borderLabelLines) {
+				for(var pi = 0; pi < borderLabelLines[faction].length; pi++) {
+					curPolyline = borderLabelLines[faction][pi];
+					curD = '';
+					for(var ei = 0; ei < curPolyline.edges.length; ei++) {
+						curEdge = curPolyline.edges[ei];
+						if(ei === 0) {
+							curD += 'M'+curEdge.n1.x.toFixed(2)+','+(-curEdge.n1.y).toFixed(2);
+						}
+						if(curEdge.n1c2 === null || curEdge.n1c2 === undefined ||
+							curEdge.n2c1 === null || curEdge.n2c1 === undefined) {
+							curD += ' L' + curEdge.n2.x.toFixed(2)+','+(-curEdge.n2.y).toFixed(2);
+						} else {
+							curD += ' C' + curEdge.n1c2.x.toFixed(2)+','+(-curEdge.n1c2.y).toFixed(2);
+							curD += ' ' + curEdge.n2c1.x.toFixed(2)+','+(-curEdge.n2c1.y).toFixed(2);
+							curD += ' ' + curEdge.n2.x.toFixed(2)+','+(-curEdge.n2.y).toFixed(2);
+						}
+					}
+					this.markup.borderLabels += `<path fill-rule="evenodd"
+						style="stroke: #000; stroke-width: .3px; fill: none;" d="${curD}" />\n`;
+				}
+			}
+		}
+			/*for(var i = 0, len = borderLabelLines.length; i < len; i++) {
 				for(var j = 0; j < borderLabelLines[i].lineParts.length; j++) {
 					tplObj = {
 						x1 : borderLabelLines[i].lineParts[j].p1.x,
@@ -334,8 +360,7 @@ module.exports = (function () {
 							style="stroke-width: .1; stroke: #fff; fill: #f00" />\n`;
 					}
 				}
-			}
-		}
+			}*/
 	};
 
 	/**
