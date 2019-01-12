@@ -215,13 +215,29 @@ module.exports = (function () {
 
 
     /**
-     * Calculates the euclidean distance between two points (euclidean distance in LY)
+     * Calculates the euclidean distance between two points.
      *
+     * @param x1 {Number} Point 1 X coordinate
+     * @param y1 {Number} Point 1 Y coordinate
+     * @param x2 {Number} Point 2 X coordinate
+     * @param y2 {Number} Point 2 y coordinate
      * @returns {Number} The euclidean distance
      */
     Utils.distance = function(x1, y1, x2, y2) {
     	return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
     };
+
+    /**
+     * Calculates the euclidean distance between two points,
+     * using point objects.
+     *
+     * @param p1 {Object} Point 1
+     * @param p2 {Object} Point 2
+     * @returns {Number} The euclidean distance
+     */
+    Utils.pointDistance = function (p1, p2) {
+        return this.distance(p1.x, p1.y, p2.x, p2.y);
+    }
 
     /**
      * Calculates vector length.
@@ -774,7 +790,10 @@ module.exports = (function () {
 				};
 			}
 		}
-		return null;
+		return {
+            x: curLine.p2.x,
+            y: curLine.p2.y
+        };
 	};
 
     /**

@@ -392,11 +392,6 @@ module.exports = (function () {
                 // add inner "col" to the loop
                 curEdge = curLoop.edges[0];
                 curLoop.innerCol = curEdge.rightCol;
-                /*if(Utils.pointIsLeftOfLine(this.objects[curEdge.obj1], curEdge.n1, curEdge.n2)) {
-                    curLoop.innerCol = curEdge.col2;
-                } else {
-                    curLoop.innerCol = curEdge.col1;
-                }*/
             }
 
             this.borderEdgeLoops[col] = colLoops;
@@ -757,7 +752,7 @@ module.exports = (function () {
     				}
 
                     // add 'dangling' outside edges at the end of the loop
-                    if(li >= curLoop.length - 1 && outsideEdgePoints.length > 0) {
+                    if(li >= curLoop.edges.length - 1 && outsideEdgePoints.length > 0) {
                         outsideEdges = aggregatePointsToEdges(outsideEdgePoints);
                         if(curLoopVisible || outsideEdges.length >= 4) {
                             for(var j = 0, jlen = outsideEdges.length; j < jlen; j++) {
@@ -766,6 +761,17 @@ module.exports = (function () {
                         }
                     }
                 }
+                // add remaining outside edges
+                /*if(outsideEdgePoints.length > 0) {
+                    outsideEdges = aggregatePointsToEdges(outsideEdgePoints, outsideEdgeIsFirst);
+                    if(curLoopVisible || outsideEdges.length >= 4) {
+                        for(var j = 0, jlen = outsideEdges.length; j < jlen; j++) {
+                            curLoopEdges.push(outsideEdges[j]);
+                        }
+                    }
+                    outsideEdgePoints = [];
+                    outsideEdgeIsFirst = false;
+                }*/
                 if(curLoopEdges.length > 0) {
                     boundedBorderEdgeLoops[col] = boundedBorderEdgeLoops[col] || [];
                     boundedBorderEdgeLoops[col].push({
@@ -773,18 +779,6 @@ module.exports = (function () {
                     });
                 }
 			}
-
-            // add remaining outside edges
-            /*if(outsideEdgePoints.length > 0) {
-                outsideEdges = aggregatePointsToEdges(outsideEdgePoints, outsideEdgeIsFirst);
-                if(curLoopVisible || outsideEdges.length >= 4) {
-                    for(var j = 0, jlen = outsideEdges.length; j < jlen; j++) {
-                        curColEdges.push(outsideEdges[j]);
-                    }
-                }
-                outsideEdgePoints = [];
-                outsideEdgeIsFirst = false;
-            }*/
 
 
 			/*if(curColEdges.length > 0) {

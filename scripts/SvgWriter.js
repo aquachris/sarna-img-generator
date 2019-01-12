@@ -52,8 +52,8 @@ module.exports = (function () {
 		var filename = this.baseDir + '/output/'+name.replace(/\s/g, '_')+'_' +era.year + '_' + safeEraName + '_borders.svg';
 		this.writeSvg({
 			//renderBorderLabels : false,
-			renderSystems : false,
-			renderSystemLabels : false,
+			//renderSystems : false,
+			//renderSystemLabels : false,
 			renderClusters : false,
 			renderClusterLabels : false,
 			renderMinimap : false,
@@ -259,17 +259,49 @@ module.exports = (function () {
 						if(ei === 0) {
 							curD += 'M'+curEdge.n1.x.toFixed(2)+','+(-curEdge.n1.y).toFixed(2);
 						}
-						if(curEdge.n1c2 === null || curEdge.n1c2 === undefined ||
-							curEdge.n2c1 === null || curEdge.n2c1 === undefined) {
+						//if(curEdge.n1c2 === null || curEdge.n1c2 === undefined ||
+						//	curEdge.n2c1 === null || curEdge.n2c1 === undefined) {
 							curD += ' L' + curEdge.n2.x.toFixed(2)+','+(-curEdge.n2.y).toFixed(2);
-						} else {
+						/*} else {
 							curD += ' C' + curEdge.n1c2.x.toFixed(2)+','+(-curEdge.n1c2.y).toFixed(2);
 							curD += ' ' + curEdge.n2c1.x.toFixed(2)+','+(-curEdge.n2c1.y).toFixed(2);
 							curD += ' ' + curEdge.n2.x.toFixed(2)+','+(-curEdge.n2.y).toFixed(2);
-						}
+						}*/
+					}
+					tplObj = {
+						stroke : '#000'
+					};
+					if(curPolyline.mergeFailed) {
+						tplObj.stroke = '#c00';
 					}
 					this.markup.borderLabels += `<path fill-rule="evenodd"
-						style="stroke: #000; stroke-width: .3px; fill: none;" d="${curD}" />\n`;
+						style="stroke: ${tplObj.stroke}; stroke-width: .3px; fill: none;" d="${curD}" />\n`;
+
+					for(var ci = 0; ci < curPolyline.candidates.length; ci++) {
+						tplObj = {
+							plId : curPolyline.id,
+							x1 : curPolyline.candidates[ci].fromPos.x.toFixed(2),
+							y1 : (-curPolyline.candidates[ci].fromPos.y).toFixed(2),
+							x2 : curPolyline.candidates[ci].toPos.x.toFixed(2),
+							y2 : (-curPolyline.candidates[ci].toPos.y).toFixed(2)
+						};
+						this.markup.defs += `<path id="label-path-${tplObj.plId}"
+							d="M${tplObj.x1},${tplObj.y1} L${tplObj.x2},${tplObj.y2}" />`;
+						tplObj = {
+							plId : curPolyline.id,
+							fill: curPolyline.fill,
+							x: curPolyline.candidates[ci].pos.x.toFixed(2),
+							y: (-curPolyline.candidates[ci].pos.y).toFixed(2),
+							text : curPolyline.candidates[ci].labelText,
+							dist: curPolyline.candidates[ci].dist,
+						};
+						this.markup.borderLabels += `<circle cx="${tplObj.x}" cy="${tplObj.y}"
+							r=".7" style="stroke-width: 0; fill: #a00;" />\n`;
+						this.markup.borderLabels += `<text text-anchor="left" dy="2.4">
+		    				<textPath startOffset="0" spacing="auto" xlink:href="#label-path-${tplObj.plId}">
+								<tspan style="fill: ${tplObj.fill}">${tplObj.text}</tspan></textPath>
+		  					</text>`;
+					}
 				}
 			}
 		}

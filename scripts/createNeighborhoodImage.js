@@ -240,7 +240,8 @@ var main = function () {
 				reader.labelConfig._glyphSettings || {},
 				1
 			);
-			borderLabeler.extractPolylines(clampedBorders);
+            borderLabeler.generateLabels(clampedBorders);
+			//borderLabeler.extractPolylines(clampedBorders);
 			/*borderLabeler.generateCandidates();
 			borderLabeler.findCenterlines();*/
 
