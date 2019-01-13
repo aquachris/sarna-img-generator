@@ -237,7 +237,7 @@ var main = function () {
 			borderLabeler = new BorderLabeler(logger).init(
 				labelMgr.factions,
 				viewRect,
-				reader.labelConfig._glyphSettings || {},
+				reader.labelConfig._borderGlyphSettings || {},
 				1
 			);
             borderLabeler.generateLabels(clampedBorders);

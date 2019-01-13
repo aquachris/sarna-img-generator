@@ -250,10 +250,12 @@ module.exports = (function () {
 
 		if(settings.renderBorderLabels) {
 			var curPolyline;
+			var curCtrlPoints;
 			for(var faction in borderLabelLines) {
 				for(var pi = 0; pi < borderLabelLines[faction].length; pi++) {
 					curPolyline = borderLabelLines[faction][pi];
 					curD = '';
+					curCtrlPoints = '';
 					for(var ei = 0; ei < curPolyline.edges.length; ei++) {
 						curEdge = curPolyline.edges[ei];
 						if(ei === 0) {
@@ -267,6 +269,17 @@ module.exports = (function () {
 							curD += ' ' + curEdge.n2c1.x.toFixed(2)+','+(-curEdge.n2c1.y).toFixed(2);
 							curD += ' ' + curEdge.n2.x.toFixed(2)+','+(-curEdge.n2.y).toFixed(2);
 						}*/
+						if(curEdge.n1c2 !== null && curEdge.n1c2 !== undefined &&
+							curEdge.n2c1 !== null && curEdge.n2c1 !== undefined) {
+							tplObj = {
+								x1 : curEdge.n1c2.x.toFixed(2),
+								y1 : (-curEdge.n1c2.y).toFixed(2),
+								x2 : curEdge.n2c1.x.toFixed(2),
+								y2 : (-curEdge.n2c1.y).toFixed(2)
+							};
+							this.markup.borderLabels += `<circle cx="${tplObj.x1}" cy="${tplObj.y1}" r="0.3" style="fill: black;" />`;
+							this.markup.borderLabels += `<circle cx="${tplObj.x2}" cy="${tplObj.y2}" r="0.3" style="fill: black;" />`;
+						}
 					}
 					tplObj = {
 						stroke : '#000'
@@ -280,25 +293,28 @@ module.exports = (function () {
 					for(var ci = 0; ci < curPolyline.candidates.length; ci++) {
 						tplObj = {
 							plId : curPolyline.id,
+							cId : ci,
 							x1 : curPolyline.candidates[ci].fromPos.x.toFixed(2),
 							y1 : (-curPolyline.candidates[ci].fromPos.y).toFixed(2),
 							x2 : curPolyline.candidates[ci].toPos.x.toFixed(2),
 							y2 : (-curPolyline.candidates[ci].toPos.y).toFixed(2)
 						};
-						this.markup.defs += `<path id="label-path-${tplObj.plId}"
+						this.markup.defs += `<path id="label-path-${tplObj.plId}-${tplObj.cId}"
 							d="M${tplObj.x1},${tplObj.y1} L${tplObj.x2},${tplObj.y2}" />`;
 						tplObj = {
 							plId : curPolyline.id,
+							cId : ci,
 							fill: curPolyline.fill,
 							x: curPolyline.candidates[ci].pos.x.toFixed(2),
 							y: (-curPolyline.candidates[ci].pos.y).toFixed(2),
 							text : curPolyline.candidates[ci].labelText,
-							dist: curPolyline.candidates[ci].dist,
+							verticalOffset: curPolyline.candidates[ci].verticalOffset
+							//dist: curPolyline.candidates[ci].dist,
 						};
 						this.markup.borderLabels += `<circle cx="${tplObj.x}" cy="${tplObj.y}"
 							r=".7" style="stroke-width: 0; fill: #a00;" />\n`;
-						this.markup.borderLabels += `<text text-anchor="left" dy="2.4">
-		    				<textPath startOffset="0" spacing="auto" xlink:href="#label-path-${tplObj.plId}">
+						this.markup.borderLabels += `<text text-anchor="left" dy="${tplObj.verticalOffset}">
+		    				<textPath startOffset="0" spacing="auto" xlink:href="#label-path-${tplObj.plId}-${tplObj.cId}">
 								<tspan style="fill: ${tplObj.fill}">${tplObj.text}</tspan></textPath>
 		  					</text>`;
 					}
