@@ -259,10 +259,12 @@ module.exports = (function () {
 	};
 
     BorderLabeler.prototype.findCandidates = function (polyline, labelText, labelWidth) {
-        var curStartLength = 0;
-        var curStartPoint, curEndPoint;
+        var curStartLength = 0, curEndLength = 0;
+        var curStartPoint;
+        var cMidPoint, cVec;
         var curEdge, nextEdge;
-        var newCandidate = null;
+        var potentialCandidates = [];
+        var newCandidate;
         var candidates = [];
         var controlPoints = [];
         var candidateLine;
@@ -274,6 +276,7 @@ module.exports = (function () {
             if(!curStartPoint) {
                 curStartPoint = curEdge.n1;
             }
+            curEndLength += curEdge.length;
             // remember the control points for later
             if(curEdge.n1c2 !== undefined && curEdge.n1c2 !== null) {
                 controlPoints.push(curEdge.n1c2);
@@ -282,7 +285,87 @@ module.exports = (function () {
                 controlPoints.push(curEdge.n2c1);
             }
 
-            if(curEdge.length >= labelWidth) {
+            if(Utils.pointDistance(curStartPoint, curEdge.n2) >= labelWidth) {
+                // the current stretch is long enough to fit the label
+                // --> create three candidates, with one each being at the stretch's left
+                //     edge, in the middle and at the stretch's right edge
+                // left edge candidate
+                cVec = [curEdge.n2.x - curStartPoint.x, curEdge.n2.y - curStartPoint.y];
+                //cMidPoint = curStartLength + labelWidth * .5;
+                Utils.scaleVector2d(cVec, labelWidth * .5);
+                cMidPoint = { x: curStartPoint.x + cVec[0], y: curStartPoint.y + cVec[1] };
+                potentialCandidates.push({
+                    pos : cMidPoint,
+                    fromPos : curStartPoint,
+                    toPos : { x: cMidPoint.x + cVec[0], y: cMidPoint.y + cVec[1] },
+                    labelText : labelText,
+                    controlPoints : controlPoints,
+                    controlPointDist : 0,
+                    verticalOffset : 0
+                });
+                /*potentialCandidates.push({
+                    pos : Utils.pointAlongPolyline(polyline.edges, cMidPoint),
+                    fromPos : Utils.pointAlongPolyline(polyline.edges, cMidPoint - labelWidth * .5),
+                    toPos : Utils.pointAlongPolyline(polyline.edges, cMidPoint + labelWidth * .5),
+                    labelText : labelText,
+                    controlPoints : controlPoints,
+                    controlPointDist : 0,
+                    verticalOffset : 0
+                });*/
+                // midpoint candidate
+                cVec = [curEdge.n2.x - curStartPoint.x, curEdge.n2.y - curStartPoint.y];
+                Utils.scaleVector2d(cVec, Utils.vectorLength2d(cVec) * .5);
+                cMidPoint = { x: curStartPoint.x + cVec[0], y: curStartPoint.y + cVec[1] };
+                Utils.scaleVector2d(cVec, labelWidth * .5);
+                potentialCandidates.push({
+                    pos : cMidPoint,
+                    fromPos : { x: cMidPoint.x - cVec[0], y: cMidPoint.y - cVec[1] },
+                    toPos : { x: cMidPoint.x + cVec[0], y: cMidPoint.y + cVec[1] },
+                    labelText : labelText,
+                    controlPoints : controlPoints,
+                    controlPointDist : 0,
+                    verticalOffset : 0
+                });
+                /*cMidPoint = curStartLength + (curEndLength - curStartLength) * .5;
+                potentialCandidates.push({
+                    pos : Utils.pointAlongPolyline(polyline.edges, cMidPoint),
+                    fromPos : Utils.pointAlongPolyline(polyline.edges, cMidPoint - labelWidth * .5),
+                    toPos : Utils.pointAlongPolyline(polyline.edges, cMidPoint + labelWidth * .52),
+                    labelText : labelText,
+                    controlPoints : controlPoints,
+                    controlPointDist : 0,
+                    verticalOffset : 0
+                });*/
+                // right edge candidate
+                cVec = [curEdge.n2.x - curStartPoint.x, curEdge.n2.y - curStartPoint.y];
+                Utils.scaleVector2d(cVec, labelWidth * .5);
+                cMidPoint = { x: curEdge.n2.x - cVec[0], y: curEdge.n2.y - cVec[1] };
+                potentialCandidates.push({
+                    pos : cMidPoint,
+                    fromPos : { x: cMidPoint.x - cVec[0], y: cMidPoint.y - cVec[1] },
+                    toPos : curEdge.n2,
+                    labelText : labelText,
+                    controlPoints : controlPoints,
+                    controlPointDist : 0,
+                    verticalOffset : 0
+                });
+                /*cMidPoint = curEndLength - labelWidth * .5;
+                potentialCandidates.push({
+                    pos : Utils.pointAlongPolyline(polyline.edges, cMidPoint),
+                    fromPos : Utils.pointAlongPolyline(polyline.edges, cMidPoint - labelWidth * .5),
+                    toPos : Utils.pointAlongPolyline(polyline.edges, cMidPoint + labelWidth * .5),
+                    labelText : labelText,
+                    controlPoints : controlPoints,
+                    controlPointDist : 0,
+                    verticalOffset : 0
+                });*/
+
+                // reset controlPoints
+                controlPoints = [];
+                curStartLength = curEndLength;
+                curStartPoint = null;
+            }
+            /*if(curEdge.length >= labelWidth) {
                 // the current edge is long enough by itself to fit the label --> great!
                 newCandidate = {
                     pos : Utils.pointAlongPolyline(polyline.edges, curStartLength + curEdge.length * .5),
@@ -298,10 +381,10 @@ module.exports = (function () {
             } else {
                 // TODO: manage control points correctly for multi-edge candidates
                 controlPoints = [];
-            }
+            }*/
 
-
-            if(newCandidate) {
+            for(var poi = 0; poi < potentialCandidates.length; poi++) {
+                newCandidate = potentialCandidates[poi];
                 candidateLine = Utils.lineFromPoints(
                     [newCandidate.fromPos.x, newCandidate.fromPos.y],
                     [newCandidate.toPos.x, newCandidate.toPos.y]
@@ -329,9 +412,8 @@ module.exports = (function () {
                     newCandidate.verticalOffset =  Math.max(1, newCandidate.controlPointDist) + this.glyphSettings.lineHeight // TODO this is the minimum offset!
                 }
                 candidates.push(newCandidate);
-                newCandidate = null;
             }
-            curStartLength += curEdge.length;
+            potentialCandidates = [];
         }
         return candidates;
     };
