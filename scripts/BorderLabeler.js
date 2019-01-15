@@ -20,12 +20,10 @@ module.exports = (function () {
      *      best one (or none, if none of them is good enough)
      * - candidate metric conditions:
      *      - minimal overlap with other labels
-     *      - mostly straight labels
      *      - horizontal labels preferred over vertical labels
      *      - middle of the polyline is preferred to the edges
      *    --> all of these conditions are weighted, weights sum to 1
-     * - for the selected candidate, use the closest polyline points and svg text-path
-     *      to achieve the desired result
+     * - for the selected candidate
 	 */
 	var BorderLabeler = function (logger) {
         this.logger = logger || console;
@@ -38,8 +36,9 @@ module.exports = (function () {
      *
      * @returns {Object} this object
      */
-    BorderLabeler.prototype.init = function (factions, viewRect, glyphSettings, distanceBetweenLabels) {
+    BorderLabeler.prototype.init = function (factions, labelGrid, viewRect, glyphSettings, distanceBetweenLabels) {
         this.factions = factions;
+        this.labelGrid = labelGrid;
         this.viewRect = viewRect;
         this.glyphSettings = glyphSettings || {};
         this.glyphSettings.lineHeight = this.glyphSettings.lineHeight || 3;
@@ -240,7 +239,7 @@ module.exports = (function () {
             // generate candidate locations for the (possibly) merged polylines
             for(var i = 0; i < this.polylines[factionKey].length; i++) {
                 curPolyline = this.polylines[factionKey][i];
-                curPolyline.candidates = this.findCandidates(curPolyline, faction.longName, labelWidth);
+                curPolyline.candidates = this.findCandidatesIteratively(curPolyline, faction.longName, labelWidth);
                 /*curPolyline.candidates.push({
                     dist: curPolyline.length * .5,
                     pos : Utils.pointAlongPolyline(curPolyline.edges, curPolyline.length * .5),
@@ -257,6 +256,226 @@ module.exports = (function () {
 			this.polylines[i].candidates = this.generateCandidatesAlongPolyline(this.polylines[i]);
 		}*/
 	};
+
+    /**
+     * Generates candidates along the polyline.
+     *
+     * @param polyline {Object} The polyline
+     * @param labelText {String} The label text to place
+     * @param labelWidth {Number} The label text's width in map units
+     * @returns {Array} An array of candidate positions along the polyline
+     * @private
+     */
+    BorderLabeler.prototype.findCandidatesIteratively = function (polyline, labelText, labelWidth) {
+        var candidates = [];
+        var startPos = 0; // the starting position along the polyline (a number btw. 0 and the polyline's length)
+        var endPos = 0; // the end position along the polyline (see above)
+        var startPosStepSize = labelWidth * .5; // the distance (on the polyline) between candidates
+        var searchStepSize = labelWidth * .1; // the size of the next incremental search step
+        var startPt, endPt;
+        var newCandidate, controlPoints, curCtrlPt, ctrlPointDist;
+        var angle, candidateLine, tmp;
+
+        while(endPos < polyline.length && labelText === 'Draconis Combine') {
+            // look at a new starting position
+            endPos = startPos + labelWidth;
+            startPt = Utils.pointAlongPolyline(polyline.edges, startPos);
+            do {
+                endPt = Utils.pointAlongPolyline(polyline.edges, endPos);
+                endPos += searchStepSize;
+                if(!endPt) {
+                    break;
+                }
+            } while(Utils.pointDistance(startPt, endPt) < labelWidth);
+            // abort if the current candidate goes beyond the polyline
+            if(!endPt) {
+                break;
+            }
+            // the candidate's start and end point have been found
+            newCandidate = {
+                midPt : {x: (startPt.x + endPt.x) * .5, y: (startPt.y + endPt.y) * .5 },
+                fromPt : startPt,
+                toPt : endPt,
+                midPos : (startPos + endPos) / 2,
+                startPos : startPos,
+                endPos : endPos - searchStepSize,
+                midPosByPolylineLength : ((startPos + endPos) / 2) / polyline.length,
+                labelText : labelText,
+                labelWidth : labelWidth,
+                controlPointDist : -Infinity,
+                verticalOffset : -Infinity
+            };
+            // get a different mathematical representation of the candidate line
+            candidateLine = Utils.lineFromPoints([startPt.x, startPt.y], [endPt.x, endPt.y]);
+
+            // Gather up all possible control points for the candidate. Control points lie
+            // on the polyline and include the candidate line's start and end points, as well
+            // as any polyline edge meeting points along the candidate line.
+            controlPoints = this.findEdgeMeetingPoints(polyline.edges, startPos, endPos);
+            controlPoints.push(Utils.pointAlongCubicPolycurve(polyline.edges, newCandidate.startPos));
+            controlPoints.push(Utils.pointAlongCubicPolycurve(polyline.edges, newCandidate.endPos));
+            controlPoints.push(Utils.pointAlongCubicPolycurve(polyline.edges, newCandidate.midPos));
+
+            // Use the control points to calculate the line's vertical offset
+            for(var ci = 0; ci < controlPoints.length; ci++) {
+                curCtrlPt = controlPoints[ci];
+                // only take control points on the label's side of the polyline into account
+                /*if(Utils.pointIsLeftOfLine(curCtrlPt, startPt, endPt)) {
+                    continue;
+                }*/
+                //this.logger.log('dist is ' + Utils.distanceLineToPoint(candidateLine, curCtrlPt));
+                ctrlPointDist = Utils.distanceLineToPoint(candidateLine, curCtrlPt);
+                if(Utils.pointIsLeftOfLine(curCtrlPt, startPt, endPt)) {
+                    ctrlPointDist *= -1;
+                }
+                // default additional distance
+                // TODO magic number?
+                ctrlPointDist += 1;
+                // ctrlPointDist += borderWidth * 2;
+
+                newCandidate.controlPointDist = Math.max(
+                    newCandidate.controlPointDist,
+                    ctrlPointDist
+                );
+            }
+
+            angle = Utils.radToDeg(Utils.angleBetweenPoints(newCandidate.fromPt, newCandidate.toPt));
+            angle = (angle + 360) % 360;
+            //this.logger.log(newCandidate.controlPointDist);
+            if(angle > 90 && angle < 270) {
+                tmp = newCandidate.fromPt;
+                newCandidate.fromPt = newCandidate.toPt;
+                newCandidate.toPt = tmp;
+                newCandidate.angle = (angle + 180) % 360;
+                newCandidate.verticalOffset = -newCandidate.controlPointDist;
+                //Math.min(-1.5, -newCandidate.controlPointDist);
+            } else {
+                newCandidate.verticalOffset =  newCandidate.controlPointDist + this.glyphSettings.lineHeight;
+                //Math.max(1, newCandidate.controlPointDist) + this.glyphSettings.lineHeight; // TODO this is the minimum offset!
+                newCandidate.angle = angle;
+            }
+            candidates.push(newCandidate);
+
+            // prepare start position for next iteration
+            startPos += startPosStepSize;
+        }
+
+        this.rateAndSortCandidates(candidates);
+
+        return candidates;
+    };
+
+    /**
+     * Helper function that finds all edge meeting points between startPos and endPos
+     * on a polyline.
+     * TODO put this in Utils? Might be too specific.
+     * @private
+     */
+    BorderLabeler.prototype.findEdgeMeetingPoints = function (pLineParts, startPos, endPos) {
+        var curLine;
+        var curLineStartDist = 0;
+        var lineInRange = false;
+        var points = [];
+		for(var i = 0, len = pLineParts.length; i < len; i++) {
+			curLine = pLineParts[i];
+            if(startPos < curLineStartDist + curLine.length) {
+                lineInRange = true;
+            }
+            if(lineInRange) {
+                if(curLineStartDist >= startPos) {
+                    points.push(curLine.n1);
+                }
+                if(curLineStartDist + curLine.length <= endPos) {
+                    points.push(curLine.n2);
+                } else {
+                    break;
+                }
+            }
+            curLineStartDist += curLine.length;
+        }
+		return points;
+    };
+
+    /**
+     * Add a numerical rating between 0 (bad) and 1 (good) to each of the given candidates,
+     * and sort the candidates array by rating (in descending fashion).
+     *
+     * @param candidates {Array} The candidates to rate. Note that this array will be changed.
+     */
+    BorderLabeler.prototype.rateAndSortCandidates = function (candidates) {
+        var weights = { // TODO make this a config option
+            overlap: .5,
+            angle: .15,
+            verticalDistance: .25,
+            centeredness : .1
+        };
+        var curCandidate;
+        var overlapRating;
+        var overlapMax, overlapArea;
+        var angleRating;
+        var verticalDistanceRating;
+        var verticalDistanceMax;
+        var centerednessRating;
+
+        if(!candidates || candidates.length === 0) {
+            return;
+        }
+
+        overlapMax = candidates[0].labelWidth * this.glyphSettings.lineHeight;
+        verticalDistanceMax = candidates.map(function (el) {
+            return el.controlPointDist;
+        }).reduce(function (acc, curVal) {
+            return Math.max(acc, curVal);
+        }, 0);
+
+        for(var i = 0; i < candidates.length; i++) {
+            curCandidate = candidates[i];
+
+            // rate the overlap area
+            overlapArea = this.findCandidateOverlapWithExistingLabels(curCandidate);
+            overlapRating = 1 - overlapArea / overlapMax;
+            overlapRating *= weights.overlap;
+
+            // rate the angle
+            if(curCandidate.angle <= 90) {
+                angleRating = 1 - curCandidate.angle / 90;
+            } else { // 270 <= angle < 360
+                angleRating = (curCandidate.angle - 270) / 90;
+            }
+            angleRating *= weights.angle;
+
+            // rate the distance
+            verticalDistanceRating = 1 - curCandidate.controlPointDist / verticalDistanceMax;
+            verticalDistanceRating *= weights.verticalDistance;
+
+            // rate the centeredness
+            centerednessRating = 1 - Math.abs(.5 - curCandidate.midPosByPolylineLength) * 2;
+            centerednessRating *= weights.centeredness;
+
+            curCandidate.rating = overlapRating + angleRating + verticalDistanceRating + centerednessRating;
+        }
+
+        /*candidates.sort(function (a, b) {
+            return a.rating - b.rating;
+        });*/
+    };
+
+    BorderLabeler.prototype.findCandidateOverlapWithExistingLabels = function (candidate) {
+        // TODO: calculate real positions for candidates
+        var boundingBox = {
+            x: candidate.fromPt.x,
+            y: Math.min(candidate.fromPt.y, candidate.toPt.y),
+            w: candidate.toPt.x - candidate.fromPt.x,
+            h: 0
+        };
+        boundingBox.h = Math.max(candidate.fromPt.y, candidate.toPt.y) - boundingBox.y;
+        var overlaps = this.labelGrid.getOverlaps(boundingBox);
+        if(overlaps && overlaps.length) {
+            console.log(overlaps.length + ' label overlaps detected!', overlaps);
+        }
+        return 0;
+        //Utils.RectRotRectOverlap(rect, rotRect) {
+    };
 
     BorderLabeler.prototype.findCandidates = function (polyline, labelText, labelWidth) {
         var curStartLength = 0, curEndLength = 0;

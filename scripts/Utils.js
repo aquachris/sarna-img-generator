@@ -311,13 +311,23 @@ module.exports = (function () {
 	};
 
 	/**
+     * @param p {Object} The point
+     * @param rect {Object} The rectangle, defined by its bottom left corner (x,y) and its dimensions (w,h)
+     * @param strict {boolean} (optional) If strict is true, the point may not lie on the rectangle's perimeter
 	 * @returns {boolean} true if p lies within the rectangle
 	 */
-	Utils.pointInRectangle = function(p, rect) {
-		return p.x >= rect.x
+	Utils.pointInRectangle = function(p, rect, strict) {
+        if(!strict) {
+            return p.x >= rect.x
 				&& p.x <= rect.x + rect.w
 				&& p.y >= rect.y
 				&& p.y <= rect.y + rect.h;
+        } else {
+            return p.x > rect.x
+				&& p.x < rect.x + rect.w
+				&& p.y > rect.y
+				&& p.y < rect.y + rect.h;
+        }
 	};
 
     /**
@@ -591,6 +601,182 @@ module.exports = (function () {
     };
 
     /**
+     * Calculates the overlapping area of a x / y axis aligned rectangle with another,
+     * rotated rectangle.
+     *
+     * @param rect {Object} A rectangle, defined by its bottom left corner (x,y) and its width and height (w,h)
+     * @param rotRect {Object} A rotated rectangle, defined by its corners in clockwise order (p0, p1, p2, p3)
+     * @returns {Number} The overlapping area
+     * @see https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
+     */
+    Utils.RectRotRectOverlap = function (rect, rotRect) {
+        var prevPt;
+        var curLine;
+        var clippedLines = [
+            this.rectLineClip(rotRect.p0, rotRect.p1),
+            this.rectLineClip(rotRect.p1, rotRect.p2),
+            this.rectLineClip(rotRect.p2, rotRect.p3),
+            this.rectLineClip(rotRect.p3, rotRect.p0)
+        ];
+        var polygon = [];
+
+        for(var i = 0; i <= clippedLines.length; i++) {
+            curLine = clippedLines[i % clippedLines.length];
+            if(!curLine) {
+                continue;
+            }
+            if(!!prevPt && !(prevPt.x === curLine.p0.x && prevPt.y === curLine.p0.y)) {
+                // points are not identical
+                if(prevPt.x !== curLine.p0.x && prevPt.y !== curLine.p0.y) {
+                    // both coordinates are different --> we may have to add additional points in between
+                    if(this.pointInRectangle(curLine.p0, rect, true)) {
+                        // point lies within the rectangle --> no intermediate points
+                    } else if(prevPt.x === rect.x || prevPt.x === rect.x + rect.w) {
+                        // previous point is on rectangle's left or right boundary. Add a corner point.
+                        polygon.push({ x: prevPt.x, y: curLine.p0.y });
+                    } else if(prevPt.y === rect.y || prevPt.y === rect.y + rect.h) {
+                        // previous point is on rectangle's top or bottom boundary. Add a corner point.
+                        polygon.push({ x: curLine.p0.x, y: prevPt.y });
+                    }
+                }
+                if(i < clippedLines.length) {
+                    polygon.push(curLine.p0);
+                }
+            }
+            if(i < clippedLines.length) {
+                polygon.push(curLine.p1);
+                prevPt = curLine.p1;
+            }
+        }
+
+        if(polygon.length < 2) {
+            return 0;
+        } else {
+            return this.polygonArea(polygon);
+        }
+    };
+
+    /**
+     * Uses the Cohen Sutherland line clip algorithm to find the clipped line within
+     * a rectangle.
+     *
+     * @param rect {Object} The rectangle, defined by its bottom left corner (x,y) and its width and height (w,h)
+     * @param pFrom {Object} Starting point of the line
+     * @param pTo {Object} End point of the line
+     * @returns {Array} An array of the two end points of the clipped line segment, or null
+     * @see https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
+     */
+    Utils.rectLineClip = function (rect, pFrom, pTo) {
+        var xMin = rect.x;
+        var xMax = rect.x + rect.w;
+        var yMin = rect.y;
+        var yMap = rect.y + rect.h;
+        var codes = {
+            INSIDE : 0,
+            LEFT: 1,
+            RIGHT: 2,
+            BOTTOM: 3,
+            TOP: 4
+        };
+        var p0 = this.deepCopy(pFrom);
+        var p1 = this.deepCopy(pTo);
+        var x, y;
+        var outcode0, outcode1, outcodeOut;
+        var accept;
+
+        // private helper function
+        var computeOutcode = function (p) {
+            var code = codes.INSIDE;
+            if(p.x < xMin) {
+                code = codes.LEFT;
+            } else if(p.x > xMax) {
+                code = codes.RIGHT;
+            } else if(p.y < yMin) {
+                code = codes.BOTTOM;
+            } else if(p.y > yMax) {
+                code = codes.TOP;
+            }
+	        return code;
+        };
+
+        outcode0 = computeOutcode(p0);
+        outcode1 = computeOutcode(p1);
+        accept = false;
+        while (true) {
+    		if (outcode0 === codes.INSIDE && outcode1 === codes.INSIDE) {
+    			// both points inside window; trivially accept and exit loop
+    			accept = true;
+    			break;
+    		} else if (outcode0 === outcode1) {
+    			// both points share an outside zone (LEFT, RIGHT, TOP, BOTTOM),
+                // so both must be outside window; exit loop (accept is false)
+    			break;
+    		} else {
+    			// At least one endpoint is outside the clip rectangle; pick it.
+    			outcodeOut = outcode0 !== codes.INSIDE ? outcode0 : outcode1;
+
+    			// Now find the intersection point;
+    			// use formulas:
+    			//   slope = (y1 - y0) / (x1 - x0)
+    			//   x = x0 + (1 / slope) * (ym - y0), where ym is ymin or ymax
+    			//   y = y0 + slope * (xm - x0), where xm is xmin or xmax
+    			// No need to worry about divide-by-zero because, in each case, the
+    			// outcode bit being tested guarantees the denominator is non-zero
+    			if (outcodeOut === codes.TOP) {           // point is above the clip window
+    				x = p0.x + (p1.x - p0.x) * (yMax - p0.y) / (p1.y - p1.y);
+    				y = yMax;
+    			} else if (outcodeOut === codes.BOTTOM) { // point is below the clip window
+    				x = p0.x + (p1.x - p0.x) * (yMin - p0.y) / (p1.y - p0.y);
+    				y = yMax;
+    			} else if (outcodeOut === codes.RIGHT) {  // point is to the right of clip window
+    				y = p0.y + (p1.y - p0.y) * (xMax - p0.x) / (p1.x - p0.x);
+    				x = xMax;
+    			} else if (outcodeOut === codes.LEFT) {   // point is to the left of clip window
+    				y = p0.y + (p1.y - p0.y) * (xMin - p0.x) / (p1.x - p0.x);
+    				x = xMin;
+    			}
+
+    			// Now we move outside point to intersection point to clip
+    			// and get ready for next pass.
+    			if (outcodeOut == outcode0) {
+    				p0.x = x;
+    				p0.y = y;
+    				outcode0 = ComputeOutCode(p0);
+    			} else {
+    				p1.x = x;
+    				p1.y = y;
+    				outcode1 = ComputeOutCode(p1);
+    			}
+    		}
+    	}
+    	if (accept) {
+    		return {
+                p0 : p0,
+                p1 : p1
+            };
+    		//*DrawRectangle(xmin, ymin, xmax, ymax);
+    		//LineSegment(x0, y0, x1, y1);
+    	}
+        return null;
+    };
+
+    /**
+     * Calculates the area of the given polygon.
+     *
+     * @param pPoints {Array} An array of polygon points
+     * @see http://www.mathopenref.com/coordpolygonarea2.html
+     */
+    Utils.polygonArea = function (pPoints) {
+        var area = 0;
+        var j = pPoints.length - 1;
+        for(var i = 0; i < pPoints.length; i++) {
+            area += (pPoints[j].x+pPoints[i].x) * (pPoints[j].y-pPoints[i].y);
+            j = i;
+        }
+        return area * .5;
+    };
+
+    /**
      * Checks if a given point lies to the left of a line.
      *
      * @param p {Object} The point
@@ -774,7 +960,7 @@ module.exports = (function () {
 		var vec;
 		for(var i = 0, len = pLineParts.length; i < len; i++) {
 			curLine = pLineParts[i];
-			curLength = this.distance(curLine.p1.x, curLine.p1.y, curLine.p2.x, curLine.p2.y);
+			curLength = this.pointDistance(curLine.p1, curLine.p2);
 			if(curLength < d) {
 				// the point lies beyond the current line
 				// subtract the current line's length from the distance and continue with the next line
@@ -790,11 +976,67 @@ module.exports = (function () {
 				};
 			}
 		}
-		return {
-            x: curLine.p2.x,
-            y: curLine.p2.y
-        };
+		return null;
 	};
+
+    /**
+     * Finds the point that lies at the given distance from the start of a polycurve made up of
+     * cubic bezier curves.
+     *
+     * @param pParts {Array} The polycurve, an array of edges (with points n1, n2 and control points n1c1, n1c2 etc.)
+     * @param d {Number} The distance from the polyline's start point
+     * @returns {Object} The point at distance d (or null)
+     */
+    Utils.pointAlongCubicPolycurve = function (pLineParts, d) {
+        var curLine, curLength;
+		var vec;
+		for(var i = 0, len = pLineParts.length; i < len; i++) {
+			curLine = pLineParts[i];
+			curLength = this.pointDistance(curLine.n1, curLine.n2);
+			if(curLength < d) {
+				// the point lies beyond the current line
+				// subtract the current line's length from the distance and continue with the next line
+				d -= curLength;
+				continue;
+			} else {
+				// the point lies on the current line
+                if(curLine.n1c2 !== undefined && curLine.n1c2 !== null
+                    && curLine.n2c1 !== undefined && curLine.n2c1 !== null) {
+                    // curLine has control points --> treat as cubic bezier curve
+                    // d / curLength gives a number between 0 and 1
+                    return this.pointOnCubicBezierCurve(
+                        curLine.n1, curLine.n1c2, curLine.n2c1, curLine.n2,
+                        d / curLength
+                    );
+                } else {
+                    // curLine has no control points --> treat as line
+                    vec = [curLine.p2.x - curLine.p1.x, curLine.p2.y - curLine.p1.y];
+    				this.scaleVector2d(vec, d);
+    				return {
+    					x: curLine.p1.x + vec[0],
+    					y: curLine.p1.y + vec[1]
+    				};
+                }
+			}
+		}
+		return null;
+    };
+
+    /**
+     * Finds the point on a cubic bezier line.
+     *
+     * @param p0 {Object} The bezier start point
+     * @param p1 {Object} The first bezier control point
+     * @param p2 {Object} The second bezier control point
+     * @param p3 {Object} The bezier end point
+     * @param t {Number} How far along the curve to look (0 <= t <= 1)
+     */
+    Utils.pointOnCubicBezierCurve = function (p0, p1, p2, p3, t) {
+        return {
+            x: Math.pow((1-t),3)*p0.x + 3*t*Math.pow((1-t),2)*p1.x + 3*t*t*(1-t)*p2.x + Math.pow(t,3)*p3.x,
+            y: Math.pow((1-t),3)*p0.y + 3*t*Math.pow((1-t),2)*p1.y + 3*t*t*(1-t)*p2.y + Math.pow(t,3)*p3.y
+        };
+    };
 
     /**
      * @param mat {Array} The matrix to rotate

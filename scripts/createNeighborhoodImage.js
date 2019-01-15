@@ -138,7 +138,7 @@ var main = function () {
     //focusedSystems.push('Greifswald');
 
 	// border labelling
-	focusedSystems.push('Sol');
+	//focusedSystems.push('Sol');
 	focusedSystems.push('Cassias');
 
     // generate points randomly scattered in 2D space
@@ -236,6 +236,7 @@ var main = function () {
 			// add border labels
 			borderLabeler = new BorderLabeler(logger).init(
 				labelMgr.factions,
+                labelMgr.grid,
 				viewRect,
 				reader.labelConfig._borderGlyphSettings || {},
 				1

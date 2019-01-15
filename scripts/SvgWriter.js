@@ -294,10 +294,10 @@ module.exports = (function () {
 						tplObj = {
 							plId : curPolyline.id,
 							cId : ci,
-							x1 : curPolyline.candidates[ci].fromPos.x.toFixed(2),
-							y1 : (-curPolyline.candidates[ci].fromPos.y).toFixed(2),
-							x2 : curPolyline.candidates[ci].toPos.x.toFixed(2),
-							y2 : (-curPolyline.candidates[ci].toPos.y).toFixed(2)
+							x1 : curPolyline.candidates[ci].fromPt.x.toFixed(2),
+							y1 : (-curPolyline.candidates[ci].fromPt.y).toFixed(2),
+							x2 : curPolyline.candidates[ci].toPt.x.toFixed(2),
+							y2 : (-curPolyline.candidates[ci].toPt.y).toFixed(2)
 						};
 						this.markup.defs += `<path id="label-path-${tplObj.plId}-${tplObj.cId}"
 							d="M${tplObj.x1},${tplObj.y1} L${tplObj.x2},${tplObj.y2}" />`;
@@ -305,17 +305,18 @@ module.exports = (function () {
 							plId : curPolyline.id,
 							cId : ci,
 							fill: curPolyline.fill,
-							x: curPolyline.candidates[ci].pos.x.toFixed(2),
-							y: (-curPolyline.candidates[ci].pos.y).toFixed(2),
+							x: curPolyline.candidates[ci].midPt.x.toFixed(2),
+							y: (-curPolyline.candidates[ci].midPt.y).toFixed(2),
 							text : curPolyline.candidates[ci].labelText,
-							verticalOffset: curPolyline.candidates[ci].verticalOffset
+							verticalOffset: curPolyline.candidates[ci].verticalOffset,
+							opacity : curPolyline.candidates[ci].rating.toFixed(3)
 							//dist: curPolyline.candidates[ci].dist,
 						};
 						this.markup.borderLabels += `<circle cx="${tplObj.x}" cy="${tplObj.y}"
 							r=".7" style="stroke-width: 0; fill: #a00;" />\n`;
 						this.markup.borderLabels += `<text text-anchor="left" dy="${tplObj.verticalOffset}">
 		    				<textPath startOffset="0" spacing="auto" xlink:href="#label-path-${tplObj.plId}-${tplObj.cId}">
-								<tspan style="fill: ${tplObj.fill}">${tplObj.text}</tspan></textPath>
+								<tspan style="fill: ${tplObj.fill}; opacity: ${tplObj.opacity}">${tplObj.text}</tspan></textPath>
 		  					</text>`;
 					}
 				}
