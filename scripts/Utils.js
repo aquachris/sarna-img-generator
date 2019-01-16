@@ -610,44 +610,113 @@ module.exports = (function () {
      * @see https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
      */
     Utils.rectRotRectOverlap = function (rect, rotRect) {
-        var prevPt;
-        var curLine;
+        var curPt, nextPt, prevPt;
+        var curSide, nextSide;
+        var iSide;
+        var currentlyInside = false;
         var clippedLines = [
             this.rectLineClip(rect, rotRect.p0, rotRect.p1),
             this.rectLineClip(rect, rotRect.p1, rotRect.p2),
             this.rectLineClip(rect, rotRect.p2, rotRect.p3),
             this.rectLineClip(rect, rotRect.p3, rotRect.p0)
         ];
-        var polygon = [];
-		//console.log('clipped lines: ', clippedLines);
+        //console.log('clipped lines: ', clippedLines);
+        var side = {
+            NONE: false,
+            LEFT: 1,
+            TOP: 2,
+            RIGHT: 3,
+            BOTTOM: 4
+        };
+        var corners = {
+            bl: {x: rect.x, y: rect.y, _intermediate:true}, // bottom left
+            tl: {x: rect.x, y: rect.y + rect.h, _intermediate:true}, // top left
+            tr: {x: rect.x + rect.w, y: rect.y + rect.h, _intermediate:true }, // top right
+            br: {x: rect.x + rect.w, y: rect.y, _intermediate:true}, // bottom right
+        };
+        // private helper function
+        var turn = function (side) {
+            return (side % 4) + 1;
+        };
+        // private helper function
+        var pointIsOnSide = function (p) {
+            if(p.x === rect.x) {
+                return side.LEFT;
+            } else if(p.x === rect.x + rect.w) {
+                return side.RIGHT;
+            } else if(p.y === rect.y) {
+                return side.BOTTOM;
+            } else if(p.y === rect.y + rect.h) {
+                return side.TOP;
+            }
+            return side.NONE;
+        }
 
-        for(var i = 0; i <= clippedLines.length; i++) {
-            curLine = clippedLines[i % clippedLines.length];
-            if(!curLine) {
+        var polygon = [];
+        for(var i = 0; i < clippedLines.length; i++) {
+            if(!clippedLines[i]) {
                 continue;
             }
-            if(!!prevPt && !(prevPt.x === curLine.p0.x && prevPt.y === curLine.p0.y)) {
-                // points are not identical
-                if(prevPt.x !== curLine.p0.x && prevPt.y !== curLine.p0.y) {
-                    // both coordinates are different --> we may have to add additional points in between
-                    if(this.pointInRectangle(curLine.p0, rect, true)) {
-                        // point lies within the rectangle --> no intermediate points
-                    } else if(prevPt.x === rect.x || prevPt.x === rect.x + rect.w) {
-                        // previous point is on rectangle's left or right boundary. Add a corner point.
-                        polygon.push({ x: prevPt.x, y: curLine.p0.y });
-                    } else if(prevPt.y === rect.y || prevPt.y === rect.y + rect.h) {
-                        // previous point is on rectangle's top or bottom boundary. Add a corner point.
-                        polygon.push({ x: curLine.p0.x, y: prevPt.y });
-                    }
+            // add points to the polygon
+            polygon.push(clippedLines[i].p0);
+            polygon.push(clippedLines[i].p1);
+        }
+
+        // clean up and complete the polygon
+        for(var i = 0; i < polygon.length; i++) {
+            curPt = polygon[i];
+            nextPt = polygon[(i+1) % polygon.length];
+            console.log(i, curPt, nextPt);
+            // remove identical next points
+            while(curPt.x === nextPt.x && curPt.y === nextPt.y && polygon.length > 1) {
+                if(i+1 < polygon.length) {
+                    polygon.splice(i+1,1);
                 }
-                if(i < clippedLines.length) {
-                    polygon.push(curLine.p0);
+                nextPt = polygon[i+1 % polygon.length];
+            }
+            // check remaining point count
+            if(polygon.length < 2) {
+                // something's funky
+                console.warn('polygon could not be built with one point');
+                break;
+            }
+            // find out if the points lie on any of the rectangle's sides
+            curSide = pointIsOnSide(curPt);
+            nextSide = pointIsOnSide(nextPt);
+            if(!curSide) {
+                currentlyInside = true;
+            } else if(!curPt._intermediate) {
+                currentlyInside = !currentlyInside;
+            }
+            // if either point lies inside the rectangle, or if we have just entered the rectangle,
+            // or if we are currently looking at an in-between point, there are no in-between points to insert
+            if(!curSide || !nextSide || currentlyInside || curPt._intermediate) {
+                continue;
+            }
+            // both points lie on the perimeter
+            // if the points are on the same perimeter, there is no need for a connecting point
+            if(curSide === nextSide) {
+                continue;
+            }
+            // points lie on different sides. insert intermediate points at the corners in clockwise fashion
+            iSide = curSide;
+            var j = 0;
+            do {
+                iSide = turn(iSide);
+                if(iSide === side.RIGHT) {
+                    j++;
+                    polygon.splice(i+j,0,Utils.deepCopy(corners.tr));
+                } else if(iSide === side.BOTTOM) {
+                    j++;
+                    polygon.splice(i+j,0,Utils.deepCopy(corners.br));
+                } else if(iSide === side.LEFT) {
+                    j++;
+                    polygon.splice(i+j,0,Utils.deepCopy(corners.bl));
+                } else if(iSide === side.TOP) {
+                    j++;
+                    polygon.splice(i+j,0,Utils.deepCopy(corners.tl));
                 }
-            }
-            if(i < clippedLines.length) {
-                polygon.push(curLine.p1);
-                prevPt = curLine.p1;
-            }
+            } while(iSide !== nextSide && iSide !== curSide);
         }
 
         if(polygon.length < 2) {
@@ -690,27 +759,26 @@ module.exports = (function () {
         var accept;
 
         // private helper function
-        var computeOutcode = function (p) {
+        var computeOutcode = function (lx,ly) {
             var code = codes.INSIDE;
-            if(p.x < xMin) {
-                code |= codes.LEFT;
-            } else if(p.x > xMax) {
-                code |= codes.RIGHT;
+            if(lx < xMin) {
+                code = code | codes.LEFT;
+            } else if(lx > xMax) {
+                code = code | codes.RIGHT;
             }
-			if(p.y < yMin) {
-                code |= codes.BOTTOM;
-            } else if(p.y > yMax) {
-                code |= codes.TOP;
+			if(ly < yMin) {
+                code = code | codes.BOTTOM;
+            } else if(ly > yMax) {
+                code = code | codes.TOP;
             }
 	        return code;
         };
 
-        outcode0 = computeOutcode(p0);
-        outcode1 = computeOutcode(p1);
+        outcode0 = computeOutcode(p0.x, p0.y);
+        outcode1 = computeOutcode(p1.x, p1.y);
         accept = false;
-		var it = 0;
         while (true) {
-    		if (!(outcode0 & outcode1)) {
+    		if (!(outcode0 | outcode1)) {
     			// bitwise OR is 0: both points inside window; trivially accept and exit loop
     			accept = true;
     			break;
@@ -748,14 +816,13 @@ module.exports = (function () {
     			if (outcodeOut == outcode0) {
     				p0.x = x;
     				p0.y = y;
-    				outcode0 = computeOutcode(p0);
+    				outcode0 = computeOutcode(x, y);
     			} else {
     				p1.x = x;
     				p1.y = y;
-    				outcode1 = computeOutcode(p1);
+    				outcode1 = computeOutcode(x, y);
     			}
     		}
-			//console.log(it++, outcode0, outcode1);
     	}
     	if (accept) {
     		return {

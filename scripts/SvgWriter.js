@@ -317,7 +317,7 @@ module.exports = (function () {
 		    				<textPath xlink:href="#label-path-${tplObj.cId}">
 								<tspan style="fill: ${tplObj.fill}; opacity: ${tplObj.opacity}">${tplObj.text}</tspan></textPath>
 		  					</text>`;
-						
+
 						tplObj = {
 							cId : curPolyline.candidates[ci].id,
 							x0: curPolyline.candidates[ci].bl.x.toFixed(3),
@@ -329,103 +329,44 @@ module.exports = (function () {
 							x3: curPolyline.candidates[ci].br.x.toFixed(3),
 							y3: (-curPolyline.candidates[ci].br.y).toFixed(3)
 						};
-						tplObj.d = `M${tplObj.x0},${tplObj.y0} L${tplObj.x1},${tplObj.y1} 
+						tplObj.d = `M${tplObj.x0},${tplObj.y0} L${tplObj.x1},${tplObj.y1}
 							L${tplObj.x2},${tplObj.y2} L${tplObj.x3},${tplObj.y3} z`;
-						this.markup.borderLabels += `<path data-id="${tplObj.cId}" 
+						this.markup.borderLabels += `<path data-id="${tplObj.cId}"
 							d="${tplObj.d}"
 							style="stroke: #0052; stroke-width: .3; fill: none;" />`;
 					}
 				}
 			}
+			var polygon = [
+				{x: 296.99, y: -79.169},
+				{x: 299.073, y: -81.669},
+				{x: 301.25525, y: -81.669},
+				{x: 301.25525, y: -81.165},
+				{x: 299.595, y: -79.169}
+			];
+			var d;
+			for(var i = 0; i< polygon.length; i++) {
+				if(i === 0) {
+					d = 'M'
+				} else {
+					d += ' L';
+				}
+				d += polygon[i].x + ',' + polygon[i].y;
+			}
+			d += 'z';
+			this.markup.borderLabels += `<path d="${d}" style="stroke-width: 0; fill: #0a05" />`;
+
+			var lines = [{
+				x1: 296.993, y1: -79.169, x2: 299.073, y2: -81.669
+			}, {
+				x1: 301.255, y1: -81.165, x2: 299.595, y2: -79.169
+			}];
+			for(var i = 0; i < lines.length; i++) {
+				this.markup.borderLabels += `<line x1="${lines[i].x1}" y1="${lines[i].y1}"
+					x2="${lines[i].x2}" y2="${lines[i].y2}" style="stroke-width: 0.3; stroke: #0c0;" />`;
+			}
+
 		}
-			/*for(var i = 0, len = borderLabelLines.length; i < len; i++) {
-				for(var j = 0; j < borderLabelLines[i].lineParts.length; j++) {
-					tplObj = {
-						x1 : borderLabelLines[i].lineParts[j].p1.x,
-						y1 : (-borderLabelLines[i].lineParts[j].p1.y).toFixed(3),
-						x2 : borderLabelLines[i].lineParts[j].p2.x,
-						y2 : (-borderLabelLines[i].lineParts[j].p2.y).toFixed(3),
-						info : borderLabelLines[i].borderId + ' ' + i
-					};
-					this.markup.borders += `<line x1="${tplObj.x1}" y1="${tplObj.y1}" x2="${tplObj.x2}" y2="${tplObj.y2}"
-						style="stroke-width: .25px; stroke: #333" data-info="${tplObj.info}" />`;
-				}
-				for(var j = 0; j < borderLabelLines[i].candidates.length; j++) {
-					tplObj = {
-						x: borderLabelLines[i].candidates[j].x.toFixed(3),
-						y: (-borderLabelLines[i].candidates[j].y).toFixed(3),
-						info: i + ' ' + borderLabelLines[i].leftCol + ' ' + borderLabelLines[i].rightCol
-					};
-					this.markup.borders += `<circle cx="${tplObj.x}" cy="${tplObj.y}" r=".5"
-						style="stroke-width: 0; fill: #000" data-info="${tplObj.info}" />\n`;
-					if(!borderLabelLines[i].candidates[j].rLine) {
-						continue;
-					}
-					// faction labels
-					// left-side faction label
-					tplObj = {
-						x : borderLabelLines[i].candidates[j].perpLine.x1.toFixed(3),
-						y : (-borderLabelLines[i].candidates[j].perpLine.y1).toFixed(3),
-						rot : borderLabelLines[i].candidates[j].textAngle.toFixed(2),
-						txt: borderLabelLines[i].leftFacLabel,
-						fill: borderLabelLines[i].leftFacFill
-					};
-					this.markup.borders += `<text text-anchor="middle" x="0" y="0"
-						class="border-label"
-						style="transform: translate(${tplObj.x}px, ${tplObj.y}px) rotate(${tplObj.rot}deg);
-						fill:${tplObj.fill}">${tplObj.txt}</text>`;
-
-					// right-side faction label
-					tplObj = {
-						x : borderLabelLines[i].candidates[j].perpLine.x2.toFixed(3),
-						y : (-borderLabelLines[i].candidates[j].perpLine.y2).toFixed(3),
-						rot : borderLabelLines[i].candidates[j].textAngle.toFixed(2),
-						txt: borderLabelLines[i].rightFacLabel,
-						fill: borderLabelLines[i].rightFacFill
-					};
-					this.markup.borders += `<text text-anchor="middle" x="0" y="0"
-						class="border-label"
-						style="transform: translate(${tplObj.x}px, ${tplObj.y}px) rotate(${tplObj.rot}deg);
-						fill:${tplObj.fill}">${tplObj.txt}</text>`;
-
-					// r line
-					tplObj = {
-						x1: borderLabelLines[i].candidates[j].rLine.x1.toFixed(3),
-						y1: (-borderLabelLines[i].candidates[j].rLine.y1).toFixed(3),
-						x2: borderLabelLines[i].candidates[j].rLine.x2.toFixed(3),
-						y2: (-borderLabelLines[i].candidates[j].rLine.y2).toFixed(3),
-					};
-					this.markup.borders += `<line x1="${tplObj.x1}" y1="${tplObj.y1}"
-						x2="${tplObj.x2}" y2="${tplObj.y2}"
-						style="stroke: #888; stroke-width: .4" />`;
-					// perp line
-					tplObj = {
-						x1: borderLabelLines[i].candidates[j].perpLine.x1.toFixed(3),
-						y1: (-borderLabelLines[i].candidates[j].perpLine.y1).toFixed(3),
-						x2: borderLabelLines[i].candidates[j].perpLine.x2.toFixed(3),
-						y2: (-borderLabelLines[i].candidates[j].perpLine.y2).toFixed(3),
-					};
-					this.markup.borders += `<line x1="${tplObj.x1}" y1="${tplObj.y1}"
-						x2="${tplObj.x2}" y2="${tplObj.y2}"
-						style="stroke: #a88; stroke-width: .4" />`;
-
-					tplObj = {
-						x: borderLabelLines[i].candidates[j].perpIPoint.x.toFixed(3),
-						y: (-borderLabelLines[i].candidates[j].perpIPoint.y).toFixed(3)
-					};
-					this.markup.borders += `<circle cx="${tplObj.x}" cy="${tplObj.y}" r=".4"
-							style="stroke-width: .1; stroke: #f00; fill: #ff0" />\n`;
-
-					for(var k = 0; k < borderLabelLines[i].candidates[j].iPoints.length; k++) {
-						tplObj = {
-							x: borderLabelLines[i].candidates[j].iPoints[k].x.toFixed(3),
-							y: (-borderLabelLines[i].candidates[j].iPoints[k].y).toFixed(3)
-						};
-						this.markup.borders += `<circle cx="${tplObj.x}" cy="${tplObj.y}" r=".4"
-							style="stroke-width: .1; stroke: #fff; fill: #f00" />\n`;
-					}
-				}
-			}*/
 	};
 
 	/**

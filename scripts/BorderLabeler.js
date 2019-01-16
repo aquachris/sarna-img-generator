@@ -276,7 +276,7 @@ module.exports = (function () {
         var newCandidate, controlPoints, curCtrlPt, ctrlPointDist;
         var angle, candidateLine, tmp;
 
-        while(endPos < polyline.length) {// && labelText === 'Draconis Combine') {
+        while(endPos < polyline.length && labelText === 'Draconis Combine') {
             // look at a new starting position
             endPos = startPos + labelWidth;
             startPt = Utils.pointAlongPolyline(polyline.edges, startPos);
@@ -338,10 +338,10 @@ module.exports = (function () {
                     ctrlPointDist
                 );
             }
-			
+
 			// perpendicular line, points towards right hand side
 			var perpVec = [
-				newCandidate.toPt.y - newCandidate.fromPt.y, 
+				newCandidate.toPt.y - newCandidate.fromPt.y,
 				-1*(newCandidate.toPt.x - newCandidate.fromPt.x)
 			];
 
@@ -362,7 +362,7 @@ module.exports = (function () {
                 newCandidate.verticalOffset =  newCandidate.controlPointDist + this.glyphSettings.lineHeight;
                 //Math.max(1, newCandidate.controlPointDist) + this.glyphSettings.lineHeight; // TODO this is the minimum offset!
             }
-			
+
 			// calculate the candidate's (rotated) bounding box
 			Utils.scaleVector2d(perpVec, Math.abs(newCandidate.verticalOffset));
 			newCandidate.bl = {
@@ -386,7 +386,7 @@ module.exports = (function () {
 				x: newCandidate.toPt.x + perpVec[0],
 				y: newCandidate.toPt.y + perpVec[1]
 			};
-			
+
 			newCandidate.id = polyline.id + '_' + candidates.length;
 			// candidate is ready to go
             candidates.push(newCandidate);
@@ -395,6 +395,15 @@ module.exports = (function () {
             startPos += startPosStepSize;
         }
 
+        // DEBUG
+        /*for(var i = 0; i < candidates.length; i++) {
+            if(candidates[i].id !== 'DC_0_15') {
+                candidates.splice(i,1);
+                i--;
+            }
+        }*/
+        console.log(candidates.length + ' candidates');
+        // DEBUG END
         this.rateAndSortCandidates(candidates);
 
         return candidates;
@@ -439,10 +448,10 @@ module.exports = (function () {
      */
     BorderLabeler.prototype.rateAndSortCandidates = function (candidates) {
         var weights = { // TODO make this a config option
-            overlap: .5,
-            angle: .15,
-            verticalDistance: .25,
-            centeredness : .1
+            overlap: 1,//.5,
+            angle: 0,//.15,
+            verticalDistance: 0,//.25,
+            centeredness : 0//.1
         };
         var curCandidate;
         var overlapRating;
@@ -496,7 +505,6 @@ module.exports = (function () {
     };
 
     BorderLabeler.prototype.findCandidateOverlapWithExistingLabels = function (candidate) {
-        // TODO: calculate real positions for candidates
         var boundingBox = {
             x: candidate.fromPt.x,
             y: Math.min(candidate.fromPt.y, candidate.toPt.y),
@@ -512,7 +520,7 @@ module.exports = (function () {
 		};
         var overlaps = this.labelGrid.getOverlaps(boundingBox);
 		var overlapArea = 0;
-		
+
         if(overlaps && overlaps.length) {
             console.log(overlaps.length + ' object overlaps detected!');
 			for(var i = 0; i < overlaps.length; i++) {
