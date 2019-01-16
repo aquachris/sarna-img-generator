@@ -293,31 +293,47 @@ module.exports = (function () {
 					for(var ci = 0; ci < curPolyline.candidates.length; ci++) {
 						tplObj = {
 							plId : curPolyline.id,
-							cId : ci,
-							x1 : curPolyline.candidates[ci].fromPt.x.toFixed(2),
-							y1 : (-curPolyline.candidates[ci].fromPt.y).toFixed(2),
-							x2 : curPolyline.candidates[ci].toPt.x.toFixed(2),
-							y2 : (-curPolyline.candidates[ci].toPt.y).toFixed(2)
+							cId : curPolyline.candidates[ci].id,
+							x1 : curPolyline.candidates[ci].bl.x.toFixed(2),
+							y1 : (-curPolyline.candidates[ci].bl.y).toFixed(2),
+							x2 : curPolyline.candidates[ci].br.x.toFixed(2),
+							y2 : (-curPolyline.candidates[ci].br.y).toFixed(2)
 						};
-						this.markup.defs += `<path id="label-path-${tplObj.plId}-${tplObj.cId}"
+						this.markup.defs += `<path id="label-path-${tplObj.cId}"
 							d="M${tplObj.x1},${tplObj.y1} L${tplObj.x2},${tplObj.y2}" />`;
 						tplObj = {
 							plId : curPolyline.id,
-							cId : ci,
+							cId : curPolyline.candidates[ci].id,
 							fill: curPolyline.fill,
 							x: curPolyline.candidates[ci].midPt.x.toFixed(2),
 							y: (-curPolyline.candidates[ci].midPt.y).toFixed(2),
 							text : curPolyline.candidates[ci].labelText,
-							verticalOffset: curPolyline.candidates[ci].verticalOffset,
 							opacity : curPolyline.candidates[ci].rating.toFixed(3)
 							//dist: curPolyline.candidates[ci].dist,
 						};
 						this.markup.borderLabels += `<circle cx="${tplObj.x}" cy="${tplObj.y}"
 							r=".7" style="stroke-width: 0; fill: #a00;" />\n`;
-						this.markup.borderLabels += `<text text-anchor="left" dy="${tplObj.verticalOffset}">
-		    				<textPath startOffset="0" spacing="auto" xlink:href="#label-path-${tplObj.plId}-${tplObj.cId}">
+						this.markup.borderLabels += `<text text-anchor="left">
+		    				<textPath xlink:href="#label-path-${tplObj.cId}">
 								<tspan style="fill: ${tplObj.fill}; opacity: ${tplObj.opacity}">${tplObj.text}</tspan></textPath>
 		  					</text>`;
+						
+						tplObj = {
+							cId : curPolyline.candidates[ci].id,
+							x0: curPolyline.candidates[ci].bl.x.toFixed(3),
+							y0: (-curPolyline.candidates[ci].bl.y).toFixed(3),
+							x1: curPolyline.candidates[ci].tl.x.toFixed(3),
+							y1: (-curPolyline.candidates[ci].tl.y).toFixed(3),
+							x2: curPolyline.candidates[ci].tr.x.toFixed(3),
+							y2: (-curPolyline.candidates[ci].tr.y).toFixed(3),
+							x3: curPolyline.candidates[ci].br.x.toFixed(3),
+							y3: (-curPolyline.candidates[ci].br.y).toFixed(3)
+						};
+						tplObj.d = `M${tplObj.x0},${tplObj.y0} L${tplObj.x1},${tplObj.y1} 
+							L${tplObj.x2},${tplObj.y2} L${tplObj.x3},${tplObj.y3} z`;
+						this.markup.borderLabels += `<path data-id="${tplObj.cId}" 
+							d="${tplObj.d}"
+							style="stroke: #0052; stroke-width: .3; fill: none;" />`;
 					}
 				}
 			}

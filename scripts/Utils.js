@@ -609,16 +609,17 @@ module.exports = (function () {
      * @returns {Number} The overlapping area
      * @see https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
      */
-    Utils.RectRotRectOverlap = function (rect, rotRect) {
+    Utils.rectRotRectOverlap = function (rect, rotRect) {
         var prevPt;
         var curLine;
         var clippedLines = [
-            this.rectLineClip(rotRect.p0, rotRect.p1),
-            this.rectLineClip(rotRect.p1, rotRect.p2),
-            this.rectLineClip(rotRect.p2, rotRect.p3),
-            this.rectLineClip(rotRect.p3, rotRect.p0)
+            this.rectLineClip(rect, rotRect.p0, rotRect.p1),
+            this.rectLineClip(rect, rotRect.p1, rotRect.p2),
+            this.rectLineClip(rect, rotRect.p2, rotRect.p3),
+            this.rectLineClip(rect, rotRect.p3, rotRect.p0)
         ];
         var polygon = [];
+		//console.log('clipped lines: ', clippedLines);
 
         for(var i = 0; i <= clippedLines.length; i++) {
             curLine = clippedLines[i % clippedLines.length];
@@ -670,14 +671,18 @@ module.exports = (function () {
         var xMin = rect.x;
         var xMax = rect.x + rect.w;
         var yMin = rect.y;
-        var yMap = rect.y + rect.h;
+        var yMax = rect.y + rect.h;
         var codes = {
             INSIDE : 0,
             LEFT: 1,
             RIGHT: 2,
-            BOTTOM: 3,
-            TOP: 4
+            BOTTOM: 4,
+            TOP: 8
         };
+		/*console.log('xMin ' + xMin.toFixed(2) + ', xMax ' + xMax.toFixed(2) );
+		console.log('yMin ' + yMin.toFixed(2) + ', yMax ' + yMax.toFixed(2) );
+		console.log('pFrom ' + pFrom.x + ',' + pFrom.y);
+		console.log('pTo ' + pTo.x + ',' + pTo.y);*/
         var p0 = this.deepCopy(pFrom);
         var p1 = this.deepCopy(pTo);
         var x, y;
@@ -688,13 +693,14 @@ module.exports = (function () {
         var computeOutcode = function (p) {
             var code = codes.INSIDE;
             if(p.x < xMin) {
-                code = codes.LEFT;
+                code |= codes.LEFT;
             } else if(p.x > xMax) {
-                code = codes.RIGHT;
-            } else if(p.y < yMin) {
-                code = codes.BOTTOM;
+                code |= codes.RIGHT;
+            }
+			if(p.y < yMin) {
+                code |= codes.BOTTOM;
             } else if(p.y > yMax) {
-                code = codes.TOP;
+                code |= codes.TOP;
             }
 	        return code;
         };
@@ -702,14 +708,15 @@ module.exports = (function () {
         outcode0 = computeOutcode(p0);
         outcode1 = computeOutcode(p1);
         accept = false;
+		var it = 0;
         while (true) {
-    		if (outcode0 === codes.INSIDE && outcode1 === codes.INSIDE) {
-    			// both points inside window; trivially accept and exit loop
+    		if (!(outcode0 & outcode1)) {
+    			// bitwise OR is 0: both points inside window; trivially accept and exit loop
     			accept = true;
     			break;
-    		} else if (outcode0 === outcode1) {
-    			// both points share an outside zone (LEFT, RIGHT, TOP, BOTTOM),
-                // so both must be outside window; exit loop (accept is false)
+    		} else if (outcode0 & outcode1) {
+    			// bitwise AND is not 0: both points share an outside zone (LEFT, RIGHT, TOP,
+				// or BOTTOM), so both must be outside window; exit loop (accept is false)
     			break;
     		} else {
     			// At least one endpoint is outside the clip rectangle; pick it.
@@ -722,18 +729,18 @@ module.exports = (function () {
     			//   y = y0 + slope * (xm - x0), where xm is xmin or xmax
     			// No need to worry about divide-by-zero because, in each case, the
     			// outcode bit being tested guarantees the denominator is non-zero
-    			if (outcodeOut === codes.TOP) {           // point is above the clip window
-    				x = p0.x + (p1.x - p0.x) * (yMax - p0.y) / (p1.y - p1.y);
+    			if (outcodeOut & codes.TOP) {           // point is above the clip window
+    				x = p0.x + (p1.x - p0.x) * (yMax - p0.y) / (p1.y - p0.y);
     				y = yMax;
-    			} else if (outcodeOut === codes.BOTTOM) { // point is below the clip window
+    			} else if (outcodeOut & codes.BOTTOM) { // point is below the clip window
     				x = p0.x + (p1.x - p0.x) * (yMin - p0.y) / (p1.y - p0.y);
-    				y = yMax;
-    			} else if (outcodeOut === codes.RIGHT) {  // point is to the right of clip window
+    				y = yMin;
+    			} else if (outcodeOut & codes.RIGHT) {  // point is to the right of clip window
     				y = p0.y + (p1.y - p0.y) * (xMax - p0.x) / (p1.x - p0.x);
-    				x = xMax;
-    			} else if (outcodeOut === codes.LEFT) {   // point is to the left of clip window
+					x = xMax;
+    			} else if (outcodeOut & codes.LEFT) {   // point is to the left of clip window
     				y = p0.y + (p1.y - p0.y) * (xMin - p0.x) / (p1.x - p0.x);
-    				x = xMin;
+					x = xMin;
     			}
 
     			// Now we move outside point to intersection point to clip
@@ -741,21 +748,20 @@ module.exports = (function () {
     			if (outcodeOut == outcode0) {
     				p0.x = x;
     				p0.y = y;
-    				outcode0 = ComputeOutCode(p0);
+    				outcode0 = computeOutcode(p0);
     			} else {
     				p1.x = x;
     				p1.y = y;
-    				outcode1 = ComputeOutCode(p1);
+    				outcode1 = computeOutcode(p1);
     			}
     		}
+			//console.log(it++, outcode0, outcode1);
     	}
     	if (accept) {
     		return {
                 p0 : p0,
                 p1 : p1
             };
-    		//*DrawRectangle(xmin, ymin, xmax, ymax);
-    		//LineSegment(x0, y0, x1, y1);
     	}
         return null;
     };

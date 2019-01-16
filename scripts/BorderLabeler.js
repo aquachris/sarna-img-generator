@@ -276,7 +276,7 @@ module.exports = (function () {
         var newCandidate, controlPoints, curCtrlPt, ctrlPointDist;
         var angle, candidateLine, tmp;
 
-        while(endPos < polyline.length && labelText === 'Draconis Combine') {
+        while(endPos < polyline.length) {// && labelText === 'Draconis Combine') {
             // look at a new starting position
             endPos = startPos + labelWidth;
             startPt = Utils.pointAlongPolyline(polyline.edges, startPos);
@@ -338,6 +338,12 @@ module.exports = (function () {
                     ctrlPointDist
                 );
             }
+			
+			// perpendicular line, points towards right hand side
+			var perpVec = [
+				newCandidate.toPt.y - newCandidate.fromPt.y, 
+				-1*(newCandidate.toPt.x - newCandidate.fromPt.x)
+			];
 
             angle = Utils.radToDeg(Utils.angleBetweenPoints(newCandidate.fromPt, newCandidate.toPt));
             angle = (angle + 360) % 360;
@@ -347,13 +353,42 @@ module.exports = (function () {
                 newCandidate.fromPt = newCandidate.toPt;
                 newCandidate.toPt = tmp;
                 newCandidate.angle = (angle + 180) % 360;
+				newCandidate.flipped = true;
                 newCandidate.verticalOffset = -newCandidate.controlPointDist;
                 //Math.min(-1.5, -newCandidate.controlPointDist);
             } else {
+				newCandidate.angle = angle;
+				newCandidate.flipped = false;
                 newCandidate.verticalOffset =  newCandidate.controlPointDist + this.glyphSettings.lineHeight;
                 //Math.max(1, newCandidate.controlPointDist) + this.glyphSettings.lineHeight; // TODO this is the minimum offset!
-                newCandidate.angle = angle;
             }
+			
+			// calculate the candidate's (rotated) bounding box
+			Utils.scaleVector2d(perpVec, Math.abs(newCandidate.verticalOffset));
+			newCandidate.bl = {
+				x: newCandidate.fromPt.x + perpVec[0],
+				y: newCandidate.fromPt.y + perpVec[1]
+			};
+			newCandidate.br = {
+				x: newCandidate.toPt.x + perpVec[0],
+				y: newCandidate.toPt.y + perpVec[1]
+			};
+			if(newCandidate.flipped) {
+				Utils.scaleVector2d(perpVec, Math.abs(newCandidate.verticalOffset) + this.glyphSettings.lineHeight);
+			} else {
+				Utils.scaleVector2d(perpVec, Math.abs(newCandidate.verticalOffset) - this.glyphSettings.lineHeight);
+			}
+			newCandidate.tl = {
+				x: newCandidate.fromPt.x + perpVec[0],
+				y: newCandidate.fromPt.y + perpVec[1]
+			};
+			newCandidate.tr = {
+				x: newCandidate.toPt.x + perpVec[0],
+				y: newCandidate.toPt.y + perpVec[1]
+			};
+			
+			newCandidate.id = polyline.id + '_' + candidates.length;
+			// candidate is ready to go
             candidates.push(newCandidate);
 
             // prepare start position for next iteration
@@ -469,11 +504,25 @@ module.exports = (function () {
             h: 0
         };
         boundingBox.h = Math.max(candidate.fromPt.y, candidate.toPt.y) - boundingBox.y;
+		var boundingRect = {
+			p0: candidate.bl,
+			p1: candidate.tl,
+			p2: candidate.tr,
+			p3: candidate.br
+		};
         var overlaps = this.labelGrid.getOverlaps(boundingBox);
+		var overlapArea = 0;
+		
         if(overlaps && overlaps.length) {
-            console.log(overlaps.length + ' label overlaps detected!', overlaps);
+            console.log(overlaps.length + ' object overlaps detected!');
+			for(var i = 0; i < overlaps.length; i++) {
+				overlapArea += Utils.rectRotRectOverlap(overlaps[i], boundingRect);
+			}
         }
-        return 0;
+		if(overlapArea > 0) {
+			console.log('overlap area is ' + overlapArea + ' for ' + candidate.id);
+		}
+        return overlapArea;
         //Utils.RectRotRectOverlap(rect, rotRect) {
     };
 
