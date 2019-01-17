@@ -257,6 +257,7 @@ module.exports = (function () {
 			for(var faction in borderLabelLines) {
 				for(var pi = 0; pi < borderLabelLines[faction].length; pi++) {
 					curPolyline = borderLabelLines[faction][pi];
+					console.log(curPolyline.id, curPolyline.edges.length);
 					curD = '';
 					curCtrlPoints = '';
 					for(var ei = 0; ei < curPolyline.edges.length; ei++) {
@@ -272,7 +273,8 @@ module.exports = (function () {
 							curD += ' ' + curEdge.n2c1.x.toFixed(2)+','+(-curEdge.n2c1.y).toFixed(2);
 							curD += ' ' + curEdge.n2.x.toFixed(2)+','+(-curEdge.n2.y).toFixed(2);
 						}*/
-						if(curEdge.n1c2 !== null && curEdge.n1c2 !== undefined &&
+						// render control points
+						/*if(curEdge.n1c2 !== null && curEdge.n1c2 !== undefined &&
 							curEdge.n2c1 !== null && curEdge.n2c1 !== undefined) {
 							tplObj = {
 								x1 : curEdge.n1c2.x.toFixed(2),
@@ -282,15 +284,16 @@ module.exports = (function () {
 							};
 							this.markup.borderLabels += `<circle cx="${tplObj.x1}" cy="${tplObj.y1}" r="0.3" style="fill: black;" />`;
 							this.markup.borderLabels += `<circle cx="${tplObj.x2}" cy="${tplObj.y2}" r="0.3" style="fill: black;" />`;
-						}
+						}*/
 					}
 					tplObj = {
+						plId : curPolyline.id,
 						stroke : '#000'
 					};
 					if(curPolyline.mergeFailed) {
 						tplObj.stroke = '#c00';
 					}
-					this.markup.borderLabels += `<path fill-rule="evenodd"
+					this.markup.borderLabels += `<path fill-rule="evenodd" data-id="${tplObj.plId}"
 						style="stroke: ${tplObj.stroke}; stroke-width: .3px; fill: none;" d="${curD}" />\n`;
 
 					for(var ci = 0; ci < curPolyline.candidates.length; ci++) {
@@ -337,9 +340,9 @@ module.exports = (function () {
 						this.markup.borderLabels += `<path data-id="${tplObj.cId}"
 							d="${tplObj.d}"
 							style="stroke: #0052; stroke-width: .3; fill: none;" />`;
-							
-						for(var pi = 0; pi < curPolyline.candidates[ci].polygons.length; pi++) {
-							polygon = curPolyline.candidates[ci].polygons[pi];
+
+						for(var pci = 0; pci < curPolyline.candidates[ci].polygons.length; pci++) {
+							polygon = curPolyline.candidates[ci].polygons[pci];
 							curD = '';
 							for(var ppi = 0; ppi < polygon.length; ppi++) {
 								if(ppi === 0) {
@@ -356,7 +359,7 @@ module.exports = (function () {
 							curD += 'z';
 							this.markup.overlays += `<path d="${curD}" style="stroke-width: 0; fill: #0a05" />`;
 						}
-						var cLine; 
+						var cLine;
 						var cpLine;
 						for(var cli = 0; cli < curPolyline.candidates[ci].lines.length; cli++) {
 							cLine = curPolyline.candidates[ci].lines[cli];

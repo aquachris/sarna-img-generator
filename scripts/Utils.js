@@ -601,7 +601,7 @@ module.exports = (function () {
     };
 
     /**
-     * Calculates the overlapping polygon (intersection) of a x / y axis aligned rectangle with 
+     * Calculates the overlapping polygon (intersection) of a x / y axis aligned rectangle with
 	 * another, rotated rectangle.
      *
      * @param rect {Object} A rectangle, defined by its bottom left corner (x,y) and its width and height (w,h)
@@ -666,13 +666,18 @@ module.exports = (function () {
         for(var i = 0; i < polygon.length; i++) {
             curPt = polygon[i];
             nextPt = polygon[(i+1) % polygon.length];
-            console.log(i, curPt, nextPt);
+            //console.log(i, curPt, nextPt);
             // remove identical next points
             while(curPt.x === nextPt.x && curPt.y === nextPt.y && polygon.length > 1) {
                 if(i+1 < polygon.length) {
                     polygon.splice(i+1,1);
+                } else {
+                    polygon.splice(i,1);
+                    i--;
+                    curPt = polygon[i];
                 }
-                nextPt = polygon[i+1 % polygon.length];
+                nextPt = polygon[(i+1) % polygon.length];
+                //console.log('polygon length is '+polygon.length+', nextPt is now ' + ((i+1) % polygon.length), nextPt);
             }
             // check remaining point count
             if(polygon.length < 2) {

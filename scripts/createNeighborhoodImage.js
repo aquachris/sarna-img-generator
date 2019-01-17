@@ -138,8 +138,9 @@ var main = function () {
     //focusedSystems.push('Greifswald');
 
 	// border labelling
-	//focusedSystems.push('Sol');
-	focusedSystems.push('Cassias');
+	focusedSystems.push('Sol');
+	//focusedSystems.push('Cassias');
+    focusedSystems.push('Desolate Plains');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
