@@ -460,6 +460,7 @@ module.exports = (function () {
         var verticalDistanceRating;
         var verticalDistanceMax;
         var centerednessRating;
+		var polygons, lines;
 
         if(!candidates || candidates.length === 0) {
             return;
@@ -474,9 +475,11 @@ module.exports = (function () {
 
         for(var i = 0; i < candidates.length; i++) {
             curCandidate = candidates[i];
+			polygons = [];
+			lines = [];
 
             // rate the overlap area
-            overlapArea = this.findCandidateOverlapWithExistingLabels(curCandidate);
+            overlapArea = this.findCandidateOverlapWithExistingLabels(curCandidate, polygons, lines);
             overlapRating = 1 - overlapArea / overlapMax;
             overlapRating *= weights.overlap;
 
@@ -497,6 +500,8 @@ module.exports = (function () {
             centerednessRating *= weights.centeredness;
 
             curCandidate.rating = overlapRating + angleRating + verticalDistanceRating + centerednessRating;
+			curCandidate.polygons = polygons;
+			curCandidate.lines = lines;
         }
 
         /*candidates.sort(function (a, b) {
@@ -504,7 +509,7 @@ module.exports = (function () {
         });*/
     };
 
-    BorderLabeler.prototype.findCandidateOverlapWithExistingLabels = function (candidate) {
+    BorderLabeler.prototype.findCandidateOverlapWithExistingLabels = function (candidate, polygons, lines) {
         var boundingBox = {
             x: candidate.fromPt.x,
             y: Math.min(candidate.fromPt.y, candidate.toPt.y),
@@ -519,12 +524,16 @@ module.exports = (function () {
 			p3: candidate.br
 		};
         var overlaps = this.labelGrid.getOverlaps(boundingBox);
+		var intersection;
 		var overlapArea = 0;
 
         if(overlaps && overlaps.length) {
             console.log(overlaps.length + ' object overlaps detected!');
 			for(var i = 0; i < overlaps.length; i++) {
-				overlapArea += Utils.rectRotRectOverlap(overlaps[i], boundingRect);
+				intersection = Utils.rectRotRectOverlap(overlaps[i], boundingRect);
+				polygons.push(intersection.p);
+				lines.push(intersection.l);
+				overlapArea += Utils.polygonArea(polygons[polygons.length -1]);
 			}
         }
 		if(overlapArea > 0) {

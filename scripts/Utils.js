@@ -601,12 +601,12 @@ module.exports = (function () {
     };
 
     /**
-     * Calculates the overlapping area of a x / y axis aligned rectangle with another,
-     * rotated rectangle.
+     * Calculates the overlapping polygon (intersection) of a x / y axis aligned rectangle with 
+	 * another, rotated rectangle.
      *
      * @param rect {Object} A rectangle, defined by its bottom left corner (x,y) and its width and height (w,h)
      * @param rotRect {Object} A rotated rectangle, defined by its corners in clockwise order (p0, p1, p2, p3)
-     * @returns {Number} The overlapping area
+     * @returns {Object} The overlapping polygon
      * @see https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
      */
     Utils.rectRotRectOverlap = function (rect, rotRect) {
@@ -720,9 +720,15 @@ module.exports = (function () {
         }
 
         if(polygon.length < 2) {
-            return 0;
+            return {
+				l: clippedLines,
+				p: []
+			};
         } else {
-            return this.polygonArea(polygon);
+            return {
+				l: clippedLines,
+				p: polygon
+			};
         }
     };
 

@@ -34,7 +34,8 @@ module.exports = (function () {
 			systems : '',
 			systemLabels : '',
 			minimap : '',
-			scaleHelp : ''
+			scaleHelp : '',
+			overlays : ''
 		};
 	};
 
@@ -127,6 +128,7 @@ module.exports = (function () {
 		elementsStr += this.markup.systemLabels ? `<g class="system-labels">${this.markup.systemLabels}</g>\n` : '';
 		elementsStr += this.markup.minimap ? `<g class="minimap">${this.markup.minimap}</g>\n` : '';
 		elementsStr += this.markup.scaleHelp ? `<g class="scale">${this.markup.scaleHelp}</g>\n` : '';
+		elementsStr += this.markup.overlays ? `<g class="overlays">${this.markup.overlays}</g>\n` : '';
 
 		// insert markup into base map template
 		tpl = tpl.replace('{WIDTH}', dimensions.w);
@@ -162,6 +164,7 @@ module.exports = (function () {
 		var borderEdges;
 		var curEdge, curD;
 		var rgba, tplObj;
+		var polygon;
 
 		// make sure there is a faction entry for disputed systems
 		if(!factions['D']) {
@@ -334,10 +337,46 @@ module.exports = (function () {
 						this.markup.borderLabels += `<path data-id="${tplObj.cId}"
 							d="${tplObj.d}"
 							style="stroke: #0052; stroke-width: .3; fill: none;" />`;
+							
+						for(var pi = 0; pi < curPolyline.candidates[ci].polygons.length; pi++) {
+							polygon = curPolyline.candidates[ci].polygons[pi];
+							curD = '';
+							for(var ppi = 0; ppi < polygon.length; ppi++) {
+								if(ppi === 0) {
+									curD = 'M';
+								} else {
+									curD += ' L';
+								}
+								curD += polygon[ppi].x.toFixed(3);
+								curD += ','+(-polygon[ppi].y).toFixed(3);
+							}
+							if(!curD) {
+								continue;
+							}
+							curD += 'z';
+							this.markup.overlays += `<path d="${curD}" style="stroke-width: 0; fill: #0a05" />`;
+						}
+						var cLine; 
+						var cpLine;
+						for(var cli = 0; cli < curPolyline.candidates[ci].lines.length; cli++) {
+							cLine = curPolyline.candidates[ci].lines[cli];
+							if(!cLine) {
+								console.log(cLine);
+								continue;
+							}
+							for(var cpli = 0; cpli < cLine.length; cpli++) {
+								if(!cLine[cpli] || !cLine[cpli].p0 || !cLine[cpli].p1) {
+									continue;
+								}
+								curD = 'M'+cLine[cpli].p0.x.toFixed(3)+','+(-cLine[cpli].p0.y).toFixed(3);
+								curD += ' L'+cLine[cpli].p1.x.toFixed(3)+','+(-cLine[cpli].p1.y).toFixed(3);
+								this.markup.overlays += `<path d="${curD}" style="stroke-width: .5; stroke: #0c0" />`;
+							}
+						}
 					}
 				}
 			}
-			var polygon = [
+			/*var polygon = [
 				{x: 296.99, y: -79.169},
 				{x: 299.073, y: -81.669},
 				{x: 301.25525, y: -81.669},
@@ -364,7 +403,7 @@ module.exports = (function () {
 			for(var i = 0; i < lines.length; i++) {
 				this.markup.borderLabels += `<line x1="${lines[i].x1}" y1="${lines[i].y1}"
 					x2="${lines[i].x2}" y2="${lines[i].y2}" style="stroke-width: 0.3; stroke: #0c0;" />`;
-			}
+			}*/
 
 		}
 	};
