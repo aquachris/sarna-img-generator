@@ -139,8 +139,8 @@ var main = function () {
 
 	// border labelling
 	focusedSystems.push('Sol');
-	//focusedSystems.push('Cassias');
-    focusedSystems.push('Desolate Plains');
+	focusedSystems.push('Cassias');
+    //focusedSystems.push('Desolate Plains');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -217,8 +217,8 @@ var main = function () {
 
     		// clamp the systems and borders to the image's viewBox
     		clampedSystems = Utils.clampObjects(reader.systems, viewRect, 0);
-    		clampedBorders = vBorder.generateBoundedBorderLoops(viewRect);
             //clampedBorders = vBorder.borderEdgeLoops;
+    		clampedBorders = vBorder.generateBoundedBorderLoops(viewRect);
 
     		// initiate and execute the label manager
             labelMgr = new LabelManager(logger).init(
@@ -243,9 +243,6 @@ var main = function () {
 				1
 			);
             borderLabeler.generateLabels(clampedBorders);
-			//borderLabeler.extractPolylines(clampedBorders);
-			/*borderLabeler.generateCandidates();
-			borderLabeler.findCenterlines();*/
 
     		// create an svg with a universe picture
             writer.writeBorderSvg(

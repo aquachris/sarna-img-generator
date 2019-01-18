@@ -162,7 +162,7 @@ module.exports = (function () {
 	SvgWriter.prototype.renderFactions = function (settings, factions, borders, borderLabelLines) {
 		var borderLoops, curLoop;
 		var borderEdges;
-		var curEdge, curD;
+		var curEdge, prevEdge, curD;
 		var rgba, tplObj;
 		var polygon;
 
@@ -184,15 +184,6 @@ module.exports = (function () {
 
 		// iterate over factions and render borders / state areas
 		for(var faction in factions) {
-			// add faction labels (if faction centroids have been set)
-			/*if(factions[faction].centerX !== undefined && factions[faction].centerY !== undefined) {
-				els.factionLabels += '<text x="'+factions[faction].centerX.toFixed(3)+'"';
-				els.factionLabels += ' y="'+(-factions[faction].centerY).toFixed(3)+'" ';
-				els.factionLabels += ' class="faction-label '+faction+'">';
-				els.factionLabels +=	factions[faction].longName;
-				els.factionLabels += '</text>\n';
-			}*/
-
 			// add borders (if faction borders have been passed)
 			borderLoops = borders[faction];
 			if(!borderLoops || borderLoops.length === 0) {
@@ -255,159 +246,182 @@ module.exports = (function () {
 			var curPolyline;
 			var curCtrlPoints;
 			for(var faction in borderLabelLines) {
+				//console.log(faction + ' has ' + borderLabelLines[faction].length + ' polylines');
 				for(var pi = 0; pi < borderLabelLines[faction].length; pi++) {
 					curPolyline = borderLabelLines[faction][pi];
-					console.log(curPolyline.id, curPolyline.edges.length);
+					//console.log(curPolyline.id, curPolyline.edges.length);
 					curD = '';
 					curCtrlPoints = '';
-					for(var ei = 0; ei < curPolyline.edges.length; ei++) {
-						curEdge = curPolyline.edges[ei];
-						if(ei === 0) {
-							curD += 'M'+curEdge.n1.x.toFixed(2)+','+(-curEdge.n1.y).toFixed(2);
-						}
-						//if(curEdge.n1c2 === null || curEdge.n1c2 === undefined ||
-						//	curEdge.n2c1 === null || curEdge.n2c1 === undefined) {
-							curD += ' L' + curEdge.n2.x.toFixed(2)+','+(-curEdge.n2.y).toFixed(2);
-						/*} else {
-							curD += ' C' + curEdge.n1c2.x.toFixed(2)+','+(-curEdge.n1c2.y).toFixed(2);
-							curD += ' ' + curEdge.n2c1.x.toFixed(2)+','+(-curEdge.n2c1.y).toFixed(2);
-							curD += ' ' + curEdge.n2.x.toFixed(2)+','+(-curEdge.n2.y).toFixed(2);
-						}*/
-						// render control points
-						/*if(curEdge.n1c2 !== null && curEdge.n1c2 !== undefined &&
-							curEdge.n2c1 !== null && curEdge.n2c1 !== undefined) {
+
+					this.renderBorderLabels = true;
+					this.renderBorderLabelCandidates = false;
+
+					if(!!this.renderBorderLabels) {
+						//console.log(curPolyline.id, curPolyline.labels.length);
+						for(var li = 0; li < curPolyline.labels.length; li++) {
 							tplObj = {
-								x1 : curEdge.n1c2.x.toFixed(2),
-								y1 : (-curEdge.n1c2.y).toFixed(2),
-								x2 : curEdge.n2c1.x.toFixed(2),
-								y2 : (-curEdge.n2c1.y).toFixed(2)
+								plId : curPolyline.id,
+								lId : curPolyline.labels[li].id,
+								fill: curPolyline.fill,
+								x1 : curPolyline.labels[li].bl.x.toFixed(2),
+								y1 : (-curPolyline.labels[li].bl.y).toFixed(2),
+								x2 : curPolyline.labels[li].br.x.toFixed(2),
+								y2 : (-curPolyline.labels[li].br.y).toFixed(2),
+								text : curPolyline.labels[li].labelText,
+								opacity : 1,
+								rating: curPolyline.labels[li].rating.toFixed(3)
 							};
-							this.markup.borderLabels += `<circle cx="${tplObj.x1}" cy="${tplObj.y1}" r="0.3" style="fill: black;" />`;
-							this.markup.borderLabels += `<circle cx="${tplObj.x2}" cy="${tplObj.y2}" r="0.3" style="fill: black;" />`;
-						}*/
-					}
-					tplObj = {
-						plId : curPolyline.id,
-						stroke : '#000'
-					};
-					if(curPolyline.mergeFailed) {
-						tplObj.stroke = '#c00';
-					}
-					this.markup.borderLabels += `<path fill-rule="evenodd" data-id="${tplObj.plId}"
-						style="stroke: ${tplObj.stroke}; stroke-width: .3px; fill: none;" d="${curD}" />\n`;
-
-					for(var ci = 0; ci < curPolyline.candidates.length; ci++) {
-						tplObj = {
-							plId : curPolyline.id,
-							cId : curPolyline.candidates[ci].id,
-							x1 : curPolyline.candidates[ci].bl.x.toFixed(2),
-							y1 : (-curPolyline.candidates[ci].bl.y).toFixed(2),
-							x2 : curPolyline.candidates[ci].br.x.toFixed(2),
-							y2 : (-curPolyline.candidates[ci].br.y).toFixed(2)
-						};
-						this.markup.defs += `<path id="label-path-${tplObj.cId}"
-							d="M${tplObj.x1},${tplObj.y1} L${tplObj.x2},${tplObj.y2}" />`;
-						tplObj = {
-							plId : curPolyline.id,
-							cId : curPolyline.candidates[ci].id,
-							fill: curPolyline.fill,
-							x: curPolyline.candidates[ci].midPt.x.toFixed(2),
-							y: (-curPolyline.candidates[ci].midPt.y).toFixed(2),
-							text : curPolyline.candidates[ci].labelText,
-							opacity : curPolyline.candidates[ci].rating.toFixed(3)
-							//dist: curPolyline.candidates[ci].dist,
-						};
-						this.markup.borderLabels += `<circle cx="${tplObj.x}" cy="${tplObj.y}"
-							r=".7" style="stroke-width: 0; fill: #a00;" />\n`;
-						this.markup.borderLabels += `<text text-anchor="left">
-		    				<textPath xlink:href="#label-path-${tplObj.cId}">
-								<tspan style="fill: ${tplObj.fill}; opacity: ${tplObj.opacity}">${tplObj.text}</tspan></textPath>
-		  					</text>`;
-
-						tplObj = {
-							cId : curPolyline.candidates[ci].id,
-							x0: curPolyline.candidates[ci].bl.x.toFixed(3),
-							y0: (-curPolyline.candidates[ci].bl.y).toFixed(3),
-							x1: curPolyline.candidates[ci].tl.x.toFixed(3),
-							y1: (-curPolyline.candidates[ci].tl.y).toFixed(3),
-							x2: curPolyline.candidates[ci].tr.x.toFixed(3),
-							y2: (-curPolyline.candidates[ci].tr.y).toFixed(3),
-							x3: curPolyline.candidates[ci].br.x.toFixed(3),
-							y3: (-curPolyline.candidates[ci].br.y).toFixed(3)
-						};
-						tplObj.d = `M${tplObj.x0},${tplObj.y0} L${tplObj.x1},${tplObj.y1}
-							L${tplObj.x2},${tplObj.y2} L${tplObj.x3},${tplObj.y3} z`;
-						this.markup.borderLabels += `<path data-id="${tplObj.cId}"
-							d="${tplObj.d}"
-							style="stroke: #0052; stroke-width: .3; fill: none;" />`;
-
-						for(var pci = 0; pci < curPolyline.candidates[ci].polygons.length; pci++) {
-							polygon = curPolyline.candidates[ci].polygons[pci];
-							curD = '';
-							for(var ppi = 0; ppi < polygon.length; ppi++) {
-								if(ppi === 0) {
-									curD = 'M';
-								} else {
-									curD += ' L';
-								}
-								curD += polygon[ppi].x.toFixed(3);
-								curD += ','+(-polygon[ppi].y).toFixed(3);
+							// add label baseline path to defs
+							this.markup.defs += `<path id="label-path-${tplObj.lId}"
+								d="M${tplObj.x1},${tplObj.y1} L${tplObj.x2},${tplObj.y2}" />`;
+							// add label text element to borderLabels group
+							this.markup.borderLabels += `<text text-anchor="left" data-rating="${tplObj.rating}">
+			    				<textPath xlink:href="#label-path-${tplObj.lId}">`;
+							for(var ltpi = 0; ltpi < curPolyline.labels[li].labelParts.length; ltpi++) {
+								tplObj.text = curPolyline.labels[li].labelParts[ltpi];
+								tplObj.dx = (curPolyline.labels[li].dxValues[ltpi]).toFixed(2);
+								tplObj.dy = (curPolyline.labels[li].dyValues[ltpi]).toFixed(2);
+								this.markup.borderLabels += `<tspan dx="${tplObj.dx}" dy="${tplObj.dy}"
+									style="fill: ${tplObj.fill}; opacity: ${tplObj.opacity}">${tplObj.text}</tspan>`;
 							}
-							if(!curD) {
-								continue;
-							}
-							curD += 'z';
-							this.markup.overlays += `<path d="${curD}" style="stroke-width: 0; fill: #0a05" />`;
+							this.markup.borderLabels += `</textPath></text>`;
 						}
-						var cLine;
-						var cpLine;
-						for(var cli = 0; cli < curPolyline.candidates[ci].lines.length; cli++) {
-							cLine = curPolyline.candidates[ci].lines[cli];
-							if(!cLine) {
-								console.log(cLine);
-								continue;
+					}
+
+					if(!!this.renderBorderLabelCandidates) {
+						for(var ei = 0; ei < curPolyline.edges.length; ei++) {
+							curEdge = curPolyline.edges[ei];
+							if(ei === 0
+								//|| (prevEdge && curEdge.n1.x !== prevEdge.n2.x && curEdge.n1.y !== prevEdge.n2.y)
+							) {
+								curD += 'M'+curEdge.n1.x.toFixed(2)+','+(-curEdge.n1.y).toFixed(2);
 							}
-							for(var cpli = 0; cpli < cLine.length; cpli++) {
-								if(!cLine[cpli] || !cLine[cpli].p0 || !cLine[cpli].p1) {
+							//if(curEdge.n1c2 === null || curEdge.n1c2 === undefined ||
+							//	curEdge.n2c1 === null || curEdge.n2c1 === undefined) {
+							curD += ' L' + curEdge.n2.x.toFixed(2)+','+(-curEdge.n2.y).toFixed(2);
+							prevEdge = curEdge;
+							/*} else {
+								curD += ' C' + curEdge.n1c2.x.toFixed(2)+','+(-curEdge.n1c2.y).toFixed(2);
+								curD += ' ' + curEdge.n2c1.x.toFixed(2)+','+(-curEdge.n2c1.y).toFixed(2);
+								curD += ' ' + curEdge.n2.x.toFixed(2)+','+(-curEdge.n2.y).toFixed(2);
+							}*/
+							// render control points
+							/*if(curEdge.n1c2 !== null && curEdge.n1c2 !== undefined &&
+								curEdge.n2c1 !== null && curEdge.n2c1 !== undefined) {
+								tplObj = {
+									x1 : curEdge.n1c2.x.toFixed(2),
+									y1 : (-curEdge.n1c2.y).toFixed(2),
+									x2 : curEdge.n2c1.x.toFixed(2),
+									y2 : (-curEdge.n2c1.y).toFixed(2)
+								};
+								this.markup.borderLabels += `<circle cx="${tplObj.x1}" cy="${tplObj.y1}" r="0.3" style="fill: black;" />`;
+								this.markup.borderLabels += `<circle cx="${tplObj.x2}" cy="${tplObj.y2}" r="0.3" style="fill: black;" />`;
+							}*/
+						}
+						tplObj = {
+							plId : curPolyline.id,
+							stroke : '#000'
+						};
+						if(curPolyline.mergeFailed) {
+							tplObj.stroke = '#c00';
+						}
+						this.markup.borderLabels += `<path fill-rule="evenodd" data-id="${tplObj.plId}"
+							style="stroke: ${tplObj.stroke}; stroke-width: .3px; fill: none;" d="${curD}" />\n`;
+
+						for(var ci = 0; ci < curPolyline.candidates.length; ci++) {
+							tplObj = {
+								plId : curPolyline.id,
+								cId : curPolyline.candidates[ci].id,
+								x1 : curPolyline.candidates[ci].bl.x.toFixed(2),
+								y1 : (-curPolyline.candidates[ci].bl.y).toFixed(2),
+								x2 : curPolyline.candidates[ci].br.x.toFixed(2),
+								y2 : (-curPolyline.candidates[ci].br.y).toFixed(2)
+							};
+							this.markup.defs += `<path id="label-path-${tplObj.cId}"
+								d="M${tplObj.x1},${tplObj.y1} L${tplObj.x2},${tplObj.y2}" />`;
+							tplObj = {
+								plId : curPolyline.id,
+								cId : curPolyline.candidates[ci].id,
+								fill: curPolyline.fill,
+								x: curPolyline.candidates[ci].midPt.x.toFixed(2),
+								y: (-curPolyline.candidates[ci].midPt.y).toFixed(2),
+								text : curPolyline.candidates[ci].labelText,
+								opacity : curPolyline.candidates[ci].rating.toFixed(3)
+								//dist: curPolyline.candidates[ci].dist,
+							};
+							//console.log(curPolyline.candidates[ci].midPt);
+							this.markup.borderLabels += `<circle cx="${tplObj.x}" cy="${tplObj.y}"
+								r=".7" style="stroke-width: 0; fill: #a00;" />\n`;
+							this.markup.borderLabels += `<text text-anchor="left">
+			    				<textPath xlink:href="#label-path-${tplObj.cId}">`;
+
+							for(var ctpi = 0; ctpi < curPolyline.candidates[ci].labelParts.length; ctpi++) {
+								tplObj.text = curPolyline.candidates[ci].labelParts[ctpi];
+								tplObj.dx = (curPolyline.candidates[ci].dxValues[ctpi]).toFixed(2);
+								tplObj.dy = (curPolyline.candidates[ci].dyValues[ctpi]).toFixed(2);
+								if(tplObj.text === 'ComStar')
+									console.log(tplObj.text, tplObj.dx, tplObj.dy);
+								this.markup.borderLabels += `<tspan dx="${tplObj.dx}" dy="${tplObj.dy}"
+									style="fill: ${tplObj.fill}; opacity: ${tplObj.opacity}">${tplObj.text}</tspan>`;
+							}
+							this.markup.borderLabels += `</textPath></text>`;
+
+							tplObj = {
+								cId : curPolyline.candidates[ci].id,
+								x0: curPolyline.candidates[ci].bl.x.toFixed(3),
+								y0: (-curPolyline.candidates[ci].bl.y).toFixed(3),
+								x1: curPolyline.candidates[ci].tl.x.toFixed(3),
+								y1: (-curPolyline.candidates[ci].tl.y).toFixed(3),
+								x2: curPolyline.candidates[ci].tr.x.toFixed(3),
+								y2: (-curPolyline.candidates[ci].tr.y).toFixed(3),
+								x3: curPolyline.candidates[ci].br.x.toFixed(3),
+								y3: (-curPolyline.candidates[ci].br.y).toFixed(3)
+							};
+							tplObj.d = `M${tplObj.x0},${tplObj.y0} L${tplObj.x1},${tplObj.y1}
+								L${tplObj.x2},${tplObj.y2} L${tplObj.x3},${tplObj.y3} z`;
+							this.markup.borderLabels += `<path data-id="${tplObj.cId}"
+								d="${tplObj.d}"
+								style="stroke: #0052; stroke-width: .3; fill: none;" />`;
+
+							for(var pci = 0; pci < curPolyline.candidates[ci].polygons.length; pci++) {
+								polygon = curPolyline.candidates[ci].polygons[pci];
+								curD = '';
+								for(var ppi = 0; ppi < polygon.length; ppi++) {
+									if(ppi === 0) {
+										curD = 'M';
+									} else {
+										curD += ' L';
+									}
+									curD += polygon[ppi].x.toFixed(3);
+									curD += ','+(-polygon[ppi].y).toFixed(3);
+								}
+								if(!curD) {
 									continue;
 								}
-								curD = 'M'+cLine[cpli].p0.x.toFixed(3)+','+(-cLine[cpli].p0.y).toFixed(3);
-								curD += ' L'+cLine[cpli].p1.x.toFixed(3)+','+(-cLine[cpli].p1.y).toFixed(3);
-								this.markup.overlays += `<path d="${curD}" style="stroke-width: .5; stroke: #0c0" />`;
+								curD += 'z';
+								this.markup.overlays += `<path d="${curD}" style="stroke-width: 0; fill: #0a05" />`;
+							}
+							var cLine;
+							var cpLine;
+							for(var cli = 0; cli < curPolyline.candidates[ci].lines.length; cli++) {
+								cLine = curPolyline.candidates[ci].lines[cli];
+								if(!cLine) {
+									console.log(cLine);
+									continue;
+								}
+								for(var cpli = 0; cpli < cLine.length; cpli++) {
+									if(!cLine[cpli] || !cLine[cpli].p0 || !cLine[cpli].p1) {
+										continue;
+									}
+									curD = 'M'+cLine[cpli].p0.x.toFixed(3)+','+(-cLine[cpli].p0.y).toFixed(3);
+									curD += ' L'+cLine[cpli].p1.x.toFixed(3)+','+(-cLine[cpli].p1.y).toFixed(3);
+									this.markup.overlays += `<path d="${curD}" style="stroke-width: .5; stroke: #0c0" />`;
+								}
 							}
 						}
 					}
 				}
 			}
-			/*var polygon = [
-				{x: 296.99, y: -79.169},
-				{x: 299.073, y: -81.669},
-				{x: 301.25525, y: -81.669},
-				{x: 301.25525, y: -81.165},
-				{x: 299.595, y: -79.169}
-			];
-			var d;
-			for(var i = 0; i< polygon.length; i++) {
-				if(i === 0) {
-					d = 'M'
-				} else {
-					d += ' L';
-				}
-				d += polygon[i].x + ',' + polygon[i].y;
-			}
-			d += 'z';
-			this.markup.borderLabels += `<path d="${d}" style="stroke-width: 0; fill: #0a05" />`;
-
-			var lines = [{
-				x1: 296.993, y1: -79.169, x2: 299.073, y2: -81.669
-			}, {
-				x1: 301.255, y1: -81.165, x2: 299.595, y2: -79.169
-			}];
-			for(var i = 0; i < lines.length; i++) {
-				this.markup.borderLabels += `<line x1="${lines[i].x1}" y1="${lines[i].y1}"
-					x2="${lines[i].x2}" y2="${lines[i].y2}" style="stroke-width: 0.3; stroke: #0c0;" />`;
-			}*/
-
 		}
 	};
 

@@ -57,6 +57,7 @@ module.exports = (function () {
     BorderLabeler.prototype.generateLabels = function (borderLoops) {
         this.extractPolylines(borderLoops);
         this.generateCandidates();
+        this.selectCandidates();
     };
 
     /**
@@ -64,11 +65,12 @@ module.exports = (function () {
      * @private
      */
     BorderLabeler.prototype.extractPolylines = function (borderLoops) {
-        var curLoop, curEdge;
+        var curLoop, curEdge, otherEdge, tmpArr;
         var curPolyline;
         var firstLoopPolyline;
         var otherCol;
         var e1, e2;
+        var newPolylineAtBorderChange = false;
 
         this.polylines = {};
         for(var faction in borderLoops) {
@@ -90,7 +92,7 @@ module.exports = (function () {
     				}
                     // if the border "partner" side changes, open a new polyline
                     // otherCol is initially blank
-    				if(curEdge.leftCol !== otherCol) {
+    				if(otherCol === null || (newPolylineAtBorderChange && curEdge.leftCol !== otherCol)) {
     					// close existing polyline
                         if(curPolyline && curPolyline.edges.length > 0) {
                             this.polylines[faction].push(curPolyline);
@@ -102,7 +104,8 @@ module.exports = (function () {
                             loop : curLoop,
                             edges : [],
                             length : 0,
-                            candidates : []
+                            candidates : [],
+                            labels : []
                         };
                         if(!firstLoopPolyline) {
                             firstLoopPolyline = curPolyline;
@@ -122,6 +125,19 @@ module.exports = (function () {
                         // merge current polyline into first loop polyline
                         this.mergePolylines(firstLoopPolyline, curPolyline);
                     } else {
+                        // if the entire edge loop is not visible, make sure the polyline starts
+                        // with an edge "at the edge" of the screen,
+                        for(var ei = 0; ei < curPolyline.edges.length - 1; ei++) {
+                            curEdge = curPolyline.edges[ei];
+                            otherEdge = curPolyline.edges[ei+1];
+                            if(curEdge.n2.x !== otherEdge.n1.x || curEdge.n2.y !== otherEdge.n1.y) {
+                                // there is a break after index ei --> make ei + 1 the new starting edge
+                                tmpArr = curPolyline.edges.splice(0,ei+1)
+                                curPolyline.edges = curPolyline.edges.concat(tmpArr);
+                                break;
+                            }
+                        }
+
                         this.polylines[faction].push(curPolyline);
                     }
                 }
@@ -192,11 +208,16 @@ module.exports = (function () {
         var curDist;
         var faction;
         var labelWidth;
+        var splitLabel;
+        var splitLabelWidth;
         for(var factionKey in this.polylines) {
-            if(!this.polylines.hasOwnProperty(factionKey) || factionKey === 'DUMMY') {
+            faction = this.factions[factionKey];
+            if(!faction
+                || !this.polylines.hasOwnProperty(factionKey)
+                || factionKey === 'DUMMY'
+                || factionKey === 'I') {
                 continue;
             }
-            faction = this.factions[factionKey];
             console.log('generating candidates for ' + factionKey);
             labelWidth = this.calculateLabelLength(faction ? faction.longName : '');
             curLoop = null;
@@ -239,6 +260,7 @@ module.exports = (function () {
                     }
                     // remove the  next polyline from the List
                     this.polylines[factionKey].splice(i+1, 1);
+                    curDist = Utils.pointDistance(curPolyline.edges[0].n1, curPolyline.edges[curPolyline.edges.length-1].n2);
                 }
                 curLoop = curPolyline.loop;
             }
@@ -247,33 +269,108 @@ module.exports = (function () {
             // generate candidate locations for the (possibly) merged polylines
             for(var i = 0; i < this.polylines[factionKey].length; i++) {
                 curPolyline = this.polylines[factionKey][i];
-                curPolyline.candidates = this.findCandidatesIteratively(curPolyline, faction.longName, labelWidth);
+                this.findCandidatesIteratively(curPolyline, faction.longName);
+                // additionally generate candidates for the wrapped label if applicable
+                splitLabel = faction.longName.split(/\s+/g);
+                while(splitLabel.length > 2) {
+                    splitLabel.splice(0,2,splitLabel[0]+' '+splitLabel[1]);
+                }
+                if(splitLabel.length > 1) {
+                    this.findCandidatesIteratively(curPolyline, splitLabel);
+                }
             }
         }
 	};
 
     /**
+     * Select the labels from the list of candidates for each faction.
+     */
+    BorderLabeler.prototype.selectCandidates = function () {
+        var faction;
+        var curPolyline;
+        var factionLabels;
+
+        for(var factionKey in this.polylines) {
+            faction = this.factions[factionKey];
+            factionLabels = [];
+            if(!faction
+                || !this.polylines.hasOwnProperty(factionKey)
+                || factionKey === 'DUMMY'
+                || factionKey === 'I') {
+                continue;
+            }
+            for(var i = 0; i < this.polylines[factionKey].length; i++) {
+                curPolyline = this.polylines[factionKey][i];
+                while(curPolyline.candidates.length > 0) {
+                    this.rateAndSortCandidates(factionLabels, curPolyline.candidates);
+                    if(!curPolyline.candidates[0].taboo && curPolyline.candidates[0].rating >= 0.4) {
+                        console.log('new ' + curPolyline.candidates[0].id +', ' + curPolyline.candidates[0].rating);
+                        factionLabels.push(curPolyline.candidates[0]);
+                        curPolyline.labels.push(Utils.deepCopy(curPolyline.candidates[0]));
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+    };
+
+    /**
      * Generates candidates along the polyline.
      *
      * @param polyline {Object} The polyline
-     * @param labelText {String} The label text to place
+     * @param labelTextParts {Array} The label text to place
      * @param labelWidth {Number} The label text's width in map units
-     * @returns {Array} An array of candidate positions along the polyline
      * @private
      */
-    BorderLabeler.prototype.findCandidatesIteratively = function (polyline, labelText, labelWidth) {
-        var candidates = [];
+    BorderLabeler.prototype.findCandidatesIteratively = function (polyline, labelTextParts) {
+        var candidates = polyline.candidates || [];
         var startPos = 0; // the starting position along the polyline (a number btw. 0 and the polyline's length)
         var endPos = 0; // the end position along the polyline (see above)
-        var startPosStepSize = labelWidth * .5; // the distance (on the polyline) between candidates
-        var searchStepSize = labelWidth * .1; // the size of the next incremental search step
         var startPt, endPt;
         var newCandidate, controlPoints, curCtrlPt, ctrlPointDist;
         var angle, candidateLine, tmp;
+        var labelWidths = [];
+        var maxLabelWidth = 0;
+        var totalLabelWidth = 0;
+        var labelDxValues = [];
+        var dxSum = 0;
+        var labelDyValues = [];
+        var startPosStepSize; // the distance (on the polyline) between candidates
+        var searchStepSize; // the size of the next incremental search step
+
+        if(labelTextParts && typeof labelTextParts === 'string') {
+            labelTextParts = [labelTextParts];
+        }
+        if(!labelTextParts || labelTextParts.length === 0) {
+            this.logger.warn('BorderLabeler could not find label candidates: No label text for polyline "'+polyline.id+'".');
+            return;
+        }
+        // calculate label widths
+        for(var i = 0; i < labelTextParts.length; i++) {
+            labelWidths.push(this.calculateLabelLength(labelTextParts[i]));
+            maxLabelWidth = Math.max(maxLabelWidth, labelWidths[labelWidths.length-1]);
+        }
+        totalLabelWidth = this.calculateLabelLength(labelTextParts.join(' '));
+        // calculate dx / dy values
+        for(var i = 0; i < labelTextParts.length; i++) {
+            // negate all the preceding label parts
+            labelDxValues.push((maxLabelWidth - labelWidths[i]) * .5 - dxSum);
+            dxSum += labelDxValues[i] + labelWidths[i];
+            if(i === 0) {
+                labelDyValues.push((labelTextParts.length-1) * -this.glyphSettings.lineHeight);
+            } else {
+                labelDyValues.push(i * this.glyphSettings.lineHeight);
+            }
+        }
+
+        // TODO make these configurable
+        startPosStepSize = totalLabelWidth * .25; // the distance (on the polyline) between candidates
+        searchStepSize = totalLabelWidth * .05; // the size of the next incremental search step
 
         while(endPos < polyline.length) {// && labelText === 'Draconis Combine') {
             // look at a new starting position
-            endPos = startPos + labelWidth;
+            endPos = startPos + maxLabelWidth;
             startPt = Utils.pointAlongPolyline(polyline.edges, startPos);
             do {
                 endPt = Utils.pointAlongPolyline(polyline.edges, endPos);
@@ -281,13 +378,14 @@ module.exports = (function () {
                 if(!endPt) {
                     break;
                 }
-            } while(Utils.pointDistance(startPt, endPt) < labelWidth);
+            } while(Utils.pointDistance(startPt, endPt) < maxLabelWidth);
             // abort if the current candidate goes beyond the polyline
             if(!endPt) {
                 break;
             }
             // the candidate's start and end point have been found
             newCandidate = {
+                polylineId : polyline.id,
                 midPt : {x: (startPt.x + endPt.x) * .5, y: (startPt.y + endPt.y) * .5 },
                 fromPt : startPt,
                 toPt : endPt,
@@ -295,10 +393,14 @@ module.exports = (function () {
                 startPos : startPos,
                 endPos : endPos - searchStepSize,
                 midPosByPolylineLength : ((startPos + endPos) / 2) / polyline.length,
-                labelText : labelText,
-                labelWidth : labelWidth,
+                labelText : labelTextParts[0],
+                labelParts : labelTextParts,
+                labelWidth : maxLabelWidth,
+                labelHeight : labelTextParts.length * this.glyphSettings.lineHeight,
                 controlPointDist : -Infinity,
-                verticalOffset : -Infinity
+                verticalOffset : -Infinity,
+                dxValues : labelDxValues,
+                dyValues : labelDyValues
             };
             // get a different mathematical representation of the candidate line
             candidateLine = Utils.lineFromPoints([startPt.x, startPt.y], [endPt.x, endPt.y]);
@@ -353,11 +455,13 @@ module.exports = (function () {
                 newCandidate.angle = (angle + 180) % 360;
 				newCandidate.flipped = true;
                 newCandidate.verticalOffset = -newCandidate.controlPointDist;
+                newCandidate.lineOffset = -this.glyphSettings.lineHeight;
                 //Math.min(-1.5, -newCandidate.controlPointDist);
             } else {
 				newCandidate.angle = angle;
 				newCandidate.flipped = false;
-                newCandidate.verticalOffset =  newCandidate.controlPointDist + this.glyphSettings.lineHeight;
+                newCandidate.verticalOffset =  newCandidate.controlPointDist + newCandidate.labelHeight;
+                newCandidate.lineOffset = this.glyphSettings.lineHeight;
                 //Math.max(1, newCandidate.controlPointDist) + this.glyphSettings.lineHeight; // TODO this is the minimum offset!
             }
 
@@ -372,9 +476,9 @@ module.exports = (function () {
 				y: newCandidate.toPt.y + perpVec[1]
 			};
 			if(newCandidate.flipped) {
-				Utils.scaleVector2d(perpVec, Math.abs(newCandidate.verticalOffset) + this.glyphSettings.lineHeight);
+				Utils.scaleVector2d(perpVec, Math.abs(newCandidate.verticalOffset) + newCandidate.labelHeight);
 			} else {
-				Utils.scaleVector2d(perpVec, Math.abs(newCandidate.verticalOffset) - this.glyphSettings.lineHeight);
+				Utils.scaleVector2d(perpVec, Math.abs(newCandidate.verticalOffset) - newCandidate.labelHeight);
 			}
 			newCandidate.tl = {
 				x: newCandidate.fromPt.x + perpVec[0],
@@ -384,6 +488,10 @@ module.exports = (function () {
 				x: newCandidate.toPt.x + perpVec[0],
 				y: newCandidate.toPt.y + perpVec[1]
 			};
+
+            // calculate the label parts' vertical and horizontal offsets
+            // from the label baseline (anchor is at bottom left)
+
 
 			newCandidate.id = polyline.id + '_' + candidates.length;
 			// candidate is ready to go
@@ -402,9 +510,8 @@ module.exports = (function () {
         }
         console.log(candidates.length + ' candidates');*/
         // DEBUG END
-        this.rateAndSortCandidates(candidates);
 
-        return candidates;
+        polyline.candidates = candidates;
     };
 
     /**
@@ -442,9 +549,10 @@ module.exports = (function () {
      * Add a numerical rating between 0 (bad) and 1 (good) to each of the given candidates,
      * and sort the candidates array by rating (in descending fashion).
      *
+     * @param placedLabels {Array} The labels that have already been placed
      * @param candidates {Array} The candidates to rate. Note that this array will be changed.
      */
-    BorderLabeler.prototype.rateAndSortCandidates = function (candidates) {
+    BorderLabeler.prototype.rateAndSortCandidates = function (placedLabels, candidates) {
         var weights = { // TODO make this a config option
             overlap: .6,
             angle: .125,
@@ -460,8 +568,17 @@ module.exports = (function () {
         var centerednessRating;
 		var polygons, lines;
 
+        // minimum position distance between label midpoints
+        // minimum euclidean distance between label midpoints
+        // TODO make these configurable
+        var minPosDist = 25;
+        var minTrueDist = 35;
+
         if(!candidates || candidates.length === 0) {
             return;
+        }
+        if(!placedLabels) {
+            placedLabels = [];
         }
 
         overlapMax = candidates[0].labelWidth * this.glyphSettings.lineHeight;
@@ -475,6 +592,26 @@ module.exports = (function () {
             curCandidate = candidates[i];
 			polygons = [];
 			lines = [];
+
+            // disqualify the candidate if the label does not fit into the viewRect fully
+            if(!Utils.pointInRectangle(curCandidate.bl, this.viewRect)
+                || !Utils.pointInRectangle(curCandidate.tl, this.viewRect)
+                || !Utils.pointInRectangle(curCandidate.tr, this.viewRect)
+                || !Utils.pointInRectangle(curCandidate.br, this.viewRect)) {
+                curCandidate.taboo = true;
+            }
+
+            // disqualify the label if it is too close to another label that
+            // already exists for this faction
+            for(var li = 0; li < placedLabels.length; li++) {
+                if( (placedLabels[li].polylineId === curCandidate.polylineId
+                        && Math.abs(placedLabels[li].midPos, curCandidate.midPos) < minPosDist)
+                    || (Utils.pointDistance(placedLabels[li].midPt, curCandidate.midPt) < minTrueDist)
+                ) {
+                    curCandidate.taboo = true;
+                    break;
+                }
+            }
 
             // rate the overlap area
             overlapArea = this.findCandidateOverlapWithExistingLabels(curCandidate, polygons, lines);
@@ -498,13 +635,18 @@ module.exports = (function () {
             centerednessRating *= weights.centeredness;
 
             curCandidate.rating = overlapRating + angleRating + verticalDistanceRating + centerednessRating;
-			curCandidate.polygons = polygons;
-			curCandidate.lines = lines;
+            curCandidate.polygons = polygons;
+            curCandidate.lines = lines;
         }
 
-        /*candidates.sort(function (a, b) {
-            return a.rating - b.rating;
-        });*/
+        candidates.sort(function (a, b) {
+            if(!a.taboo && !!b.taboo) {
+                return -1;
+            } else if(!!a.taboo && !b.taboo) {
+                return 1;
+            }
+            return b.rating - a.rating;
+        });
     };
 
     BorderLabeler.prototype.findCandidateOverlapWithExistingLabels = function (candidate, polygons, lines) {

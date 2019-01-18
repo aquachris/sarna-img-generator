@@ -354,6 +354,9 @@ module.exports = (function () {
 
                 curLoop.edges.push(curEdge);
             }
+            if(curLoop) {
+                colLoops.push(curLoop);
+            }
 
             // We now have neat loops, but they are not guaranteed to be in clockwise order
             // loop over the loops again (ha!), and make them clockwise if necessary.
