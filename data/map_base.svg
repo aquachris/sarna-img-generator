@@ -68,7 +68,7 @@
 		text.system-label tspan.sup { font-size: 1.5px; }
 		text.system-label.apocryphal tspan.sup { fill: #c00 }
 		text.faction-label { fill: #aaa; font-size: 6px; font-style: italic; font-weight: bold; text-shadow: .05em .05em 0 #eee, -.05em .05em 0 #eee, .05em -.05em 0 #eee, -.05em -.05em 0 #eee; }
-		g.border-labels text { alignment-baseline: middle; font-size: 2px; font-style: italic; font-weight: bold; }
+		g.border-labels text { alignment-baseline: middle; font-size: 1.8px; font-style: italic; font-weight: bold; }
 		path.label-connector { fill: none; stroke: #000; stroke-width: 0.25; }
 		.minimap-outer text { font-size: 60px; text-shadow: 1px 1px 0 #fff, -1px 1px 0 #fff, 1px -1px 0 #fff, -1px -1px 0 #fff; }
 		.minimap-outer text .smaller { font-size: 45px; }

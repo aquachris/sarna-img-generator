@@ -387,6 +387,60 @@ module.exports = (function () {
 	};
 
     /**
+     * Checks whether the two lines described by two points on each line (p0 and p1, p2 and p3) intersect.
+     * Note that this does NOT check for the given line "segments", but for the infinite line.
+     *
+     * @param p0 {Object} The first line's first point
+     * @param p1 {Object} The first line's second point
+     * @param p2 {Object} The second line's first point
+     * @param p3 {Object} The second line's second point
+     * @returns {boolean} true if the lines intersect
+     * @see https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect/1201356#1201356
+     */
+    Utils.doLinesIntersect = function (p0, p1, p2, p3) {
+        // make sure the lines have lengths > 0
+        if( (p0.x === p1.x && p0.y === p1.y)
+            || (p2.x === p3.x && p2.y === p3.y) ) {
+            return false;
+        } else if(p0.x === p1.x) {
+            return !(p2.x === p3.x && p0.x !== p2.x);
+        } else if(p2.x === p3.x) {
+            return true;
+        } else {
+            // neither line is parallel to the y-axis
+            return (p0.y-p1.y) / (p0.x-p1.x) !== (p2.y-p3.y) / (p2.x-p3.x);
+        }
+    };
+
+    /**
+     * @param p0 {Object} The first line's start point
+     * @param p1 {Object} The first line's end point
+     * @param p2 {Object} The second line's start point
+     * @param p3 {Object} The second line's end point
+     * @returns {Object} The intersection point, or null
+     * @see https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect/1201356#1201356
+     */
+    Utils.getLineSegmentsIntersection = function(p0, p1, p2, p3) {
+        var s1 = {};
+        var s2 = {};
+        s1.x = p1.x - p0.x;
+        s1.y = p1.y - p0.y;
+        s2.x = p3.x - p2.x;
+        s2.y = p3.y - p2.y;
+        var s, t;
+        s = (-s1.y * (p0.x - p2.x) + s1.x * (p0.y - p2.y)) / (-s2.x * s1.y + s1.x * s2.y);
+        t = ( s2.x * (p0.y - p2.y) - s2.y * (p0.x - p2.x)) / (-s2.x * s1.y + s1.x * s2.y);
+        if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+            // Collision detected
+            return {
+                x: p0.x + (t * s1.x),
+                y: p0.y + (t * s1.y)
+            };
+        }
+        return null; // No collision
+    };
+
+    /**
      * Returns intersection points of a line with a rectangle.
      *
      * @param line {Object} The line (an object with properties x1, y1, x2 and y2)
@@ -655,11 +709,29 @@ module.exports = (function () {
         var polygon = [];
         for(var i = 0; i < clippedLines.length; i++) {
             if(!clippedLines[i]) {
+                clippedLines.splice(i,1);
+                i--;
                 continue;
+            } else {
+                // add points to the polygon
+                polygon.push(clippedLines[i].p0);
+                polygon.push(clippedLines[i].p1);
             }
-            // add points to the polygon
-            polygon.push(clippedLines[i].p0);
-            polygon.push(clippedLines[i].p1);
+        }
+
+        // check if the entire rectangle lies within the rotated rectangle
+        if(clippedLines.length === 0) {
+            if(
+                Math.min(rotRect.p0.x, rotRect.p1.x, rotRect.p2.x, rotRect.p3.x) < corners.bl.x
+                && Math.max(rotRect.p0.x, rotRect.p1.x, rotRect.p2.x, rotRect.p3.x) > corners.tl.x
+                && Math.min(rotRect.p0.y, rotRect.p1.y, rotRect.p2.y, rotRect.p3.y) < corners.br.y
+                && Math.max(rotRect.p0.y, rotRect.p1.y, rotRect.p2.y, rotRect.p3.y) > corners.tr.y
+            ) {
+                polygon.push(corners.bl);
+                polygon.push(corners.tl);
+                polygon.push(corners.tr);
+                polygon.push(corners.br);
+            }
         }
 
         // clean up and complete the polygon
@@ -759,10 +831,10 @@ module.exports = (function () {
             BOTTOM: 4,
             TOP: 8
         };
-		/*console.log('xMin ' + xMin.toFixed(2) + ', xMax ' + xMax.toFixed(2) );
-		console.log('yMin ' + yMin.toFixed(2) + ', yMax ' + yMax.toFixed(2) );
-		console.log('pFrom ' + pFrom.x + ',' + pFrom.y);
-		console.log('pTo ' + pTo.x + ',' + pTo.y);*/
+		//console.log('xMin ' + xMin.toFixed(2) + ', xMax ' + xMax.toFixed(2) );
+		//console.log('yMin ' + yMin.toFixed(2) + ', yMax ' + yMax.toFixed(2) );
+		//console.log('pFrom ' + pFrom.x + ',' + pFrom.y);
+		//console.log('pTo ' + pTo.x + ',' + pTo.y);
         var p0 = this.deepCopy(pFrom);
         var p1 = this.deepCopy(pTo);
         var x, y;

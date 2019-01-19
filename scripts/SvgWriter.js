@@ -163,7 +163,7 @@ module.exports = (function () {
 		var borderLoops, curLoop;
 		var borderEdges;
 		var curEdge, prevEdge, curD;
-		var rgba, tplObj;
+		var rgba, hex, tplObj;
 		var polygon;
 
 		// make sure there is a faction entry for disputed systems
@@ -249,6 +249,12 @@ module.exports = (function () {
 				//console.log(faction + ' has ' + borderLabelLines[faction].length + ' polylines');
 				for(var pi = 0; pi < borderLabelLines[faction].length; pi++) {
 					curPolyline = borderLabelLines[faction][pi];
+					// make sure the border labels are visible against the faction background
+					rgba = this.hexToRgba(curPolyline.fill) || {r:0,g:0,b:0};
+					if(rgba.r + rgba.g + rgba.b >= 600) {
+						rgba.r = rgba.g = rgba.b = 0;
+					}
+					hex = this.rgbToHex(rgba.r, rgba.g, rgba.b);
 					//console.log(curPolyline.id, curPolyline.edges.length);
 					curD = '';
 					curCtrlPoints = '';
@@ -262,7 +268,7 @@ module.exports = (function () {
 							tplObj = {
 								plId : curPolyline.id,
 								lId : curPolyline.labels[li].id,
-								fill: curPolyline.fill,
+								fill: hex,
 								x1 : curPolyline.labels[li].bl.x.toFixed(2),
 								y1 : (-curPolyline.labels[li].bl.y).toFixed(2),
 								x2 : curPolyline.labels[li].br.x.toFixed(2),
@@ -329,6 +335,9 @@ module.exports = (function () {
 							style="stroke: ${tplObj.stroke}; stroke-width: .3px; fill: none;" d="${curD}" />\n`;
 
 						for(var ci = 0; ci < curPolyline.candidates.length; ci++) {
+							/*if(curPolyline.candidates[ci].id !== 'FS_0_63') {
+								continue;
+							}*/
 							tplObj = {
 								plId : curPolyline.id,
 								cId : curPolyline.candidates[ci].id,
@@ -359,8 +368,6 @@ module.exports = (function () {
 								tplObj.text = curPolyline.candidates[ci].labelParts[ctpi];
 								tplObj.dx = (curPolyline.candidates[ci].dxValues[ctpi]).toFixed(2);
 								tplObj.dy = (curPolyline.candidates[ci].dyValues[ctpi]).toFixed(2);
-								if(tplObj.text === 'ComStar')
-									console.log(tplObj.text, tplObj.dx, tplObj.dy);
 								this.markup.borderLabels += `<tspan dx="${tplObj.dx}" dy="${tplObj.dy}"
 									style="fill: ${tplObj.fill}; opacity: ${tplObj.opacity}">${tplObj.text}</tspan>`;
 							}
@@ -415,7 +422,7 @@ module.exports = (function () {
 									}
 									curD = 'M'+cLine[cpli].p0.x.toFixed(3)+','+(-cLine[cpli].p0.y).toFixed(3);
 									curD += ' L'+cLine[cpli].p1.x.toFixed(3)+','+(-cLine[cpli].p1.y).toFixed(3);
-									this.markup.overlays += `<path d="${curD}" style="stroke-width: .5; stroke: #0c0" />`;
+									this.markup.overlays += `<path d="${curD}" style="stroke-width: .25; stroke: #0c0" />`;
 								}
 							}
 						}
