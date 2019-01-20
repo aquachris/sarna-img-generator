@@ -139,9 +139,12 @@ var main = function () {
 
 	// border labelling
 	focusedSystems.push('Sol');
-	//focusedSystems.push('Cassias');
-    //focusedSystems.push('Desolate Plains');
+	focusedSystems.push('Cassias');
+    focusedSystems.push('Desolate Plains');
     focusedSystems.push('Strana Mechty');
+    focusedSystems.push('Versailles');
+    focusedSystems.push('El Dorado');
+    //focusedSystems.push('Bremen');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -160,7 +163,7 @@ var main = function () {
                 minimapViewRect.y = reader.systems[i].y - 300;
                 break;
             }
-			if(reader.systems[i].name.startsWith('Sol')) console.log(reader.systems[i].name);
+			//if(reader.systems[i].name.startsWith('Sol')) console.log(reader.systems[i].name);
         }
 
         // clamp nebulae to view box

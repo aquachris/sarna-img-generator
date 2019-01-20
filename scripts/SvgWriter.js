@@ -275,13 +275,15 @@ module.exports = (function () {
 								y2 : (-curPolyline.labels[li].br.y).toFixed(2),
 								text : curPolyline.labels[li].labelText,
 								opacity : 1,
-								rating: curPolyline.labels[li].rating.toFixed(3)
+								rating: curPolyline.labels[li].rating.toFixed(3),
+								midPos: curPolyline.labels[li].midPos.toFixed(3)
 							};
 							// add label baseline path to defs
 							this.markup.defs += `<path id="label-path-${tplObj.lId}"
 								d="M${tplObj.x1},${tplObj.y1} L${tplObj.x2},${tplObj.y2}" />`;
 							// add label text element to borderLabels group
-							this.markup.borderLabels += `<text text-anchor="left" data-rating="${tplObj.rating}">
+							this.markup.borderLabels += `<text text-anchor="left"
+								data-rating="${tplObj.rating}" data-mid-pos="${tplObj.midPos}">
 			    				<textPath xlink:href="#label-path-${tplObj.lId}">`;
 							for(var ltpi = 0; ltpi < curPolyline.labels[li].labelParts.length; ltpi++) {
 								tplObj.text = curPolyline.labels[li].labelParts[ltpi];
@@ -335,9 +337,11 @@ module.exports = (function () {
 							style="stroke: ${tplObj.stroke}; stroke-width: .3px; fill: none;" d="${curD}" />\n`;
 
 						for(var ci = 0; ci < curPolyline.candidates.length; ci++) {
-							/*if(curPolyline.candidates[ci].id !== 'FS_0_63') {
+							// DEBUG
+							/*if(curPolyline.candidates[ci].id !== 'FS_0_9') {
 								continue;
 							}*/
+							// END DEBUG
 							tplObj = {
 								plId : curPolyline.id,
 								cId : curPolyline.candidates[ci].id,
@@ -351,25 +355,30 @@ module.exports = (function () {
 							tplObj = {
 								plId : curPolyline.id,
 								cId : curPolyline.candidates[ci].id,
-								fill: curPolyline.fill,
+								fill: hex,
 								x: curPolyline.candidates[ci].midPt.x.toFixed(2),
 								y: (-curPolyline.candidates[ci].midPt.y).toFixed(2),
 								text : curPolyline.candidates[ci].labelText,
-								opacity : curPolyline.candidates[ci].rating.toFixed(3)
+								rating : curPolyline.candidates[ci].rating.toFixed(4),
+								isAbove : curPolyline.candidates[ci].labelIsAbovePolyline,
+								innerLoop : curPolyline.candidates[ci].inInnerLoop,
+								angle : curPolyline.candidates[ci].angle.toFixed(3)
 								//dist: curPolyline.candidates[ci].dist,
 							};
 							//console.log(curPolyline.candidates[ci].midPt);
 							this.markup.borderLabels += `<circle cx="${tplObj.x}" cy="${tplObj.y}"
-								r=".7" style="stroke-width: 0; fill: #a00;" />\n`;
+								r=".7" style="stroke-width: 0; fill: #a00;" data-above="${tplObj.isAbove}" />\n`;
 							this.markup.borderLabels += `<text text-anchor="left">
-			    				<textPath xlink:href="#label-path-${tplObj.cId}">`;
+			    				<textPath xlink:href="#label-path-${tplObj.cId}"
+								data-rating="${tplObj.rating}" data-angle="${tplObj.angle}"
+								data-above="${tplObj.isAbove}" data-inner-loop="${tplObj.innerLoop}">`;
 
 							for(var ctpi = 0; ctpi < curPolyline.candidates[ci].labelParts.length; ctpi++) {
 								tplObj.text = curPolyline.candidates[ci].labelParts[ctpi];
 								tplObj.dx = (curPolyline.candidates[ci].dxValues[ctpi]).toFixed(2);
 								tplObj.dy = (curPolyline.candidates[ci].dyValues[ctpi]).toFixed(2);
 								this.markup.borderLabels += `<tspan dx="${tplObj.dx}" dy="${tplObj.dy}"
-									style="fill: ${tplObj.fill}; opacity: ${tplObj.opacity}">${tplObj.text}</tspan>`;
+									style="fill: ${tplObj.fill};">${tplObj.text}</tspan>`;
 							}
 							this.markup.borderLabels += `</textPath></text>`;
 

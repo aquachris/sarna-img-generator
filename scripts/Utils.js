@@ -265,6 +265,17 @@ module.exports = (function () {
     };
 
     /**
+     * Multiplies the given vector by the scalar value. Note that the vector will be changed.
+     *
+     * @param v {Array} 2-piece array representing the vector
+     * @param scalar {Number} The scalar value
+     */
+    Utils.scalarMultVector2d = function (v, scalar) {
+        v[0] *= scalar;
+        v[1] *= scalar;
+    };
+
+    /**
      * Scales vector to 1. Note that the passed vector will be changed.
      *
      * @param v {Array} 2-piece array representing the vector
