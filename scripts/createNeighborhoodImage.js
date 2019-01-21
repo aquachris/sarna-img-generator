@@ -138,13 +138,14 @@ var main = function () {
     //focusedSystems.push('Greifswald');
 
 	// border labelling
-	focusedSystems.push('Sol');
-	focusedSystems.push('Cassias');
-    focusedSystems.push('Desolate Plains');
-    focusedSystems.push('Strana Mechty');
-    focusedSystems.push('Versailles');
-    focusedSystems.push('El Dorado');
+	//focusedSystems.push('Sol');
+	//focusedSystems.push('Cassias');
+    //focusedSystems.push('Desolate Plains');
+    //focusedSystems.push('Strana Mechty');
+    //focusedSystems.push('Versailles');
+    //focusedSystems.push('El Dorado');
     //focusedSystems.push('Bremen');
+    focusedSystems.push('St. Ives');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -172,7 +173,8 @@ var main = function () {
 
         // for each era ...
     	//for(var eraI = 0; eraI < 1; eraI++) {
-    	for(var eraI = 16; eraI < 17; eraI++) {
+        for(var eraI = 4; eraI < 5; eraI++) { // 2367
+    	//for(var eraI = 16; eraI < 17; eraI++) { // 3025
     	//for(var eraI = 0; eraI < reader.eras.length; eraI++) {
     		curEra = reader.eras[eraI];
     		reservedPoints = [];

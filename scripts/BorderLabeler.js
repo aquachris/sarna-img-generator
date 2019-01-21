@@ -201,25 +201,6 @@ module.exports = (function () {
         return true;
     };
 
-    /**
-     * Calculates the label's length for the given text.
-     *
-     * @param text {String} The text
-     * @returns {Number} The label length, in map units
-     * @private
-     */
-    BorderLabeler.prototype.calculateLabelLength = function (text) {
-        var length = 0;
-        var lineH = this.glyphSettings.lineHeight;
-        var charDefaultWidth = this.glyphSettings.widths.default;
-
-        for(var i = 0; i < text.length; i++) {
-            length += (this.glyphSettings.widths[text[i]] || charDefaultWidth);
-        }
-
-        return length;
-    };
-
 	/**
 	 * Generates candidate positions.
 	 */
@@ -295,14 +276,12 @@ module.exports = (function () {
             // second pass:
             // generate candidate locations for the (possibly) merged polylines
             numCurFactionCandidates = 0;
+            splitLabelWidth = 0;
             for(var i = 0; i < this.polylines[factionKey].length; i++) {
                 curPolyline = this.polylines[factionKey][i];
                 this.findCandidatesIteratively(curPolyline, faction.longName);
                 // additionally generate candidates for the wrapped label if applicable
-                splitLabel = faction.longName.split(/\s+/g);
-                while(splitLabel.length > 2) {
-                    splitLabel.splice(0,2,splitLabel[0]+' '+splitLabel[1]);
-                }
+                splitLabel = this.splitLabelOptimally(faction.longName);
                 if(splitLabel.length > 1) {
                     this.findCandidatesIteratively(curPolyline, splitLabel);
                 }
@@ -800,7 +779,7 @@ module.exports = (function () {
             if(curCandidate.angle <= 90) {
                 angleRating = Math.abs(90 - curCandidate.angle) / 90;
             } else { // 270 <= angle < 360
-                angleRating = Math.abs(90 - (curCandidate.angle - 270)) / 90;
+                angleRating = Math.abs(curCandidate.angle - 270) / 90;
             }
             angleRating *= this.settings.weights.angle;
 
@@ -906,6 +885,61 @@ module.exports = (function () {
                 );
             }
         }
+    };
+
+    /**
+     * Calculates the label's length for the given text.
+     *
+     * @param text {String} The text
+     * @returns {Number} The label length, in map units
+     * @private
+     */
+    BorderLabeler.prototype.calculateLabelLength = function (text) {
+        var length = 0;
+        var lineH = this.glyphSettings.lineHeight;
+        var charDefaultWidth = this.glyphSettings.widths.default;
+
+        for(var i = 0; i < text.length; i++) {
+            length += (this.glyphSettings.widths[text[i]] || charDefaultWidth);
+        }
+
+        return length;
+    };
+
+    /**
+     * Looks for an optimal two-line split for a given label.
+     *
+     * @param label {String} The full, un-split label
+     * @returns {Array} The label parts (1- or 2-part array)
+     */
+    BorderLabeler.prototype.splitLabelOptimally = function (label) {
+        var firstLine = label.trim();
+        var secondLine = '';
+        var firstLineWidth, secondLineWidth;
+        var curMaxWidth = Infinity;
+        var prevMaxWidth = this.calculateLabelLength(firstLine);
+        var idx;
+        // shortcut if label cannot be split
+        idx = firstLine.lastIndexOf(' ');
+        if(idx < 0) {
+            return [firstLine];
+        }
+        // normal search
+        while(idx >= 0) {
+            firstLineWidth = this.calculateLabelLength(firstLine.substring(0,idx));
+            secondLineWidth = this.calculateLabelLength((firstLine.substring(idx) + ' ' + secondLine).trim());
+            curMaxWidth = Math.max(firstLineWidth, secondLineWidth);
+            if(curMaxWidth >= prevMaxWidth) {
+                break;
+            }
+            // do not swap these two lines (should be obvious but took me a while ...)
+            secondLine = (firstLine.substring(idx) + ' ' + secondLine).trim();
+            firstLine = firstLine.substring(0,idx);
+
+            prevMaxWidth = curMaxWidth;
+            idx = firstLine.lastIndexOf(' ');
+        }
+        return [firstLine, secondLine];
     };
 
 	return BorderLabeler;
