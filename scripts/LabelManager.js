@@ -50,7 +50,8 @@ module.exports = (function () {
         this.glyphSettings.lineHeight = this.glyphSettings.lineHeight || 3;
         this.glyphSettings.widths = this.glyphSettings.widths || { default: 1.6 };
         // cannot really determine why, but there seems to be a .5 shift required
-        // for the labels to be at the correct y position
+        // for the labels to be at the correct y position. Upon further review, this
+        // is probably a problem with the configured line height.
         this.defaultDelta = { x: 0, y: .5 };
 
         this.grid = new RectangleGrid().init(viewRect);
@@ -257,100 +258,130 @@ module.exports = (function () {
      */
 	LabelManager.prototype.determineLabelPositionFor = function (obj) {
 		var manualArr = this.labelConfig[obj.name];
+        var manualConfigApplied = false;
 
         if(manualArr && manualArr.length > 0) {
     		for(var i = 0; i < manualArr.length; i++) {
-    			this.applyManualConfig(obj, manualArr[i]);
-    			if(true) {
+    			if(this.applyManualLabelConfig(obj, manualArr[i])) {
+                    manualConfigApplied = true;
     				break;
     			}
     		}
-            return;
-        } else {
-            this.applyAutomaticPlacement(obj);
+        }
+
+        if(!manualConfigApplied) {
+            this.findLabelLocationAutomatically(obj);
         }
 	};
 
 	/**
      * Places a label according to the passed manual configuration object.
-	 * @private
+     *
+     * @param obj {Object} The object whose label needs to be placed
+     * @param config {Object} The manual configuration object
+     * @returns {boolean} true if the label could be placed at the configured spot
+     * @private
 	 */
-	LabelManager.prototype.applyManualConfig = function (obj, config) {
+	LabelManager.prototype.applyManualLabelConfig = function (obj, config) {
 		var dist = this.objLabelDist;
-		var position = Utils.deepCopy(config.position);
-		var anchor = config.anchor;
+        var pos = {};
 		var connPoint, isecPoint, labelEdgePoint;
 
-		// position shorthands
-		if(typeof position.x === 'string') {
-			if(position.x === 'left') {
-				position.x = obj.centerX - obj.radiusX - dist;
-			} else if(position.x === 'center') {
-				position.x = obj.centerX;
-			} else if(position.x === 'right') {
-				position.x = obj.centerX + obj.radiusX + dist;
-			} else {
-				this.logger.warn(`label config for ${obj.name}: x position shorthand "${position.x}" is unknown`);
-			}
-		}
-		if(typeof position.y === 'string') {
-			if(position.y === 'top') {
-				position.y = obj.centerY + obj.radiusY + dist * .5;
-			} else if(position.y === 'center') {
-				position.y = obj.centerY;
-			} else if(position.y === 'bottom') {
-				position.y = obj.centerY - obj.radiusY - dist * .5;
-			} else {
-				this.logger.warn(`label config for ${obj.name}: y position shorthand "${position.y}" is unknown`);
-			}
-		}
-		// anchor shorthands
-		if(typeof anchor.x === 'string') {
-			if(anchor.x === 'center') {
-				position.x -= obj.label.w * .5;
-			} else if(anchor.x === 'right') {
-				position.x -= obj.label.w;
-			}
-		}
-		if(typeof anchor.y === 'string') {
-			if(anchor.y === 'center') {
-				position.y -= obj.label.h * .5;
-			} else if(anchor.y === 'top') {
-				position.y -= obj.label.h;
-			}
-		}
+        // parsed config options
+        var positionShorthands = (config.position || '').split(/\s+/g);
+        var delta = config.delta || [0,0];
 
-		obj.label.x = position.x + position.dx + this.defaultDelta.x;
-		obj.label.y = position.y + position.dy + this.defaultDelta.y;
+        // validation
+        if(positionShorthands.length < 2) {
+            this.logger.warn(`Position shorthands for manual label config are insufficient: ${obj.name}`);
+            return false;
+        }
+        if(!delta.length || delta.length < 2) {
+            this.logger.warn(`Delta values for manual label config are insufficient: ${obj.name}`);
+        }
+
+        // generate real positions from shorthands
+        switch((''+positionShorthands[0]).trim().toLowerCase()) {
+            case 'left':
+                pos.x = obj.centerX - obj.radiusX - dist - obj.label.w;
+                break;
+            case 'center':
+                pos.x = obj.centerX - obj.label.w * .5;
+                break;
+            case 'right':
+            default:
+                pos.x = obj.centerX + obj.radiusX + dist;
+        }
+        switch((''+positionShorthands[1]).trim().toLowerCase()) {
+            case 'top':
+                pos.y = obj.centerY + obj.radiusY + dist * .5;
+                break;
+            case 'bottom':
+                pos.y = obj.centerY - obj.radiusY - dist * .5 - obj.label.h;
+                break;
+            case 'center':
+            default:
+                pos.y = obj.centerY - obj.label.h * .5;
+        }
+
+        obj.label.x = pos.x + delta[0] + this.defaultDelta.x;
+        obj.label.y = pos.y + delta[1] + this.defaultDelta.y;
 
 		// connector
-		if(config.connector) {
-			connPoint = {
-				x: obj.centerX + config.connector.dx || 0,
-				y: obj.centerY + config.connector.dy || 0
-			};
+		if(!!config.connector) {
+            // The connector stop, or connection point, is a given point between
+            // the object and the label. The connector line consists of two line parts,
+            // with the first going from the label to the connection point (p1 -> p2),
+            // and the second going from the connection point to the object (p2 -> p3).
+            if(!!config.connectorStop && config.connectorStop.length >= 2) {
+                connPoint = {
+                    x: obj.centerX + (config.connectorStop[0] || 0),
+                    y: obj.centerY + (config.connectorStop[1] || 0)
+                };
+            } else {
+                connPoint = {
+                    x: obj.label.x,
+                    y: obj.label.y
+                };
+            }
 			isecPoint = Utils.getClosestPointOnEllipsePerimeter(connPoint, obj);
 
+            // figure out where exactly the three control line points need to be
             if(obj.label.y <= connPoint.y && obj.label.y + obj.label.h >= connPoint.y) {
+                // connection point is (vertically) between label baseline and label topline
+                // --> flat (0°) horizontal line from label to connection point
                 labelEdgePoint = {
-                    x: obj.label.x + obj.label.w + dist,
                     y: connPoint.y
                 };
                 if(obj.label.x > connPoint.x) {
+                    // label is to the right of the connection point
+                    // --> attach to label's left side
                     labelEdgePoint.x = obj.label.x - dist;
+                } else {
+                    // label is to the left of the connection point
+                    // --> attach to label's right side
+                    labelEdgePoint.x = obj.label.x + obj.label.w + dist
                 }
             } else if(obj.label.x <= connPoint.x && obj.label.x + obj.label.w >= connPoint.x) {
+                // connection point is between label's left side and right side
+                // --> vertical line (90°) from label to connection point
                 labelEdgePoint = {
-                    x: connPoint.x,
-                    y: obj.label.y + obj.label.h + dist * .5
+                    x: connPoint.x
                 };
                 if(obj.label.y > connPoint.y) {
+                    // label is above connection point
+                    // --> attach to label's bottom
                     labelEdgePoint.y = obj.label.y - dist;
+                } else {
+                    // label is below connection point
+                    // --> attach to label's top
+                    labelEdgePoint.y = obj.label.y + obj.label.h + dist * .5
                 }
             } else {
+                // connection point is both horizontally and vertically offset from label
+                // --> just draw a direct line from the connection point to the label bounding box
                 labelEdgePoint = Utils.getClosestPointOnRectanglePerimeter(connPoint, obj.label);
             }
-
 
 			obj.label.connector = {
 				p1: labelEdgePoint,
@@ -358,7 +389,29 @@ module.exports = (function () {
 				p3: isecPoint
 			};
 		}
+
+        // evaluate whether the label is fully inside the viewport
+        // if not, this manual config will not be applied
+        if(!Utils.rectangleInRectangle(obj.label, this.viewRect)) {
+            this.logger.info('label manual config cannot be used (out of bounds): ', config);
+            return false;
+        }
+        return true;
 	};
+
+    /**
+     * Places a system label at the best possible position.
+     *
+     * @param obj {Object} The object whose label needs to be placed
+     * @returns {Number} The overlapped area's size (in square units) for the label's best position
+     * @private
+     */
+    LabelManager.prototype.findLabelLocationAutomatically = function (obj) {
+        delete obj.label.connector;
+
+        // TODO re-implement the below function (better)
+        return this.findBestLabelPositionFor(obj);
+    };
 
     /**
      * Places a label at the best possible position.
@@ -691,11 +744,11 @@ module.exports = (function () {
         for(var i = 0, len = this.orderedObjIndices.length; i < len; i++) {
             curObj = this.objects[this.orderedObjIndices[i]];
             this.grid.unplaceObject(curObj.label);
-			if(this.labelConfig.hasOwnProperty(curObj.name)) {
-				this.determineLabelPositionFor(curObj);
+            this.determineLabelPositionFor(curObj);
+			/*if(this.labelConfig.hasOwnProperty(curObj.name)) {
 			} else {
 				this.findBestLabelPositionFor(curObj);
-			}
+			}*/
             this.grid.placeObject(curObj.label);
         }
 

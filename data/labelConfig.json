@@ -1,93 +1,49 @@
 {
 	"Badlands Cluster" : [{
-		"position" : {
-			"x": "center",
-			"y": "bottom"
-		}
+		"position" : "center bottom"
 	}],
 	"Brocchi's Cluster": [{
-		"position": {
-			"x": "right",
-			"y": "center"
-		}
+		"position": "right center"
 	}],
 	"Chaine Cluster": [{
-		"position": {
-			"x": "center",
-			"y": "top"
-		}
+		"position": "center top"
 	}],
 	"Enders Cluster": [{
-		"position": {
-			"x": "right",
-			"y": "center"
-		}
+		"position": "right center"
 	}],
 	"Hyades Cluster" : [{
-		"anchor": {
-			"x" : "left",
-			"y" : "center"
-		},
-		"position": {
-			"x": "center",
-			"y": "center",
-			"dx": 15,
-			"dy": -3.5
-		},
-		"connector": {
-			"dx" : 9,
-			"dy" : -3.5
-		}
+		"position" : "center center",
+		"delta" : [23,-3.5],
+		"connector": true,
+		"connectorStop": [9, -3.5]
 	}],
 	"Ishtar": [{
-		"position": {
-			"x" : "left",
-			"y" : "center"
-		}
+		"position": "left center"
 	}],
 	"Jansen's Hold" : [{
-		"position": {
-			"x" : "center",
-			"y" : "top",
-			"dx": -3
-		}
+		"position": "center top",
+		"delta" : [-3, 0]
 	}],
 	"MacLeod's Land" : [{
-		"position": {
-			"x" : "center",
-			"y" : "top"
-		}
+		"position": "center top"
 	}],
 	"Pinard": [{
-		"position": {
-			"x" : "left",
-			"y" : "center",
-			"dy": -1.5
-		}
+		"position": "left center",
+		"delta": [0, -1.5]
 	}],
 	"Pleiades Cluster": [{
+		"position": "center center",
+		"delta" : [0, 5],
 		"anchor": {
 			"x": "center",
 			"y": "center"
-		},
-		"position": {
-			"x": "center",
-			"y": "center",
-			"dx": 0,
-			"dy": 5
 		}
 	}, {
-		"position": {
-			"x": "right",
-			"y": "center"
-		}
+		"position": "right center"
 	}],
 	"Taurus": [{
-		"position": {
-			"x" : "center",
-			"y" : "bottom",
-			"dx": 1
-		}
+		"position": "center bottom",
+		"delta" : [1, 0]
 	}],
 	"_glyphSettings" : {
         "lineHeight" : 2.5,

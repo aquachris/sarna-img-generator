@@ -48,18 +48,18 @@ module.exports = (function () {
 		this.writeSvg(null, filename, dimensions, viewRect, era, systems, factions, borders, null, nebulae, minimapSettings, jumpRings);
 	};
 
-	SvgWriter.prototype.writeBorderSvg = function (name, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings) {
+	SvgWriter.prototype.writeBorderSvg = function (name, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings) {
 		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
 		var filename = this.baseDir + '/output/'+name.replace(/\s/g, '_')+'_' +era.year + '_' + safeEraName + '_borders.svg';
 		this.writeSvg({
 			//renderBorderLabels : false,
 			//renderSystems : false,
 			//renderSystemLabels : false,
-			renderClusters : false,
-			renderClusterLabels : false,
+			//renderClusters : false,
+			//renderClusterLabels : false,
 			renderMinimap : false,
-			renderScaleHelp : false
-		}, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings);
+			//renderScaleHelp : false
+		}, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings);
 	};
 
 	/**

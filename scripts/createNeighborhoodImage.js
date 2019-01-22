@@ -112,7 +112,7 @@ var main = function () {
     //focusedSystems.push('Carvajal');
     //focusedSystems.push('Cohagen');
     //focusedSystems.push('Cyrton');
-    //focusedSystems.push('Desolate Plains');
+    focusedSystems.push('Desolate Plains');
     //focusedSystems.push('Fiery Plains');
     //focusedSystems.push('Heathville');
 	//focusedSystems.push('Naka Pabni');
@@ -145,7 +145,7 @@ var main = function () {
     //focusedSystems.push('Versailles');
     //focusedSystems.push('El Dorado');
     //focusedSystems.push('Bremen');
-    focusedSystems.push('St. Ives');
+    //focusedSystems.push('St. Ives');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);

@@ -342,6 +342,21 @@ module.exports = (function () {
 	};
 
     /**
+     * Checks whether the inner rectangle is completely within the outer rectangle.
+     * Note that a rectangle's x, y position is its bottom left corner.
+     *
+     * @param innerRect {Object} The inner rectangle
+     * @param outerRect {Object} The outer rectangle
+     * @returns {boolean} true if innerRect lies completely within outerRect
+     */
+    Utils.rectangleInRectangle = function (innerRect, outerRect) {
+        return innerRect.x >= outerRect.x
+            && innerRect.x + innerRect.w <= outerRect.x + outerRect.w
+            && innerRect.y >= outerRect.y
+            && innerRect.y + innerRect.h <= outerRect.y + outerRect.h;
+    };
+
+    /**
      * Returns closest point to p on rectangle's perimeter
      * https://stackoverflow.com/questions/20453545/how-to-find-the-nearest-point-in-the-perimeter-of-a-rectangle-to-a-given-point
      *
