@@ -464,6 +464,7 @@ module.exports = (function () {
 							cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.rx}" ry="${tplObj.ry}" />\n`;*/
 
 				curD = '';
+				//console.log(nebulae[i].allPoints);
 				for(var j = 0, jlen = nebulae[i].points.length; j <= jlen; j++) {
 					curPoint = nebulae[i].points[j % jlen];
 					(j > 0) && (prevPoint = nebulae[i].points[j-1]);

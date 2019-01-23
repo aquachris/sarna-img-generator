@@ -5,8 +5,15 @@
 	"Brocchi's Cluster": [{
 		"position": "right center"
 	}],
+	"Castor": [{
+		"position": "center bottom"
+	}],
 	"Chaine Cluster": [{
 		"position": "center top"
+	}],
+	"Denebola": [{
+		"position": "left top",
+		"delta": [2, 0]
 	}],
 	"Enders Cluster": [{
 		"position": "right center"
@@ -16,6 +23,21 @@
 		"delta" : [23,-3.5],
 		"connector": true,
 		"connectorStop": [9, -3.5]
+	}, {
+		"position" : "center center",
+		"delta": [-20, 8.5],
+		"connector": true,
+		"connectorStop": [-10, 8.5]
+	}, {
+		"position" : "center center",
+		"delta" : [-15, -14],
+		"connector" : true,
+		"connectorStop" : [-10, -7]
+	}, {
+		"position" : "center center",
+		"delta" : [17, 8],
+		"connector" : true,
+		"connectorStop" : [7, 8]
 	}],
 	"Ishtar": [{
 		"position": "left center"
@@ -24,7 +46,22 @@
 		"position": "center top",
 		"delta" : [-3, 0]
 	}],
+	"Keid": [{
+		"position": "right center",
+		"delta" : [0, 0.5]
+	}],
+	"Landmark" : [{
+		"position": "center bottom",
+		"delta" : [-2, 0]
+	}],
 	"MacLeod's Land" : [{
+		"position": "center top"
+	}],
+	"New Home" : [{
+		"position": "center bottom",
+		"delta": [-1, 0]
+	}],
+	"New Vallis" : [{
 		"position": "center top"
 	}],
 	"Pinard": [{
@@ -33,17 +70,32 @@
 	}],
 	"Pleiades Cluster": [{
 		"position": "center center",
-		"delta" : [0, 5],
-		"anchor": {
-			"x": "center",
-			"y": "center"
-		}
+		"delta" : [13, 10],
+		"connector" : true,
+		"connectorStop" : [2, 10]
+	}, {
+		"position": "center center",
+		"delta" : [0, 5]
+	}, {
+		"position": "center center",
+		"delta": [-2, -13],
+		"connector": true,
+		"connectorStop": [-3, -10]
 	}, {
 		"position": "right center"
 	}],
+	"Procyon" : [{
+		"position": "center bottom"
+	}],
+	"Sirius" : [{
+		"position": "left center"
+	}],
+	"Tau Ceti" : [{
+		"position": "center top"
+	}],
 	"Taurus": [{
 		"position": "center bottom",
-		"delta" : [1, 0]
+		"delta" : [1, 0.5]
 	}],
 	"_glyphSettings" : {
         "lineHeight" : 2.5,

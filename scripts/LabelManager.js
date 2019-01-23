@@ -317,7 +317,7 @@ module.exports = (function () {
                 pos.y = obj.centerY + obj.radiusY + dist * .5;
                 break;
             case 'bottom':
-                pos.y = obj.centerY - obj.radiusY - dist * .5 - obj.label.h;
+                pos.y = obj.centerY - obj.radiusY - dist - obj.label.h;
                 break;
             case 'center':
             default:
@@ -345,6 +345,9 @@ module.exports = (function () {
                 };
             }
 			isecPoint = Utils.getClosestPointOnEllipsePerimeter(connPoint, obj);
+            if(!isecPoint) {
+                isecPoint = { x: obj.x, y: obj.y };
+            }
 
             // figure out where exactly the three control line points need to be
             if(obj.label.y <= connPoint.y && obj.label.y + obj.label.h >= connPoint.y) {

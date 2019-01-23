@@ -1014,15 +1014,15 @@ module.exports = (function () {
 
         for(var i = 0, len = objects.length; i < len; i++) {
             objRect = {
-                x : objects[i].x,
-                y : objects[i].y,
-                w : objects[i].w || defaultObjWidth,
-                h : objects[i].h || defaultObjHeight
+                x : objects[i].x - objects[i].radiusX,
+                y : objects[i].y - objects[i].radiusY,
+                w : objects[i].radiusX * 2 || defaultObjWidth,
+                h : objects[i].radiusY * 2 || defaultObjHeight
             };
-            if(objects[i].w === undefined) {
+            if(objects[i].w !== undefined) {
                 objRect.x -= objRect.w *.5;
             }
-            if(objects[i].h === undefined) {
+            if(objects[i].h !== undefined) {
                 objRect.y -= objRect.h * .5;
             }
 

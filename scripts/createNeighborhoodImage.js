@@ -112,7 +112,7 @@ var main = function () {
     //focusedSystems.push('Carvajal');
     //focusedSystems.push('Cohagen');
     //focusedSystems.push('Cyrton');
-    focusedSystems.push('Desolate Plains');
+    //focusedSystems.push('Desolate Plains');
     //focusedSystems.push('Fiery Plains');
     //focusedSystems.push('Heathville');
 	//focusedSystems.push('Naka Pabni');
@@ -140,12 +140,13 @@ var main = function () {
 	// border labelling
 	//focusedSystems.push('Sol');
 	//focusedSystems.push('Cassias');
-    //focusedSystems.push('Desolate Plains');
+    focusedSystems.push('Desolate Plains');
     //focusedSystems.push('Strana Mechty');
     //focusedSystems.push('Versailles');
     //focusedSystems.push('El Dorado');
     //focusedSystems.push('Bremen');
     //focusedSystems.push('St. Ives');
+    focusedSystems.push('Kiesen');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -160,6 +161,8 @@ var main = function () {
             if(reader.systems[i].name === focusedSystemName) {
                 viewRect.x = reader.systems[i].x - viewRect.w * .5;
                 viewRect.y = reader.systems[i].y - viewRect.h * .5;
+                viewRect.x = -viewRect.w * .5;
+                viewRect.y = -viewRect.h * .5;
                 minimapViewRect.x = reader.systems[i].x - 600;
                 minimapViewRect.y = reader.systems[i].y - 300;
                 break;
@@ -265,7 +268,7 @@ var main = function () {
     				dimensions : minimapDimensions,
     				viewRect : minimapViewRect,
     				borders: minimapBorders,
-    				nebulae: minimapNebulae
+    				nebulae: labelMgr.minimapNebulae
     			},
     			[30, 60]
     		);

@@ -202,6 +202,7 @@ module.exports = (function () {
                 return resultingPoints;
             } else if(points.length === 1) {
 				resultingPoints.push(Utils.deepCopy(points[0]));
+                return resultingPoints;
 			}
 
             // make sure p1 and p2 are set
@@ -263,7 +264,7 @@ module.exports = (function () {
 						curBoundedNeb.points.push(aggregatedOutsidePoints[oi]);
 					}
 					outsidePoints = [];
-					curBoundedNeb.points.push(Utils.deepCopy(curPoint));
+                    curBoundedNeb.points.push(Utils.deepCopy(curPoint));
 					curNebulaIsVisible = true;
 
 				// both the previous and the current point are invisible

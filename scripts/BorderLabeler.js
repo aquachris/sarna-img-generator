@@ -49,16 +49,16 @@ module.exports = (function () {
             candidateQualityThreshold : 0.55, // the lowest accepted candidate rating
             candidateDistFactor : .25, // distance factor (on the polyline) between candidates. Lower number = higher quality, slower
             labelGrowFactor: .05, // the step size factor for incrementally growing the label size. lower number = higher quality, slower
-            labelPolylineTolerance: 1.2, // the tolerance for labels crossing their polyline
+            labelPolylineTolerance: 1.15, // the tolerance for labels crossing their polyline
             minPosDist : 55, // minimum "position" distance between label midpoints (on the polyline)
             minTrueDist : 25, // minimum true euclidean distance between label midpoints
             weights : { // border label rating weights (should add to a sum of 1)
                 overlap: .55, // border labels with less overlap with existing system / cluster labels will be preferred
                 angle: .05, // horizontal / vertical border labels will be preferred over diagonal ones
-                verticalDistance: .225, // border labels that are close to their anchor point will be preferred
-                polylineIntersection: .075, // labels that overlap less with the polyline will be preferred
+                verticalDistance: .2, // border labels that are close to their anchor point will be preferred
+                polylineIntersection: .125, // labels that overlap less with the polyline will be preferred
                 centeredness : .025, // border labels closer to the polyline center will be preferred
-                multiline : .075 // multiline border labels are preferred over single line ones
+                multiline : .05 // multiline border labels are preferred over single line ones
             }
         };
         return this;
