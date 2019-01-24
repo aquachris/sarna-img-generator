@@ -83,8 +83,11 @@
             top: .4em;
             width: 6px;
         }
+		div.tabs-body .info {
+			color: #999;
+		}
         div.tabs-body .msg {
-            color: #aaa;
+            color: #000;
         }
         div.tabs-body .warn {
             color: #ca0;
@@ -100,7 +103,8 @@
         }
         div.tabs-body.hide-errors .err,
         div.tabs-body.hide-warnings .warn,
-        div.tabs-body.hide-messages .msg {
+        div.tabs-body.hide-messages .msg,
+		div.tabs-body.hide-info .info {
             display: none;
         }
 
@@ -111,12 +115,13 @@
 <h1>&gt; script logs</h1>
 <div class="tabs">
     <div class="tabs-header">
-        <span id="tab-err-warn" class="active">errors and warnings</span>
+        <span id="tab-err-warn">errors and warnings</span>
         <span id="tab-err">errors only</span>
         <span id="tab-warn">warnings only</span>
+		<span id="tab-logs" class="active">errors, warnings and logs</span>
         <span id="tab-all">all logs</span>
     </div>
-    <div id="tabstrip-body" class="tabs-body hide-messages">
+    <div id="tabstrip-body" class="tabs-body hide-info">
         {LOG_CONTENT}
     </div>
     <script type="text/javascript">
@@ -124,27 +129,33 @@
         var tabErrWarnBtn = document.getElementById('tab-err-warn');
         var tabErrBtn = document.getElementById('tab-err');
         var tabWarnBtn = document.getElementById('tab-warn');
+		var tabLogsBtn = document.getElementById('tab-logs');
         var tabAllBtn = document.getElementById('tab-all');
 
         var tabClicked = function (e) {
             tabErrWarnBtn.setAttribute('class', '');
             tabErrBtn.setAttribute('class', '');
             tabWarnBtn.setAttribute('class', '');
+			tabLogsBtn.setAttribute('class', '');
             tabAllBtn.setAttribute('class', '');
 
             switch(this) {
                 case tabErrWarnBtn:
-                    tabBody.setAttribute('class', 'tabs-body hide-messages');
+                    tabBody.setAttribute('class', 'tabs-body hide-messages hide-info');
                     tabErrWarnBtn.setAttribute('class', 'active');
                     break;
                 case tabErrBtn:
-                    tabBody.setAttribute('class', 'tabs-body hide-warnings hide-messages');
+                    tabBody.setAttribute('class', 'tabs-body hide-warnings hide-messages hide-info');
                     tabErrBtn.setAttribute('class', 'active');
                     break;
                 case tabWarnBtn:
-                    tabBody.setAttribute('class', 'tabs-body hide-errors hide-messages');
+                    tabBody.setAttribute('class', 'tabs-body hide-errors hide-messages hide-info');
                     tabWarnBtn.setAttribute('class', 'active');
                     break;
+				case tabLogsBtn:
+					tabBody.setAttribute('class', 'tabs-body hide-info');
+					tabLogsBtn.setAttribute('class', 'active');
+					break;
                 case tabAllBtn:
                     tabBody.setAttribute('class', 'tabs-body');
                     tabAllBtn.setAttribute('class', 'active');
@@ -155,6 +166,7 @@
         tabErrWarnBtn.addEventListener('click', tabClicked.bind(tabErrWarnBtn));
         tabErrBtn.addEventListener('click', tabClicked.bind(tabErrBtn));
         tabWarnBtn.addEventListener('click', tabClicked.bind(tabWarnBtn));
+		tabLogsBtn.addEventListener('click', tabClicked.bind(tabLogsBtn));
         tabAllBtn.addEventListener('click', tabClicked.bind(tabAllBtn));
     </script>
 </div>

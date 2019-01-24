@@ -97,7 +97,7 @@ var main = function () {
     //focusedSystems.push('Badlands Cluster');
 	//focusedSystems.push('Brocchi\'s Cluster');
 	//focusedSystems.push('Chaine Cluster');
-	//focusedSystems.push('Enders Cluster');
+	focusedSystems.push('Enders Cluster');
 	//focusedSystems.push('Hyades Cluster');
     //focusedSystems.push('Pleiades Cluster');
 
@@ -140,13 +140,14 @@ var main = function () {
 	// border labelling
 	//focusedSystems.push('Sol');
 	//focusedSystems.push('Cassias');
-    focusedSystems.push('Desolate Plains');
+    //focusedSystems.push('Desolate Plains');
     //focusedSystems.push('Strana Mechty');
     //focusedSystems.push('Versailles');
     //focusedSystems.push('El Dorado');
     //focusedSystems.push('Bremen');
     //focusedSystems.push('St. Ives');
-    focusedSystems.push('Kiesen');
+    //focusedSystems.push('Kiesen');
+	//focusedSystems.push('Zurich');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -161,8 +162,8 @@ var main = function () {
             if(reader.systems[i].name === focusedSystemName) {
                 viewRect.x = reader.systems[i].x - viewRect.w * .5;
                 viewRect.y = reader.systems[i].y - viewRect.h * .5;
-                viewRect.x = -viewRect.w * .5;
-                viewRect.y = -viewRect.h * .5;
+                //viewRect.x = -viewRect.w * .5;
+                //viewRect.y = -viewRect.h * .5;
                 minimapViewRect.x = reader.systems[i].x - 600;
                 minimapViewRect.y = reader.systems[i].y - 300;
                 break;
@@ -176,9 +177,15 @@ var main = function () {
 
         // for each era ...
     	//for(var eraI = 0; eraI < 1; eraI++) {
-        for(var eraI = 4; eraI < 5; eraI++) { // 2367
+        //for(var eraI = 4; eraI < 5; eraI++) { // 2367
     	//for(var eraI = 16; eraI < 17; eraI++) { // 3025
-    	//for(var eraI = 0; eraI < reader.eras.length; eraI++) {
+    	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
+			if(!(false
+				//|| eraI === 4 // 2367
+				|| eraI === 16 // 3025
+			)) {
+				continue;
+			}
     		curEra = reader.eras[eraI];
     		reservedPoints = [];
     		voronoiSystems = [];

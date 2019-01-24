@@ -759,7 +759,8 @@ module.exports = (function () {
         for(var i = 0, len = this.ellipticalObjects.length; i < len; i++) {
             curObj = this.ellipticalObjects[i];
 
-            this.grid.placeObject(curObj);
+			// do not place nebulae in the grid, as this messes with border labels
+            //this.grid.placeObject(curObj); 
             this.findBestLabelPositionForEllipticalObj(curObj);
             this.grid.placeObject(curObj.label);
         }

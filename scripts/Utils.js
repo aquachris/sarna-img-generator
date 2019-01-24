@@ -1129,6 +1129,39 @@ module.exports = (function () {
         }
         return closest;
     };
+	
+	/**
+     * Finds all edge meeting points between startPos and endPos on a polyline.
+	 *
+     * @param pLineParts {Array} The polyline's edges
+	 * @param startPos {Number} The starting position in map units from the polyline's start point
+	 * @param endPos {Number} The end position in map units from the polyline's start point
+	 * @returns {Array} The edge meeting points between the start position and the end position
+     */
+    Utils.findEdgeMeetingPoints = function (pLineParts, startPos, endPos) {
+        var curLine;
+        var curLineStartDist = 0;
+        var lineInRange = false;
+        var points = [];
+		for(var i = 0, len = pLineParts.length; i < len; i++) {
+			curLine = pLineParts[i];
+            if(startPos < curLineStartDist + curLine.length) {
+                lineInRange = true;
+            }
+            if(lineInRange) {
+                if(curLineStartDist >= startPos) {
+                    points.push(curLine.n1);
+                }
+                if(curLineStartDist + curLine.length <= endPos) {
+                    points.push(curLine.n2);
+                } else {
+                    break;
+                }
+            }
+            curLineStartDist += curLine.length;
+        }
+		return points;
+    };
 
 	/**
 	 * Finds the point that lies at the given distance from the start of a polyline.

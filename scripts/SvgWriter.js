@@ -338,7 +338,7 @@ module.exports = (function () {
 
 						for(var ci = 0; ci < curPolyline.candidates.length; ci++) {
 							// DEBUG
-							/*if(curPolyline.candidates[ci].id !== 'FS_0_9') {
+							/*if(curPolyline.candidates[ci].id !== 'LC_0_10') {
 								continue;
 							}*/
 							// END DEBUG

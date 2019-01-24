@@ -2,6 +2,9 @@
 	"Badlands Cluster" : [{
 		"position" : "center bottom"
 	}],
+	"Berenson": [{
+		"position" : "left center"
+	}],
 	"Brocchi's Cluster": [{
 		"position": "right center"
 	}],
@@ -56,6 +59,10 @@
 	}],
 	"MacLeod's Land" : [{
 		"position": "center top"
+	}],
+	"Menkalinan": [{
+		"position": "center bottom",
+		"delta": [-1, 0]
 	}],
 	"New Home" : [{
 		"position": "center bottom",

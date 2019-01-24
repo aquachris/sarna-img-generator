@@ -213,6 +213,8 @@ module.exports = (function () {
         var splitLabel;
         var splitLabelWidth;
         var numCurFactionCandidates;
+		var backwardsMerging;
+		
         for(var factionKey in this.polylines) {
             faction = this.factions[factionKey];
             if(!faction
@@ -226,7 +228,7 @@ module.exports = (function () {
                 continue;
             }*/
             // DEBUG END
-            console.log('generating candidates for ' + factionKey);
+            console.log('generating border label candidates for ' + faction.longName);
             labelWidth = this.calculateLabelLength(faction ? faction.longName : '');
             curLoop = null;
 
@@ -234,10 +236,9 @@ module.exports = (function () {
             // make sure the polylines are long enough to fit a faction label
             for(var i = 0; i < this.polylines[factionKey].length; i++) {
                 curPolyline = this.polylines[factionKey][i];
-
+				backwardsMerging = false;
                 // Keep merging polylines for as long as it takes to make the long
                 // faction label fit. If the polyline consists of the entire loop, give up.
-                //while(curPolyline.length < labelWidth) {
                 curDist = Utils.pointDistance(curPolyline.edges[0].n1, curPolyline.edges[curPolyline.edges.length-1].n2);
                 while(curDist < labelWidth) {
                     // long faction name does not fit
@@ -257,13 +258,18 @@ module.exports = (function () {
                             break;
                         }
                         i--;
+						backwardsMerging = true;
                         curPolyline = this.polylines[factionKey][i];
                     }
 
                     // merge the two lines (next into current)
                     if(!this.mergePolylines(curPolyline, this.polylines[factionKey][i+1])) {
-                        // something went wrong --> abort!
-                        this.logger.error('polyline merge failed');
+                        // polylines couldn't be merged, no common edges
+                        this.logger.info('polyline merge failed for ' + curPolyline.id + ', ' + this.polylines[factionKey][i+1].id);
+						// backwards merge failed --> reset i to original current index
+						if(backwardsMerging) {
+							i++;
+						}
                         break;
                     }
                     // remove the  next polyline from the List
@@ -285,21 +291,18 @@ module.exports = (function () {
                 if(splitLabel.length > 1) {
                     this.findCandidatesIteratively(curPolyline, splitLabel);
                 }
-                // rate and sort the candidates
-                this.rateAndSortCandidates(curPolyline, [], curPolyline.candidates);
-                if(curPolyline.candidates.length > 0
-                    && !curPolyline.candidates[0].taboo
-                    && curPolyline.candidates[0].rating >= this.settings.candidateQualityThreshold) {
-                    numCurFactionCandidates++;
-                } else if(curPolyline.candidates.length > 0
+				// if there are any candidates, and the polyline is a full loop,
+				// create an additional candidate based on the current best one
+				// and place it at the bottom of the polyline
+				// this is intended for cases like Sol / Terra 3025
+				if(curPolyline.candidates.length > 0
                     && curPolyline.edges.length > 2
                     && curPolyline.edges[curPolyline.edges.length-1].n2.x === curPolyline.edges[0].n1.x
                     && curPolyline.edges[curPolyline.edges.length-1].n2.y === curPolyline.edges[0].n1.y) {
-                    // no candidate for this polyline: try workaround
-                    // this was mostly intended for Sol / Terra
-                    var curC = curPolyline.candidates[0];
+                    var curC = Utils.deepCopy(curPolyline.candidates[0]);
                     var minYPoints = [];
                     var cPoint;
+					curC.id = curPolyline.id + '_' + 'SB'; // special candidate at bottom
                     for(var pli = 0; pli < curPolyline.edges.length; pli++) {
                         minYPoints.push(curPolyline.edges[pli].n1);
                     }
@@ -314,8 +317,17 @@ module.exports = (function () {
                     curC.tl = { x: curC.bl.x, y: cPoint.y + curC.labelHeight };
                     curC.br = { x: cPoint.x + curC.labelWidth * .5, y: cPoint.y };
                     curC.tr = { x: curC.br.x, y: curC.tl.y };
-                    this.findCandidatePolylineIntersection(curC, curPolyline);
-                    this.rateAndSortCandidates(curPolyline, [], curPolyline.candidates);
+                    this.findCandidatePolylinesIntersection(curC, this.polylines[factionKey]);
+					curPolyline.candidates.push(curC);
+                    //this.rateAndSortCandidates(curPolyline, [], curPolyline.candidates);
+                }
+				// rate and sort all candidates (this includes potential special candidates)
+				this.rateAndSortCandidates(curPolyline, [], curPolyline.candidates);
+				// if there is a valid candidate, mark this faction as labelled
+                if(curPolyline.candidates.length > 0
+                    && !curPolyline.candidates[0].taboo
+                    && curPolyline.candidates[0].rating >= this.settings.candidateQualityThreshold) {
+                    numCurFactionCandidates++;
                 }
             }
 
@@ -324,10 +336,27 @@ module.exports = (function () {
                 //this.logger.log(numCurFactionCandidates + ' candidates found', curPolyline.candidates[0]);
             }*/
             // DEBUGGER END
+			
+			// possible third pass: if no valid candidates have been found so far, relax the quality threshold 
+			// somewhat
+			if(numCurFactionCandidates === 0 
+				&& curPolyline.candidates.length > 0 
+				&& !curPolyline.candidates[0].taboo 
+				&& curPolyline.candidates[0].rating >= this.settings.candidateQualityThreshold * .75) {
+				// Artificially increase the candidate's rating to the minimum acceptable value.
+				// Note that this value will be overwritten when rateAndSortCandidates is called again.
+				curPolyline.candidates[0].rating = this.settings.candidateQualityThreshold;
+				this.logger.info('candidate ' + curPolyline.candidates[0].id + '\'s rating was artificially increased to ensure the faction is labelled');
+				numCurFactionCandidates++;
+			}
 
-            // possible third pass: if no valid candidates have been found,
+			if(numCurFactionCandidates === 0) {
+				this.logger.log('no faction candidates found for ' + faction.longName + ', ' + curPolyline.candidates[0].rating);
+			}
+			
+            // possible fourth pass: if no valid candidates have been found for the faction,
             // find candidates with the faction key as label
-            for(var i = 0; i < this.polylines[factionKey].length; i++) {
+            for(var i = 0; i < this.polylines[factionKey].length && numCurFactionCandidates === 0; i++) {
                 curPolyline = this.polylines[factionKey][i];
                 if(curPolyline.candidates.length === 0
                     || curPolyline.candidates[0].taboo
@@ -363,7 +392,6 @@ module.exports = (function () {
             for(var i = 0; i < this.polylines[factionKey].length; i++) {
                 curPolyline = this.polylines[factionKey][i];
                 while(curPolyline.candidates.length > 0) {
-                    this.rateAndSortCandidates(curPolyline, factionLabels, curPolyline.candidates);
                     curCandidate = curPolyline.candidates[0];
                     if(!curCandidate.taboo && curCandidate.rating >= this.settings.candidateQualityThreshold) {
                         //console.log('new ' + curPolyline.candidates[0].id +', ' + curPolyline.candidates[0].rating);
@@ -373,6 +401,7 @@ module.exports = (function () {
                     } else {
                         break;
                     }
+					this.rateAndSortCandidates(curPolyline, factionLabels, curPolyline.candidates);
                 }
             }
         }
@@ -493,7 +522,7 @@ module.exports = (function () {
             // Gather up all possible control points for the candidate. Control points lie
             // on the polyline and include the candidate line's start and end points, as well
             // as any polyline edge meeting points along the candidate line.
-            controlPoints = this.findEdgeMeetingPoints(polyline.edges, startPos, endPos);
+            controlPoints = Utils.findEdgeMeetingPoints(polyline.edges, startPos, endPos);
             controlPoints.push(startPt);
             controlPoints.push(endPt);
             controlPoints.push(midPt);
@@ -651,7 +680,7 @@ module.exports = (function () {
             var iPoint, minIPtDist = 0;
             // check whether the candidate intersects any of the polyline's edges
             if(!candidateDisqualified) {
-                this.findCandidatePolylineIntersection(newCandidate, polyline);
+                this.findCandidatePolylinesIntersection(newCandidate, this.polylines[polyline.factionKey]);
                 if(newCandidate.plIntMax > this.settings.labelPolylineTolerance) {
                     this.logger.info('candidate '+newCandidate.id+' will be disqualified because it intersects the polyline by ' + newCandidate.plIntMax + ' units');
                     candidateDisqualified = true;
@@ -685,37 +714,6 @@ module.exports = (function () {
     };
 
     /**
-     * Helper function that finds all edge meeting points between startPos and endPos
-     * on a polyline.
-     * TODO put this in Utils? Might be too specific.
-     * @private
-     */
-    BorderLabeler.prototype.findEdgeMeetingPoints = function (pLineParts, startPos, endPos) {
-        var curLine;
-        var curLineStartDist = 0;
-        var lineInRange = false;
-        var points = [];
-		for(var i = 0, len = pLineParts.length; i < len; i++) {
-			curLine = pLineParts[i];
-            if(startPos < curLineStartDist + curLine.length) {
-                lineInRange = true;
-            }
-            if(lineInRange) {
-                if(curLineStartDist >= startPos) {
-                    points.push(curLine.n1);
-                }
-                if(curLineStartDist + curLine.length <= endPos) {
-                    points.push(curLine.n2);
-                } else {
-                    break;
-                }
-            }
-            curLineStartDist += curLine.length;
-        }
-		return points;
-    };
-
-    /**
      * Add a numerical rating between 0 (bad) and 1 (good) to each of the given candidates,
      * and sort the candidates array by rating (in descending fashion).
      *
@@ -741,7 +739,11 @@ module.exports = (function () {
             placedLabels = [];
         }
 
-        overlapMax = candidates[0].labelWidth * this.glyphSettings.lineHeight;
+        overlapMax = candidates.map(function(el) {
+			return el.labelWidth * this.glyphSettings.lineHeight;
+		}.bind(this)).reduce(function(acc, curVal) {
+			return Math.max(acc, curVal);
+		}, 0,);//candidates[0].labelWidth * this.glyphSettings.lineHeight;
         verticalDistanceMax = candidates.map(function (el) {
             return el.controlPointDist;
         }).reduce(function (acc, curVal) {
@@ -803,11 +805,20 @@ module.exports = (function () {
             curCandidate.rating += polylineIntersectionRating + centerednessRating + multilineRating;
             curCandidate.polygons = polygons;
             curCandidate.lines = lines;
-
-            // DEBUG
-            /*if(curCandidate.id === 'CJF_0_28') {
-                console.log('rating', curCandidate.rating, overlapRating, overlapArea);
-            }*/
+			
+			// DEBUG 
+			/*
+			if(curCandidate.id === 'DL_0_24') {
+				console.log(curCandidate.rating);
+				console.log(curCandidate.midPt.x.toFixed(3) + ', ' + curCandidate.midPt.y.toFixed(3));
+				console.log('  overlap: ' + (overlapRating / this.settings.weights.overlap) + ' ('+overlapArea.toFixed(2)+')');
+				console.log('  angle: ' + (angleRating / this.settings.weights.angle));
+				console.log('  vDist: ' + (verticalDistanceRating / this.settings.weights.verticalDistance));
+				console.log('  pInt: ' + (polylineIntersectionRating / this.settings.weights.polylineIntersection));
+				console.log('  centeredness: ' + (centerednessRating / this.settings.weights.centeredness));
+				console.log('  multiline: ' + (multilineRating / this.settings.weights.multiline));
+			}
+			*/
             // DEBUG END
         }
 
@@ -836,13 +847,11 @@ module.exports = (function () {
 			p2: candidate.tr,
 			p3: candidate.br
 		};
-        //console.log('bbox ', boundingBox);
         var overlaps = this.labelGrid.getOverlaps(boundingBox);
 		var intersection;
 		var overlapArea = 0;
 
         if(overlaps && overlaps.length) {
-            //console.log(overlaps.length + ' object overlaps detected!');
 			for(var i = 0; i < overlaps.length; i++) {
                 intersection = Utils.rectRotRectOverlap(overlaps[i], boundingRect);
 				polygons.push(intersection.p);
@@ -850,41 +859,43 @@ module.exports = (function () {
 				overlapArea += Utils.polygonArea(polygons[polygons.length -1]);
 			}
         }
-		/*if(overlapArea > 0) {
-			console.log('overlap area is ' + overlapArea + ' for ' + candidate.id);
-		}*/
         return overlapArea;
     };
 
     /**
-     * Calculates the maximum distance the label baseline extends beyond any of the polyline's edges.
+     * Calculates the maximum distance the label baseline extends beyond any of its faction's 
+	 * polylines' edges.
      * The resulting distance will be saved in candidate.plIntMax.
      *
      * @private
      */
-    BorderLabeler.prototype.findCandidatePolylineIntersection = function (candidate, polyline) {
+    BorderLabeler.prototype.findCandidatePolylinesIntersection = function (candidate, polylines) {
         var iPoint;
         candidate.plIntMax = 0;
-        for(var ei = 0; ei < polyline.edges.length; ei++) {
-            iPoint = Utils.getLineSegmentsIntersection(polyline.edges[ei].p1, polyline.edges[ei].p2,
-                        candidate.bl, candidate.br);
-            if(iPoint !== null) {
-                candidate.plIntMax = Math.min(
-                    Utils.pointDistance(candidate.bl, iPoint),
-                    Utils.pointDistance(candidate.br, iPoint)
-                );
-            }
-            iPoint = Utils.getLineSegmentsIntersection(polyline.edges[ei].p1, polyline.edges[ei].p2,
-                        candidate.tl, candidate.tr);
-            if(iPoint !== null) {
-                candidate.plIntMax = Math.max(candidate.plIntMax,
-                    Math.min(
-                        Utils.pointDistance(candidate.tl, iPoint),
-                        Utils.pointDistance(candidate.tr, iPoint)
-                    )
-                );
-            }
-        }
+		for(var pi = 0; pi < polylines.length; pi++) {
+			for(var ei = 0; ei < polylines[pi].edges.length; ei++) {
+				iPoint = Utils.getLineSegmentsIntersection(polylines[pi].edges[ei].n1, 
+							polylines[pi].edges[ei].n2,
+							candidate.bl, candidate.br);
+				if(iPoint !== null) {
+					candidate.plIntMax = Math.min(
+						Utils.pointDistance(candidate.bl, iPoint),
+						Utils.pointDistance(candidate.br, iPoint)
+					);
+				}
+				iPoint = Utils.getLineSegmentsIntersection(polylines[pi].edges[ei].p1, 
+							polylines[pi].edges[ei].p2,
+							candidate.tl, candidate.tr);
+				if(iPoint !== null) {
+					candidate.plIntMax = Math.max(candidate.plIntMax,
+						Math.min(
+							Utils.pointDistance(candidate.tl, iPoint),
+							Utils.pointDistance(candidate.tr, iPoint)
+						)
+					);
+				}
+			}
+		}
     };
 
     /**
