@@ -111,7 +111,8 @@ module.exports = (function () {
 		var systemsSheet = this.workbook[1];
         //var nebulaeSheet = this.workbook[3];
 
-		var curRow, curSystem, curAffiliation, curScale;
+		var curRow, curSystem, curAltNames, altRegexResult, curAffiliation, curScale;
+		var parentheses;
 		// sort out headers
 		var headerRowIdx = 2; // TODO magic number
 		var columnIdxMap = {}; // map of column titles (lowercase) to column indices
@@ -150,7 +151,24 @@ module.exports = (function () {
 			// name and status
 			curSystem.name_full = curRow[columnIdxMap['system']];
             curSystem.name = curSystem.name_full;
-            var parentheses;
+			curAltNames = [];
+			if(!!curRow[columnIdxMap['alternate names']]) {
+				curAltNames = curRow[columnIdxMap['alternate names']].split(',');
+				// disregard any alternative names that do no contain a year in parentheses
+				for(var ni = 0; ni < curAltNames.length; ni++) {
+					curAltNames[ni] = curAltNames[ni].trim();
+					if((altRegexResult = curAltNames[ni].match(/(.*)\s+\((\d+).*\)/i)) === null) {
+						curAltNames.splice(ni,1);
+						ni--;
+						continue;
+					}
+					// translate the system plus year string into an object
+					console.log(ni, altRegexResult);
+				}
+			}
+			if(curAltNames.length > 0) {
+				console.log(curAltNames);
+			}
             if(parentheses = curSystem.name_full.match(/(.+)\s*\(\s*(.+)\s*\)/i)) {
                 if(parentheses[2].match(/[0-9]/)) {
                     curSystem.oldName = parentheses[1].trim();
@@ -162,10 +180,6 @@ module.exports = (function () {
                 //console.log(parentheses, curSystem.name, curSystem.oldName || '', curSystem.newName || '');
             }
 			curSystem.status = curRow[columnIdxMap['status']];
-			/*if(curSystem.status.toLowerCase() === 'apocryphal') {
-				curSystem.name_full += ' (apocryphal)';
-				curSystem.name += ' (apocryphal)';
-			}*/
 			// coordinates
 			curSystem.x = curRow[columnIdxMap['x']];
 			curSystem.y = curRow[columnIdxMap['y']];
@@ -185,10 +199,13 @@ module.exports = (function () {
 
             // era affiliations
 			curSystem.affiliations = [];
+			curSystem.names = [];
             for(var eraIdx = 0; eraIdx < this.eras.length; eraIdx++) {
                 curEra = this.eras[eraIdx];
                 curAffiliation = curRow[columnIdxMap['era_'+eraIdx]] || '';//eras[eraI].idx] || '';
                 curSystem.affiliations.push(curAffiliation);
+				// default: use the regular name
+				curSystem.names.push(curSystem.name);
             }
 
 			this.systems.push(curSystem);
