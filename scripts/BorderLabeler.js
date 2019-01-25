@@ -297,7 +297,7 @@ module.exports = (function () {
 				// this is intended for cases like Sol / Terra 3025
 				if(curPolyline.candidates.length > 0
                     && curPolyline.edges.length > 2
-                    && !curPolyline.candidates[0].inInnerLoop 
+                    && !curPolyline.candidates[0].inInnerLoop
                     && curPolyline.edges[curPolyline.edges.length-1].n2.x === curPolyline.edges[0].n1.x
                     && curPolyline.edges[curPolyline.edges.length-1].n2.y === curPolyline.edges[0].n1.y) {
                     var curC = Utils.deepCopy(curPolyline.candidates[0]);
@@ -745,7 +745,7 @@ module.exports = (function () {
 			return el.labelWidth * this.glyphSettings.lineHeight;
 		}.bind(this)).reduce(function(acc, curVal) {
 			return Math.max(acc, curVal);
-		}, 0,);//candidates[0].labelWidth * this.glyphSettings.lineHeight;
+		}, 0);//candidates[0].labelWidth * this.glyphSettings.lineHeight;
         verticalDistanceMax = candidates.map(function (el) {
             return el.controlPointDist;
         }).reduce(function (acc, curVal) {
