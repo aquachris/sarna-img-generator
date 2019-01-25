@@ -5,7 +5,7 @@ A collection of scripts that generate planetary systems images used on sarna.net
 - ~~State labels (A)~~ **DONE**
 - ~~Label hinting (A)~~ **DONE**
 - ~~Properly parse and use system names (A)~~ **DONE**
-- Script arguments & packaging (A)
+- ~~Script arguments & packaging (A)~~ **DONE**
 ---
 - Borders overlap at disputed systems (B)
 - Dark theme (B)
