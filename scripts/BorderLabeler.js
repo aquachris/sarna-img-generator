@@ -340,6 +340,7 @@ module.exports = (function () {
 			// possible third pass: if no valid candidates have been found so far, relax the quality threshold
 			// somewhat
 			if(numCurFactionCandidates === 0
+                && curPolyline
 				&& curPolyline.candidates.length > 0
 				&& !curPolyline.candidates[0].taboo
 				&& curPolyline.candidates[0].rating >= this.settings.candidateQualityThreshold * .75) {
@@ -351,7 +352,7 @@ module.exports = (function () {
 			}
 
 			if(numCurFactionCandidates === 0) {
-				this.logger.log('no faction candidates found for ' + faction.longName + ', ' + curPolyline.candidates[0].rating);
+				this.logger.log('no faction candidates found for ' + faction.longName);
 			}
 
             // possible fourth pass: if no valid candidates have been found for the faction,
@@ -453,7 +454,7 @@ module.exports = (function () {
         // calculate dx / dy values
         for(var i = 0; i < labelTextParts.length; i++) {
             // negate all the preceding label parts
-            labelDxValues.push((maxLabelWidth - labelWidths[i]) * .5 - dxSum);
+            labelDxValues.push((maxLabelWidth - labelWidths[i]) * .5); //- dxSum);
             dxSum += labelDxValues[i] + labelWidths[i];
             if(i === 0) {
                 labelDyValues.push((labelTextParts.length-1) * -this.glyphSettings.lineHeight);

@@ -75,97 +75,8 @@ var main = function () {
 		h: 600
 	};
 
-    var focusedSystems = [];
+    var focusedSystem;
     var focusedSystemName;
-    //focusedSystemName = 'Janina';
-	//focusedSystemName = 'Ferihegy';
-	//focusedSystemName = 'Apollo';
-	//focusedSystemName = 'Butler';
-	//focusedSystemName = 'Babaeski';
-	//focusedSystemName = 'Terra';
-	//focusedSystemName = 'Ridgebrook';
-	//focusedSystemName = 'New Vandenburg';
-	//focusedSystemName = 'Alloway';
-	//focusedSystemName = 'Naco';
-	//focusedSystemName = 'Rosetta';
-	//focusedSystemName = 'Thala';
-	//focusedSystemName = 'Spica';
-    //focusedSystemName = 'Sirius';
-    //focusedSystemName = 'Hall';
-
-    //Clusters
-    //focusedSystems.push('Badlands Cluster');
-	//focusedSystems.push('Brocchi\'s Cluster');
-	//focusedSystems.push('Chaine Cluster');
-	//focusedSystems.push('Enders Cluster');
-	//focusedSystems.push('Hyades Cluster');
-    //focusedSystems.push('Pleiades Cluster');
-
-    // Nebula neighborhood
-    //focusedSystems.push('Able\'s Glory')
-	//focusedSystems.push('Albaracht');
-    //focusedSystems.push('Althea\'s Choice');
-    //focusedSystems.push('Angra');
-    //focusedSystems.push('Basantapur');
-	//focusedSystems.push('Beckars');
-    //focusedSystems.push('Belle Isle');
-    //focusedSystems.push('Carvajal');
-    //focusedSystems.push('Cohagen');
-    //focusedSystems.push('Cyrton');
-    //focusedSystems.push('Desolate Plains');
-    //focusedSystems.push('Fiery Plains');
-    //focusedSystems.push('Heathville');
-	//focusedSystems.push('Naka Pabni');
-	//focusedSystems.push('Porthos');
-    //focusedSystems.push('Sebha');
-    //focusedSystems.push('Serenity');
-	//focusedSystems.push('Sappir');
-    //focusedSystems.push('Simone');
-    //focusedSystems.push('Thala');
-    //focusedSystems.push('Timbuktu');
-	//focusedSystems.push('Trell');
-	//focusedSystems.push('Verdigreis');
-
-	// minimap Terra reference
-	//focusedSystems.push('Caripare');
-	//focusedSystems.push('Luthien');
-	//focusedSystems.push('Bannerhoft');
-	//focusedSystems.push('New Avalon');
-	//focusedSystems.push('Agliana');
-	//focusedSystems.push('Jardangal');
-	//focusedSystems.push('Nito');
-	//focusedSystems.push('Bergen');
-    //focusedSystems.push('Greifswald');
-
-	// border labelling
-	//focusedSystems.push('Sol');
-	//focusedSystems.push('Cassias');
-    //focusedSystems.push('Desolate Plains');
-    //focusedSystems.push('Strana Mechty');
-    //focusedSystems.push('Versailles');
-    //focusedSystems.push('El Dorado');
-    //focusedSystems.push('Bremen');
-    //focusedSystems.push('St. Ives');
-    //focusedSystems.push('Kiesen');
-	//focusedSystems.push('Zurich');
-
-    // dynamic names
-    //focusedSystems.push('Badlands Cluster');
-    //focusedSystems.push('Desolate Plains')
-
-    // nebula fine tuning
-    //focusedSystems.push('Badlands Cluster');
-    //focusedSystems.push('Desolate Plains')
-    //focusedSystems.push('Heathville');
-    //focusedSystems.push('Trell');
-    //focusedSystems.push('Tortuga Prime');
-    //focusedSystems.push('New Roland');
-
-    // loop fixing
-    //focusedSystems.push('Versailles');
-
-    // debugging
-    focusedSystems.push('Aconcagua');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -173,21 +84,15 @@ var main = function () {
     // randomize nebulae
     nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
 
-    for(var fsi = 0; fsi < focusedSystems.length; fsi++) {
-        focusedSystemName = focusedSystems[fsi];
+    for(var fsi = 0; fsi < reader.systems.length; fsi++) {
+        focusedSystem = reader.systems[fsi];
+        focusedSystemName = focusedSystem.name;
+        logger.log('Starting on ' + focusedSystemName);
 
-        for(var i = 0, len = reader.systems.length; i < len; i++) {
-            if(reader.systems[i].name === focusedSystemName) {
-                viewRect.x = reader.systems[i].x - viewRect.w * .5;
-                viewRect.y = reader.systems[i].y - viewRect.h * .5;
-                //viewRect.x = -viewRect.w * .5;
-                //viewRect.y = -viewRect.h * .5;
-                minimapViewRect.x = reader.systems[i].x - 600;
-                minimapViewRect.y = reader.systems[i].y - 300;
-                break;
-            }
-			//if(reader.systems[i].name.startsWith('Sol')) console.log(reader.systems[i].name);
-        }
+        viewRect.x = focusedSystem.x - viewRect.w * .5;
+        viewRect.y = focusedSystem.y - viewRect.h * .5;
+        minimapViewRect.x = focusedSystem.x - minimapViewRect.w * .5;
+        minimapViewRect.y = focusedSystem.y - minimapViewRect.h * .5;
 
         // clamp nebulae to view box
     	clampedNebulae = nebulaeRandomizer.generateBoundedNebulae(viewRect);

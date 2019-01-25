@@ -39,18 +39,21 @@ module.exports = (function () {
 		};
 	};
 
-	/**
-	 * Create a system neighborhood SVG file.
-	 */
-	SvgWriter.prototype.writeSystemNeighborhoodSvg = function (name, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings, jumpRings) {
+	/*SvgWriter.prototype.writeSystemNeighborhoodSvg = function (name, dimensions, viewRect, era, systems, factions, borders, nebulae, minimapSettings, jumpRings) {
 		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
 		var filename = this.baseDir + '/output/'+name.replace(/\s/g, '_')+'_' +era.year + '_' + safeEraName + '.svg';
 		this.writeSvg(null, filename, dimensions, viewRect, era, systems, factions, borders, null, nebulae, minimapSettings, jumpRings);
-	};
+	};*/
 
-	SvgWriter.prototype.writeBorderSvg = function (name, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings) {
-		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
-		var filename = this.baseDir + '/output/'+name.replace(/\s/g, '_')+'_' +era.year + '_' + safeEraName + '_borders.svg';
+	/**
+	 * Create a system neighborhood SVG file.
+	 */
+	SvgWriter.prototype.writeNeighborhoodSvg = function (name, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings) {
+		var safeEraName = era.year + '_' + era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
+		var dir = this.baseDir + '/output/'+safeEraName;
+		var filename = name.replace(/\s/g, '_')+'_' + safeEraName + '.svg';
+		dir = dir.replace(/[\+\s\(\)]/g, '_');
+		filename = filename.replace(/[\+\s\(\)]/g, '_');
 		this.writeSvg({
 			renderFactions : true,
 			renderBorderLabels : true,
@@ -63,13 +66,14 @@ module.exports = (function () {
 			renderJumpRings : true,
 			renderMinimap : true,
 			renderScaleHelp : true,
-		}, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings);
+		}, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings);
 	};
 
 	/**
 	 * Create an SVG file.
 	 *
 	 * @param settings {Object} The export settings
+	 * @param dir {String} The directory to put the file in (will be created if it doesn't exist)
 	 * @param filename {String} The file name
 	 * @param dimensions {Object} The image dimensions in pixels {w:<width>, h:<height>}
 	 * @param viewRect {Object} The viewport rectangle in map space {x: <left x>, y: <bottom y>, w:<width>, h:<height>}
@@ -81,7 +85,7 @@ module.exports = (function () {
 	 * @param minimapSettings {Object} Settings for an optional minimap (dimensions, viewRect and borders)
 	 * @param jumpRings {Array} List of jump ring radii
 	 */
-	SvgWriter.prototype.writeSvg = function (settings, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings) {
+	SvgWriter.prototype.writeSvg = function (settings, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings) {
 		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf-8' });
 		var viewBox;
 		var elementsStr;
@@ -154,11 +158,12 @@ module.exports = (function () {
 		tpl = tpl.replace('{DEFS}', this.markup.defs);
 		tpl = tpl.replace('{CSS}', this.markup.css);
 		tpl = tpl.replace('{ELEMENTS}', elementsStr);
-		// make filename safe
-		filename = filename.replace(/[\+\s\(\)]/g, '_');
 		// write file
-		fs.writeFileSync(filename, tpl, { encoding: 'utf8'});
-		this.logger.log('file "' + filename + '" written');
+		if(!fs.existsSync(dir)) {
+			fs.mkdirSync(dir, { recursive: true });
+		}
+		fs.writeFileSync(dir + '/' + filename, tpl, { encoding: 'utf8'});
+		this.logger.log('file "' + dir + '/' + filename + '" written');
 	};
 
 	/**
@@ -282,7 +287,7 @@ module.exports = (function () {
 							tplObj.text = curPolyline.labels[li].labelParts[ltpi];
 							tplObj.dx = (curPolyline.labels[li].dxValues[ltpi]).toFixed(2);
 							tplObj.dy = (curPolyline.labels[li].dyValues[ltpi]).toFixed(2);
-							this.markup.borderLabels += `<tspan dx="${tplObj.dx}" dy="${tplObj.dy}"
+							this.markup.borderLabels += `<tspan x="${tplObj.dx}" dy="${tplObj.dy}"
 								style="fill: ${tplObj.fill};">${tplObj.text}</tspan>`;
 						}
 						this.markup.borderLabels += `</textPath></text>`;
