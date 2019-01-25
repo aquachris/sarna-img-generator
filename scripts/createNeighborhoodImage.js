@@ -97,7 +97,7 @@ var main = function () {
     //focusedSystems.push('Badlands Cluster');
 	//focusedSystems.push('Brocchi\'s Cluster');
 	//focusedSystems.push('Chaine Cluster');
-	focusedSystems.push('Enders Cluster');
+	//focusedSystems.push('Enders Cluster');
 	//focusedSystems.push('Hyades Cluster');
     //focusedSystems.push('Pleiades Cluster');
 
@@ -149,6 +149,9 @@ var main = function () {
     //focusedSystems.push('Kiesen');
 	//focusedSystems.push('Zurich');
 
+    // dynamic names
+    focusedSystems.push('Badlands Cluster');
+
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
 
@@ -176,12 +179,10 @@ var main = function () {
     	minimapNebulae = nebulaeRandomizer.generateBoundedNebulae(minimapViewRect);
 
         // for each era ...
-    	//for(var eraI = 0; eraI < 1; eraI++) {
-        //for(var eraI = 4; eraI < 5; eraI++) { // 2367
-    	//for(var eraI = 16; eraI < 17; eraI++) { // 3025
     	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
 			if(!(false
 				//|| eraI === 4 // 2367
+                || eraI === 15 // 2864
 				|| eraI === 16 // 3025
 			)) {
 				continue;
@@ -210,7 +211,7 @@ var main = function () {
     				x: curSys.x,
     				y: curSys.y,
     				col : curAff,
-    				name : curSys.name
+    				name : curSys.names[eraI]
     			});
     		}
 
@@ -233,6 +234,11 @@ var main = function () {
 
     		// clamp the systems and borders to the image's viewBox
     		clampedSystems = Utils.clampObjects(reader.systems, viewRect, 0);
+            // for each of the clamped systems, replace its name with the current era's name
+            for(var i = 0; i < clampedSystems.length; i++) {
+                clampedSystems[i].name = clampedSystems[i].names[eraI];
+            }
+
             //clampedBorders = vBorder.borderEdgeLoops;
     		clampedBorders = vBorder.generateBoundedBorderLoops(viewRect);
 

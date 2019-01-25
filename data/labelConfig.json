@@ -1,6 +1,10 @@
 {
 	"Badlands Cluster" : [{
 		"position" : "center bottom"
+	}, {
+		"position" : "center center"
+	}, {
+		"position" : "center top"
 	}],
 	"Berenson": [{
 		"position" : "left center"
@@ -74,6 +78,13 @@
 	"Pinard": [{
 		"position": "left center",
 		"delta": [0, -1.5]
+	}],
+	"Pirates Haven Cluster" : [{
+		"position" : "center bottom"
+	}, {
+		"position" : "center center"
+	}, {
+		"position" : "center top"
 	}],
 	"Pleiades Cluster": [{
 		"position": "center center",

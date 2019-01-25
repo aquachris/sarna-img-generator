@@ -151,6 +151,8 @@ module.exports = (function () {
 			// name and status
 			curSystem.name_full = curRow[columnIdxMap['system']];
             curSystem.name = curSystem.name_full;
+
+            // find alternate names
 			curAltNames = [];
 			if(!!curRow[columnIdxMap['alternate names']]) {
 				curAltNames = curRow[columnIdxMap['alternate names']].split(',');
@@ -162,23 +164,16 @@ module.exports = (function () {
 						ni--;
 						continue;
 					}
-					// translate the system plus year string into an object
-					console.log(ni, altRegexResult);
+                    // translate the system plus year string into an object
+                    curAltNames[ni] = {
+                        name : altRegexResult[1], // new name
+                        year : parseInt(altRegexResult[2],10) // starting year for new name
+                    };
 				}
 			}
-			if(curAltNames.length > 0) {
-				console.log(curAltNames);
-			}
-            if(parentheses = curSystem.name_full.match(/(.+)\s*\(\s*(.+)\s*\)/i)) {
-                if(parentheses[2].match(/[0-9]/)) {
-                    curSystem.oldName = parentheses[1].trim();
-                    curSystem.newName = parentheses[2].replace(/\s[0-9]+\'*s*\+*/g, '');
-                    curSystem.name = curSystem.newName;
-                } else {
-                    curSystem.name = parentheses[1].trim();
-                }
-                //console.log(parentheses, curSystem.name, curSystem.oldName || '', curSystem.newName || '');
-            }
+            // sort alternate names by year
+            curAltNames.sort(function (a,b) { return a.year - b.year; });
+
 			curSystem.status = curRow[columnIdxMap['status']];
 			// coordinates
 			curSystem.x = curRow[columnIdxMap['x']];
@@ -206,6 +201,12 @@ module.exports = (function () {
                 curSystem.affiliations.push(curAffiliation);
 				// default: use the regular name
 				curSystem.names.push(curSystem.name);
+                for(var ni = 0; ni < curAltNames.length; ni++) {
+                    if(parseInt(curEra.year,10) >= curAltNames[ni].year) {
+                        curSystem.names.pop();
+                        curSystem.names.push(curAltNames[ni].name);
+                    }
+                }
             }
 
 			this.systems.push(curSystem);
