@@ -18,6 +18,9 @@
 	"Chaine Cluster": [{
 		"position": "center top"
 	}],
+	"Dark Nebula": [{
+		"position": "center center"
+	}],
 	"Denebola": [{
 		"position": "left top",
 		"delta": [2, 0]

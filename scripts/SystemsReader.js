@@ -270,7 +270,8 @@ module.exports = (function () {
     			centerX: curRow[columnIdxMap['x']],
                 centerY: curRow[columnIdxMap['y']],
                 w: curRow[columnIdxMap['width']],
-                h: curRow[columnIdxMap['height']]
+                h: curRow[columnIdxMap['height']],
+                type: 'nebula'
             };
             curNeb.x = curNeb.centerX - curNeb.w * .5;
             curNeb.y = curNeb.centerY - curNeb.h * .5;

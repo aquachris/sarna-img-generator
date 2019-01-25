@@ -23,6 +23,9 @@ module.exports = (function () {
 		return this;
 	};
 
+    /**
+     * Generates and randomizes the nebula polygons.
+     */
 	NebulaRandomizer.prototype.calculate = function () {
         var curNebula;
 		var widthToHeight;
@@ -32,6 +35,8 @@ module.exports = (function () {
         var angleInDeg, angleInRad;
 		var distToCenter;
 		var rng;
+        var avgDist;
+        var thresholdDist = 15;
 
         for(var i = 0, len = this.nebulae.length; i < len; i++) {
             curNebula = this.nebulae[i];
@@ -43,7 +48,8 @@ module.exports = (function () {
 			// ellipse's width to height ratio
 			widthToHeight = curNebula.w / curNebula.h;
 
-            numPoints = curNebula.circumference / 5;
+            //numPoints = curNebula.circumference / 5;
+            numPoints = Math.min(25, curNebula.circumference / 5);
             numPoints *= 0.9 + rng() * .25;
 			numPoints = Math.max(3, Math.round(numPoints));
 
@@ -60,17 +66,39 @@ module.exports = (function () {
 					y: curPoint[1]
 				});
             }
+            avgDist = this.randomizePoints(curNebula, rng);
+			while(avgDist > thresholdDist) {
+                //console.log('before ' +avgDist);
+                for(var j = 0; j < curNebula.points.length; j += 2) {
+                    curPoint = curNebula.points[j];
+                    prevPoint = curNebula.points[(curNebula.points.length+j-1)%curNebula.points.length];
+                    curNebula.points.splice(j, 0, {
+                        x: 0.5 * (curPoint.x + prevPoint.x),
+                        y: 0.5 * (curPoint.y + prevPoint.y)
+                    });
+                }
+                avgDist = this.randomizePoints(curNebula, rng);
+            }
 
-			this.randomizePoints(curNebula, rng);
+
 			this.generateControlPoints(curNebula);
         }
 	};
 
+    /**
+     * Randomizes a nebula's polygons.
+     *
+     * @param nebula {Object} The nebula object
+     * @param rng {Object} The seeded pseudorandom number generator
+     * @returns {Number} The average distance between the points *before* randomization
+     */
 	NebulaRandomizer.prototype.randomizePoints = function (nebula, rng) {
 		var prevI, nextI;
 		var p1, p2, p3;
 		var dist;
 		var deviation;
+        var newP;
+        var avgDist = 0;
 
 		nebula.originalPoints = nebula.points;
 		nebula.points = [];
@@ -89,8 +117,10 @@ module.exports = (function () {
 			p2 = nebula.originalPoints[i];
 			p3 = nebula.originalPoints[nextI];
 
+            // calculate the minimum distance to any of the nebula's neighbors
 			dist = Math.min(Utils.distance(p2.x, p2.y, p1.x, p1.y),
 							Utils.distance(p2.x, p2.y, p3.x, p3.y));
+            avgDist += dist;
 
 			// deviate in a random x and y direction
 			deviation = [rng(), rng()];
@@ -103,6 +133,7 @@ module.exports = (function () {
 				y: p2.y + deviation[1]
 			});
 		}
+        return avgDist / nebula.points.length;
 	};
 
 	/**

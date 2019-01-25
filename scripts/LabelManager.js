@@ -269,7 +269,9 @@ module.exports = (function () {
     		}
         }
 
-        if(!manualConfigApplied) {
+        if(!manualConfigApplied && obj.type === 'nebula') {
+            this.findBestLabelPositionForEllipticalObj(obj);
+        } else if(!manualConfigApplied) {
             this.findLabelLocationAutomatically(obj);
         }
 	};
@@ -760,19 +762,10 @@ module.exports = (function () {
             curObj = this.ellipticalObjects[i];
 
 			// do not place nebulae in the grid, as this messes with border labels
-            //this.grid.placeObject(curObj); 
-            this.findBestLabelPositionForEllipticalObj(curObj);
+            //this.grid.placeObject(curObj);
+            //this.findBestLabelPositionForEllipticalObj(curObj);
+            this.determineLabelPositionFor(curObj);
             this.grid.placeObject(curObj.label);
-        }
-    };
-
-    /**
-     * Generates and places faction labels
-     */
-    LabelManager.prototype.placeFactionLabels = function () {
-        var curFaction;
-        for(var faction in this.factions) {
-            curFaction = this.factions[faction];
         }
     };
 

@@ -214,7 +214,7 @@ module.exports = (function () {
         var splitLabelWidth;
         var numCurFactionCandidates;
 		var backwardsMerging;
-		
+
         for(var factionKey in this.polylines) {
             faction = this.factions[factionKey];
             if(!faction
@@ -228,7 +228,7 @@ module.exports = (function () {
                 continue;
             }*/
             // DEBUG END
-            console.log('generating border label candidates for ' + faction.longName);
+            this.logger.info('generating border label candidates for ' + faction.longName);
             labelWidth = this.calculateLabelLength(faction ? faction.longName : '');
             curLoop = null;
 
@@ -336,12 +336,12 @@ module.exports = (function () {
                 //this.logger.log(numCurFactionCandidates + ' candidates found', curPolyline.candidates[0]);
             }*/
             // DEBUGGER END
-			
-			// possible third pass: if no valid candidates have been found so far, relax the quality threshold 
+
+			// possible third pass: if no valid candidates have been found so far, relax the quality threshold
 			// somewhat
-			if(numCurFactionCandidates === 0 
-				&& curPolyline.candidates.length > 0 
-				&& !curPolyline.candidates[0].taboo 
+			if(numCurFactionCandidates === 0
+				&& curPolyline.candidates.length > 0
+				&& !curPolyline.candidates[0].taboo
 				&& curPolyline.candidates[0].rating >= this.settings.candidateQualityThreshold * .75) {
 				// Artificially increase the candidate's rating to the minimum acceptable value.
 				// Note that this value will be overwritten when rateAndSortCandidates is called again.
@@ -353,7 +353,7 @@ module.exports = (function () {
 			if(numCurFactionCandidates === 0) {
 				this.logger.log('no faction candidates found for ' + faction.longName + ', ' + curPolyline.candidates[0].rating);
 			}
-			
+
             // possible fourth pass: if no valid candidates have been found for the faction,
             // find candidates with the faction key as label
             for(var i = 0; i < this.polylines[factionKey].length && numCurFactionCandidates === 0; i++) {
@@ -805,8 +805,8 @@ module.exports = (function () {
             curCandidate.rating += polylineIntersectionRating + centerednessRating + multilineRating;
             curCandidate.polygons = polygons;
             curCandidate.lines = lines;
-			
-			// DEBUG 
+
+			// DEBUG
 			/*
 			if(curCandidate.id === 'DL_0_24') {
 				console.log(curCandidate.rating);
@@ -863,7 +863,7 @@ module.exports = (function () {
     };
 
     /**
-     * Calculates the maximum distance the label baseline extends beyond any of its faction's 
+     * Calculates the maximum distance the label baseline extends beyond any of its faction's
 	 * polylines' edges.
      * The resulting distance will be saved in candidate.plIntMax.
      *
@@ -874,7 +874,7 @@ module.exports = (function () {
         candidate.plIntMax = 0;
 		for(var pi = 0; pi < polylines.length; pi++) {
 			for(var ei = 0; ei < polylines[pi].edges.length; ei++) {
-				iPoint = Utils.getLineSegmentsIntersection(polylines[pi].edges[ei].n1, 
+				iPoint = Utils.getLineSegmentsIntersection(polylines[pi].edges[ei].n1,
 							polylines[pi].edges[ei].n2,
 							candidate.bl, candidate.br);
 				if(iPoint !== null) {
@@ -883,7 +883,7 @@ module.exports = (function () {
 						Utils.pointDistance(candidate.br, iPoint)
 					);
 				}
-				iPoint = Utils.getLineSegmentsIntersection(polylines[pi].edges[ei].p1, 
+				iPoint = Utils.getLineSegmentsIntersection(polylines[pi].edges[ei].p1,
 							polylines[pi].edges[ei].p2,
 							candidate.tl, candidate.tr);
 				if(iPoint !== null) {

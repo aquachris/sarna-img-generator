@@ -4,7 +4,7 @@ A collection of scripts that generate planetary systems images used on sarna.net
 ## TODOs (priority category):
 - ~~State labels (A)~~ **DONE**
 - ~~Label hinting (A)~~ **DONE**
-- Properly parse and use system names (A)
+- ~~Properly parse and use system names (A)~~ **DONE**
 - Script arguments & packaging (A)
 ---
 - Borders overlap at disputed systems (B)

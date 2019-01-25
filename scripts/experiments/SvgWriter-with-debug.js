@@ -52,24 +52,19 @@ module.exports = (function () {
 		var safeEraName = era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
 		var filename = this.baseDir + '/output/'+name.replace(/\s/g, '_')+'_' +era.year + '_' + safeEraName + '_borders.svg';
 		this.writeSvg({
-			renderFactions : true,
 			renderBorderLabels : true,
 			renderSystems : true,
 			renderSystemLabels : true,
 			renderClusters : true,
 			renderClusterLabels : true,
-			renderNebulae : true,
-			renderNebulaeLabels : true,
-			renderJumpRings : true,
 			renderMinimap : true,
-			renderScaleHelp : true,
+			renderScaleHelp : true
 		}, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings);
 	};
 
 	/**
 	 * Create an SVG file.
 	 *
-	 * @param settings {Object} The export settings
 	 * @param filename {String} The file name
 	 * @param dimensions {Object} The image dimensions in pixels {w:<width>, h:<height>}
 	 * @param viewRect {Object} The viewport rectangle in map space {x: <left x>, y: <bottom y>, w:<width>, h:<height>}
@@ -88,17 +83,17 @@ module.exports = (function () {
 		var pxPerLy = dimensions.w / viewRect.w;
 
 		settings = settings || {};
-		settings.renderFactions = settings.renderFactions === undefined ? true : settings.renderFactions;
-		settings.renderBorderLabels = settings.renderBorderLabels === undefined ? true : settings.renderBorderLabels;
-		settings.renderSystems = settings.renderSystems === undefined ? true : settings.renderSystems;
-		settings.renderSystemLabels = settings.renderSystemLabels === undefined ? true : settings.renderSystemLabels;
-		settings.renderClusters = settings.renderClusters === undefined ? true : settings.renderClusters;
-		settings.renderClusterLabels = settings.renderClusterLabels === undefined ? true : settings.renderClusterLabels;
-		settings.renderNebulae = settings.renderNebulae === undefined ? true : settings.renderNebulae;
-		settings.renderNebulaLabels = settings.renderNebulaLabels === undefined ? true : settings.renderNebulaLabels;
-		settings.renderJumpRings = settings.renderJumpRings === undefined ? true : settings.renderJumpRings;
-		settings.renderMinimap = settings.renderMinimap === undefined ? true : settings.renderMinimap;
-		settings.renderScaleHelp = settings.renderScaleHelp === undefined ? true : settings.renderScaleHelp;
+		settings.renderFactions = settings.renderFactions === undefined ? true : false;
+		settings.renderBorderLabels = settings.renderBorderLabels === undefined ? true : false;
+		settings.renderNebulae = settings.renderNebulae === undefined ? true : false;
+		settings.renderNebulaLabels = settings.renderNebulaLabels === undefined ? true : false;
+		settings.renderJumpRings = settings.renderJumpRings === undefined ? true : false;
+		settings.renderSystems = settings.renderSystems === undefined ? true : false;
+		settings.renderSystemLabels = settings.renderSystemLabels === undefined ? true : false;
+		settings.renderClusters = settings.renderClusters === undefined ? true : false;
+		settings.renderClusterLabels = settings.renderClusterLabels === undefined ? true : false;
+		settings.renderMinimap = settings.renderMinimap === undefined ? true : false;
+		settings.renderScaleHelp = settings.renderScaleHelp === undefined ? true : false;
 
 		// reset markup
 		this.initMarkup();
@@ -238,6 +233,12 @@ module.exports = (function () {
 				this.markup.borders += `<path fill-rule="evenodd" class="border ${tplObj.faction}"
 						style="stroke: ${tplObj.stroke}; stroke-width: 1px; fill: ${tplObj.fill};"
 						d="${tplObj.d}" />\n`;
+				/*this.markup.defs += `<path id="label-path-${tplObj.faction}"
+					d="${tplObj.d}" />`;
+				this.markup.borders += `<text dy="-2">
+    				<textPath startOffset="2" spacing="auto" xlink:href="#label-path-${tplObj.faction}">
+						<tspan>${tplObj.faction}</tspan></textPath>
+  				</text>`;*/
 			}
 		}
 
@@ -258,34 +259,182 @@ module.exports = (function () {
 					curD = '';
 					curCtrlPoints = '';
 
-					for(var li = 0; li < curPolyline.labels.length; li++) {
+					this.renderBorderLabels = true;
+					this.renderBorderLabelCandidates = false;
+
+					if(!!this.renderBorderLabels) {
+						//console.log(curPolyline.id, curPolyline.labels.length);
+						for(var li = 0; li < curPolyline.labels.length; li++) {
+							tplObj = {
+								plId : curPolyline.id,
+								lId : curPolyline.labels[li].id,
+								fill: hex,
+								x1 : curPolyline.labels[li].bl.x.toFixed(2),
+								y1 : (-curPolyline.labels[li].bl.y).toFixed(2),
+								x2 : curPolyline.labels[li].br.x.toFixed(2),
+								y2 : (-curPolyline.labels[li].br.y).toFixed(2),
+								text : curPolyline.labels[li].labelText,
+								opacity : 1,
+								rating: curPolyline.labels[li].rating.toFixed(3),
+								midPos: curPolyline.labels[li].midPos.toFixed(3)
+							};
+							// add label baseline path to defs
+							this.markup.defs += `<path id="label-path-${tplObj.lId}"
+								d="M${tplObj.x1},${tplObj.y1} L${tplObj.x2},${tplObj.y2}" />`;
+							// add label text element to borderLabels group
+							this.markup.borderLabels += `<text text-anchor="left"
+								data-rating="${tplObj.rating}" data-mid-pos="${tplObj.midPos}">
+			    				<textPath xlink:href="#label-path-${tplObj.lId}">`;
+							for(var ltpi = 0; ltpi < curPolyline.labels[li].labelParts.length; ltpi++) {
+								tplObj.text = curPolyline.labels[li].labelParts[ltpi];
+								tplObj.dx = (curPolyline.labels[li].dxValues[ltpi]).toFixed(2);
+								tplObj.dy = (curPolyline.labels[li].dyValues[ltpi]).toFixed(2);
+								this.markup.borderLabels += `<tspan dx="${tplObj.dx}" dy="${tplObj.dy}"
+									style="fill: ${tplObj.fill}; opacity: ${tplObj.opacity}">${tplObj.text}</tspan>`;
+							}
+							this.markup.borderLabels += `</textPath></text>`;
+						}
+					}
+
+					if(!!this.renderBorderLabelCandidates) {
+						for(var ei = 0; ei < curPolyline.edges.length; ei++) {
+							curEdge = curPolyline.edges[ei];
+							if(ei === 0
+								//|| (prevEdge && curEdge.n1.x !== prevEdge.n2.x && curEdge.n1.y !== prevEdge.n2.y)
+							) {
+								curD += 'M'+curEdge.n1.x.toFixed(2)+','+(-curEdge.n1.y).toFixed(2);
+							}
+							//if(curEdge.n1c2 === null || curEdge.n1c2 === undefined ||
+							//	curEdge.n2c1 === null || curEdge.n2c1 === undefined) {
+							curD += ' L' + curEdge.n2.x.toFixed(2)+','+(-curEdge.n2.y).toFixed(2);
+							prevEdge = curEdge;
+							/*} else {
+								curD += ' C' + curEdge.n1c2.x.toFixed(2)+','+(-curEdge.n1c2.y).toFixed(2);
+								curD += ' ' + curEdge.n2c1.x.toFixed(2)+','+(-curEdge.n2c1.y).toFixed(2);
+								curD += ' ' + curEdge.n2.x.toFixed(2)+','+(-curEdge.n2.y).toFixed(2);
+							}*/
+							// render control points
+							/*if(curEdge.n1c2 !== null && curEdge.n1c2 !== undefined &&
+								curEdge.n2c1 !== null && curEdge.n2c1 !== undefined) {
+								tplObj = {
+									x1 : curEdge.n1c2.x.toFixed(2),
+									y1 : (-curEdge.n1c2.y).toFixed(2),
+									x2 : curEdge.n2c1.x.toFixed(2),
+									y2 : (-curEdge.n2c1.y).toFixed(2)
+								};
+								this.markup.borderLabels += `<circle cx="${tplObj.x1}" cy="${tplObj.y1}" r="0.3" style="fill: black;" />`;
+								this.markup.borderLabels += `<circle cx="${tplObj.x2}" cy="${tplObj.y2}" r="0.3" style="fill: black;" />`;
+							}*/
+						}
 						tplObj = {
 							plId : curPolyline.id,
-							lId : curPolyline.labels[li].id,
-							fill: hex,
-							x1 : curPolyline.labels[li].bl.x.toFixed(2),
-							y1 : (-curPolyline.labels[li].bl.y).toFixed(2),
-							x2 : curPolyline.labels[li].br.x.toFixed(2),
-							y2 : (-curPolyline.labels[li].br.y).toFixed(2),
-							text : curPolyline.labels[li].labelText,
-							rating: curPolyline.labels[li].rating.toFixed(3),
-							midPos: curPolyline.labels[li].midPos.toFixed(3)
+							stroke : '#000'
 						};
-						// add label baseline path to defs
-						this.markup.defs += `<path id="label-path-${tplObj.lId}"
-							d="M${tplObj.x1},${tplObj.y1} L${tplObj.x2},${tplObj.y2}" />`;
-						// add label text element to borderLabels group
-						this.markup.borderLabels += `<text text-anchor="left"
-							data-candidate-rating="${tplObj.rating}">
-		    				<textPath xlink:href="#label-path-${tplObj.lId}">`;
-						for(var ltpi = 0; ltpi < curPolyline.labels[li].labelParts.length; ltpi++) {
-							tplObj.text = curPolyline.labels[li].labelParts[ltpi];
-							tplObj.dx = (curPolyline.labels[li].dxValues[ltpi]).toFixed(2);
-							tplObj.dy = (curPolyline.labels[li].dyValues[ltpi]).toFixed(2);
-							this.markup.borderLabels += `<tspan dx="${tplObj.dx}" dy="${tplObj.dy}"
-								style="fill: ${tplObj.fill};">${tplObj.text}</tspan>`;
+						if(curPolyline.mergeFailed) {
+							tplObj.stroke = '#c00';
 						}
-						this.markup.borderLabels += `</textPath></text>`;
+						this.markup.borderLabels += `<path fill-rule="evenodd" data-id="${tplObj.plId}"
+							style="stroke: ${tplObj.stroke}; stroke-width: .3px; fill: none;" d="${curD}" />\n`;
+
+						for(var ci = 0; ci < curPolyline.candidates.length; ci++) {
+							// DEBUG
+							/*if(curPolyline.candidates[ci].id !== 'LC_0_10') {
+								continue;
+							}*/
+							// END DEBUG
+							tplObj = {
+								plId : curPolyline.id,
+								cId : curPolyline.candidates[ci].id,
+								x1 : curPolyline.candidates[ci].bl.x.toFixed(2),
+								y1 : (-curPolyline.candidates[ci].bl.y).toFixed(2),
+								x2 : curPolyline.candidates[ci].br.x.toFixed(2),
+								y2 : (-curPolyline.candidates[ci].br.y).toFixed(2)
+							};
+							this.markup.defs += `<path id="label-path-${tplObj.cId}"
+								d="M${tplObj.x1},${tplObj.y1} L${tplObj.x2},${tplObj.y2}" />`;
+							tplObj = {
+								plId : curPolyline.id,
+								cId : curPolyline.candidates[ci].id,
+								fill: hex,
+								x: curPolyline.candidates[ci].midPt.x.toFixed(2),
+								y: (-curPolyline.candidates[ci].midPt.y).toFixed(2),
+								text : curPolyline.candidates[ci].labelText,
+								rating : curPolyline.candidates[ci].rating.toFixed(4),
+								isAbove : curPolyline.candidates[ci].labelIsAbovePolyline,
+								innerLoop : curPolyline.candidates[ci].inInnerLoop,
+								angle : curPolyline.candidates[ci].angle.toFixed(3)
+								//dist: curPolyline.candidates[ci].dist,
+							};
+							//console.log(curPolyline.candidates[ci].midPt);
+							this.markup.borderLabels += `<circle cx="${tplObj.x}" cy="${tplObj.y}"
+								r=".7" style="stroke-width: 0; fill: #a00;" data-above="${tplObj.isAbove}" />\n`;
+							this.markup.borderLabels += `<text text-anchor="left">
+			    				<textPath xlink:href="#label-path-${tplObj.cId}"
+								data-rating="${tplObj.rating}" data-angle="${tplObj.angle}"
+								data-above="${tplObj.isAbove}" data-inner-loop="${tplObj.innerLoop}">`;
+
+							for(var ctpi = 0; ctpi < curPolyline.candidates[ci].labelParts.length; ctpi++) {
+								tplObj.text = curPolyline.candidates[ci].labelParts[ctpi];
+								tplObj.dx = (curPolyline.candidates[ci].dxValues[ctpi]).toFixed(2);
+								tplObj.dy = (curPolyline.candidates[ci].dyValues[ctpi]).toFixed(2);
+								this.markup.borderLabels += `<tspan dx="${tplObj.dx}" dy="${tplObj.dy}"
+									style="fill: ${tplObj.fill};">${tplObj.text}</tspan>`;
+							}
+							this.markup.borderLabels += `</textPath></text>`;
+
+							tplObj = {
+								cId : curPolyline.candidates[ci].id,
+								x0: curPolyline.candidates[ci].bl.x.toFixed(3),
+								y0: (-curPolyline.candidates[ci].bl.y).toFixed(3),
+								x1: curPolyline.candidates[ci].tl.x.toFixed(3),
+								y1: (-curPolyline.candidates[ci].tl.y).toFixed(3),
+								x2: curPolyline.candidates[ci].tr.x.toFixed(3),
+								y2: (-curPolyline.candidates[ci].tr.y).toFixed(3),
+								x3: curPolyline.candidates[ci].br.x.toFixed(3),
+								y3: (-curPolyline.candidates[ci].br.y).toFixed(3)
+							};
+							tplObj.d = `M${tplObj.x0},${tplObj.y0} L${tplObj.x1},${tplObj.y1}
+								L${tplObj.x2},${tplObj.y2} L${tplObj.x3},${tplObj.y3} z`;
+							this.markup.borderLabels += `<path data-id="${tplObj.cId}"
+								d="${tplObj.d}"
+								style="stroke: #0052; stroke-width: .3; fill: none;" />`;
+
+							for(var pci = 0; pci < curPolyline.candidates[ci].polygons.length; pci++) {
+								polygon = curPolyline.candidates[ci].polygons[pci];
+								curD = '';
+								for(var ppi = 0; ppi < polygon.length; ppi++) {
+									if(ppi === 0) {
+										curD = 'M';
+									} else {
+										curD += ' L';
+									}
+									curD += polygon[ppi].x.toFixed(3);
+									curD += ','+(-polygon[ppi].y).toFixed(3);
+								}
+								if(!curD) {
+									continue;
+								}
+								curD += 'z';
+								this.markup.overlays += `<path d="${curD}" style="stroke-width: 0; fill: #0a05" />`;
+							}
+							var cLine;
+							var cpLine;
+							for(var cli = 0; cli < curPolyline.candidates[ci].lines.length; cli++) {
+								cLine = curPolyline.candidates[ci].lines[cli];
+								if(!cLine) {
+									console.log(cLine);
+									continue;
+								}
+								for(var cpli = 0; cpli < cLine.length; cpli++) {
+									if(!cLine[cpli] || !cLine[cpli].p0 || !cLine[cpli].p1) {
+										continue;
+									}
+									curD = 'M'+cLine[cpli].p0.x.toFixed(3)+','+(-cLine[cpli].p0.y).toFixed(3);
+									curD += ' L'+cLine[cpli].p1.x.toFixed(3)+','+(-cLine[cpli].p1.y).toFixed(3);
+									this.markup.overlays += `<path d="${curD}" style="stroke-width: .25; stroke: #0c0" />`;
+								}
+							}
+						}
 					}
 				}
 			}
@@ -567,9 +716,9 @@ module.exports = (function () {
 	SvgWriter.prototype.renderMinimap = function (settings, minimapSettings, viewRect, pxPerLy, factions) {
 		var pxPerLyMinimap, minimapScale, minimapMargin;
 		var tplObj;
-		var borderEdgeLoops, borderEdges, prevEdge, curEdge;
+		var borderEdges, prevEdge, curEdge;
 		var rgba;
-		var curD, curPoint, prevPoint;
+		var curD, curPoint;
 		var focusedCoords;
 		var nebulae;
 
@@ -613,8 +762,8 @@ module.exports = (function () {
 
 		// iterate over factions and add state areas
 		for(var faction in factions) {
-			borderEdgeLoops = minimapSettings.borders[faction];
-			if(!borderEdgeLoops || borderEdgeLoops.length === 0) {
+			borderEdges = minimapSettings.borders[faction];
+			if(!borderEdges || borderEdges.length === 0) {
 				continue;
 			}
 			// don't paint borders for independent planets
@@ -627,15 +776,13 @@ module.exports = (function () {
 			}
 
 			curD = '';
-			for(var i = 0, len = borderEdgeLoops.length; i < len; i++) {
-				for(var j = 0; j < borderEdgeLoops[i].edges.length; j++) {
-					prevEdge = curEdge;
-					curEdge = borderEdgeLoops[i].edges[j];
-					if(j === 0) {
-						curD += ' M'+curEdge.n1.x.toFixed(2)+','+(-curEdge.n1.y).toFixed(2);
-					}
-					curD += ' L' + curEdge.n2.x.toFixed(2)+','+(-curEdge.n2.y).toFixed(2);
+			for(var i = 0, len = borderEdges.length; i < len; i++) {
+				prevEdge = curEdge;
+				curEdge = borderEdges[i];
+				if(curEdge.isFirstInLoop) {
+					curD += ' M'+curEdge.n1.x.toFixed(2)+','+(-curEdge.n1.y).toFixed(2);
 				}
+				curD += ' L' + borderEdges[i].n2.x.toFixed(2)+','+(-borderEdges[i].n2.y).toFixed(2);
 			}
 			if(curD.length === 0) {
 				continue;
@@ -664,13 +811,8 @@ module.exports = (function () {
 			curD = '';
 			for(var j = 0, jlen = nebulae[i].allPoints.length; j <= jlen; j++) {
 				curPoint = nebulae[i].allPoints[j % jlen];
-				prevPoint = nebulae[i].allPoints[(jlen+j-1) % jlen];
 				if(j === 0) {
 					curD += 'M' + curPoint.x.toFixed(1) + ',' + (-curPoint.y).toFixed(1);
-				} else if(true) {
-					curD += ' C' + prevPoint.c2.x.toFixed(1) + ',' + (-prevPoint.c2.y).toFixed(1);
-					curD += ' ' + curPoint.c1.x.toFixed(1) + ',' + (-curPoint.c1.y).toFixed(1);
-					curD += ' ' + curPoint.x.toFixed(1) + ',' + (-curPoint.y).toFixed(1);
 				} else {
 					curD += ' L' + curPoint.x.toFixed(1) + ',' + (-curPoint.y).toFixed(1);
 				}

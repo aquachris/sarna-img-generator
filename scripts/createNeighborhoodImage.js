@@ -150,7 +150,19 @@ var main = function () {
 	//focusedSystems.push('Zurich');
 
     // dynamic names
-    focusedSystems.push('Badlands Cluster');
+    //focusedSystems.push('Badlands Cluster');
+    //focusedSystems.push('Desolate Plains')
+
+    // nebula fine tuning
+    //focusedSystems.push('Badlands Cluster');
+    //focusedSystems.push('Desolate Plains')
+    //focusedSystems.push('Heathville');
+    //focusedSystems.push('Trell');
+    //focusedSystems.push('Tortuga Prime');
+    focusedSystems.push('New Roland');
+
+    // loop fixing
+    //focusedSystems.push('Versailles');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -182,7 +194,7 @@ var main = function () {
     	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
 			if(!(false
 				//|| eraI === 4 // 2367
-                || eraI === 15 // 2864
+                //|| eraI === 15 // 2864
 				|| eraI === 16 // 3025
 			)) {
 				continue;
@@ -281,7 +293,7 @@ var main = function () {
     				dimensions : minimapDimensions,
     				viewRect : minimapViewRect,
     				borders: minimapBorders,
-    				nebulae: labelMgr.minimapNebulae
+    				nebulae: minimapNebulae
     			},
     			[30, 60]
     		);
