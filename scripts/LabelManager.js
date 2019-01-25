@@ -266,6 +266,8 @@ module.exports = (function () {
                     manualConfigApplied = true;
     				break;
     			}
+                obj.label.connector = undefined;
+                delete obj.label.connector;
     		}
         }
 

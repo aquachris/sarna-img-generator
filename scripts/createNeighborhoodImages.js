@@ -100,11 +100,9 @@ var main = function () {
 
         // for each era ...
     	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
-			if(!(false
-				//|| eraI === 4 // 2367
-                //|| eraI === 15 // 2864
-				|| eraI === 16 // 3025
-			)) {
+			if(
+                eraI === 16 // 3025
+			) {
 				continue;
 			}
     		curEra = reader.eras[eraI];

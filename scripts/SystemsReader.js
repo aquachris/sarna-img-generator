@@ -166,7 +166,7 @@ module.exports = (function () {
 					}
                     // translate the system plus year string into an object
                     curAltNames[ni] = {
-                        name : altRegexResult[1], // new name
+                        name : altRegexResult[1].replace(/\s*\([^\)]+\)\s*/gi, ''), // new name
                         year : parseInt(altRegexResult[2],10) // starting year for new name
                     };
 				}
