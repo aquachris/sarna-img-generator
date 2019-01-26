@@ -165,7 +165,8 @@ var main = function () {
     //focusedSystems.push('Versailles');
 
     // debugging
-    focusedSystems.push('Aconcagua');
+    //focusedSystems.push('Aconcagua');
+    focusedSystems.push('Alexandria (CC)');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);

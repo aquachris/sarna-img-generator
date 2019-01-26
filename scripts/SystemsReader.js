@@ -166,7 +166,7 @@ module.exports = (function () {
 					}
                     // translate the system plus year string into an object
                     curAltNames[ni] = {
-                        name : altRegexResult[1].replace(/\s*\([^\)]+\)\s*/gi, ''), // new name
+                        name : altRegexResult[1], // new name
                         year : parseInt(altRegexResult[2],10) // starting year for new name
                     };
 				}
@@ -200,11 +200,11 @@ module.exports = (function () {
                 curAffiliation = curRow[columnIdxMap['era_'+eraIdx]] || '';//eras[eraI].idx] || '';
                 curSystem.affiliations.push(curAffiliation);
 				// default: use the regular name
-				curSystem.names.push(curSystem.name);
+				curSystem.names.push(curSystem.name.replace(/\s*\([^\)]+\)\s*/gi, ''));
                 for(var ni = 0; ni < curAltNames.length; ni++) {
                     if(parseInt(curEra.year,10) >= curAltNames[ni].year) {
                         curSystem.names.pop();
-                        curSystem.names.push(curAltNames[ni].name);
+                        curSystem.names.push(curAltNames[ni].name.replace(/\s*\([^\)]+\)\s*/gi, ''));
                     }
                 }
             }
