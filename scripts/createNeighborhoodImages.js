@@ -12,8 +12,8 @@ var SvgWriter = require('./SvgWriter.js');
 
 var main = function () {
     // initialize objects
-    var logger = new Logger(Logger.MESSAGE);
-    var logRenderer = new LogRenderer(logger, '../data/script_log.html', '../data/log.tpl.html');
+    var logger = console;//new Logger(Logger.MESSAGE);
+    //var logRenderer = new LogRenderer(logger, '../data/script_log.html', '../data/log.tpl.html');
     var reader = new SystemsReader(logger);
 	var writer = new SvgWriter(logger);
 	var pDisc;
@@ -84,7 +84,7 @@ var main = function () {
     // randomize nebulae
     nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
 
-    for(var fsi = 0; fsi < reader.systems.length; fsi++) {
+    for(var fsi = 0; fsi < 206; fsi++) {// reader.systems.length; fsi++) {
         focusedSystem = reader.systems[fsi];
         focusedSystemName = focusedSystem.name;
         logger.log('Starting on ' + focusedSystemName);
@@ -101,7 +101,7 @@ var main = function () {
         // for each era ...
     	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
 			if(
-                eraI === 16 // 3025
+                eraI !== 16 // 3025
 			) {
 				continue;
 			}
@@ -207,7 +207,7 @@ var main = function () {
     }
 
     // finish by rendering out the logs
-    logRenderer.render();
+    //logRenderer.render();
 };
 
 main();
