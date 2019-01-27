@@ -100,6 +100,15 @@ module.exports = (function () {
         var newP;
         var avgDist = 0;
 
+        // remove previous references
+        while(nebula.originalPoints && nebula.originalPoints.length > 0) {
+            nebula.originalPoints[0] = null;
+            nebula.originalPoints.shift();
+        }
+        nebula.originalPoints = null;
+        delete nebula.originalPoints;
+
+        // new reference
 		nebula.originalPoints = nebula.points;
 		nebula.points = [];
 

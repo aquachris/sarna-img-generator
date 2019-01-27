@@ -50,10 +50,8 @@ module.exports = (function () {
 	 */
 	SvgWriter.prototype.writeNeighborhoodSvg = function (name, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings) {
 		var safeEraName = era.year + '_' + era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
-		var dir = this.baseDir + '/output/'+safeEraName;
-		var filename = name.replace(/\s/g, '_')+'_' + safeEraName + '.svg';
-		dir = dir.replace(/[\+\s\(\)]/g, '_');
-		filename = filename.replace(/[\+\s\(\)]/g, '_');
+		var dir = (this.baseDir + '/output/'+safeEraName).replace(/[\+\s\(\)]/g, '_');
+		var filename = (name.replace(/\s/g, '_')+'_' + safeEraName + '.svg').replace(/[\+\s\(\)]/g, '_');
 		this.writeSvg({
 			renderFactions : true,
 			renderBorderLabels : true,
@@ -65,7 +63,30 @@ module.exports = (function () {
 			renderNebulaeLabels : true,
 			renderJumpRings : true,
 			renderMinimap : true,
-			renderScaleHelp : true,
+			renderScaleHelp : true
+		}, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings);
+	};
+
+	/**
+	 * Create a region SVG file.
+	 */
+	SvgWriter.prototype.writeRegionSvg = function (dir, name, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings) {
+		var safeEraName = era.year + '_' + era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
+		var filename = (name.replace(/\s/g, '_')+'_' + safeEraName + '.svg').replace(/[\+\s\(\)]/g, '_');
+		dir = dir || safeEraName;
+		dir = (this.baseDir + '/output/' + dir).replace(/[\+\s\(\)]/g, '_');
+		this.writeSvg({
+			renderFactions : true,
+			renderBorderLabels : true,
+			renderSystems : true,
+			renderSystemLabels : true,
+			renderClusters : true,
+			renderClusterLabels : true,
+			renderNebulae : true,
+			renderNebulaeLabels : true,
+			renderJumpRings : false,
+			renderMinimap : true,
+			renderScaleHelp : true
 		}, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings);
 	};
 
@@ -90,6 +111,7 @@ module.exports = (function () {
 		var viewBox;
 		var elementsStr;
 		var pxPerLy = dimensions.w / viewRect.w;
+		var scaleHelpSettings;
 
 		settings = settings || {};
 		settings.renderFactions = settings.renderFactions === undefined ? true : settings.renderFactions;
@@ -107,6 +129,9 @@ module.exports = (function () {
 		// reset markup
 		this.initMarkup();
 
+		// generate css rules
+		this.generateCSS(pxPerLy);
+
 		// render faction borders and state areas
 		this.renderFactions(settings, factions, borders, borderLabelLines || []);
 
@@ -123,7 +148,10 @@ module.exports = (function () {
 		this.renderMinimap(settings, minimapSettings, viewRect, pxPerLy, factions, nebulae);
 
 		// render scale help
-		this.renderScaleHelp(settings, viewRect, pxPerLy);
+		scaleHelpSettings = {};
+		scaleHelpSettings.max = 100;
+		scaleHelpSettings.step = 10;
+		this.renderScaleHelp(settings, scaleHelpSettings, viewRect, pxPerLy);
 
 		// concatenate markup
 		elementsStr = '';
@@ -164,6 +192,25 @@ module.exports = (function () {
 		}
 		fs.writeFileSync(dir + '/' + filename, tpl, { encoding: 'utf8'});
 		this.logger.log('file "' + dir + '/' + filename + '" written');
+	};
+
+	/**
+	 * @private
+	 */
+	SvgWriter.prototype.generateCSS = function (pxPerLy) {
+		var txtShd = 0.14*pxPerLy + 'px';
+		var txtShdRule = 'text-shadow: ';
+		txtShdRule += `${txtShd} ${txtShd} #fff,`;
+		txtShdRule += `-${txtShd} ${txtShd} #fff,`;
+		txtShdRule += `${txtShd} -${txtShd} #fff,`;
+		txtShdRule += `-${txtShd} -${txtShd} #fff;`;
+
+		// system label text shadow
+		this.markup.css += `text.system-label { ${txtShdRule} }\n`;
+		// minimap text shadow
+		this.markup.css += `.minimap-outer text { ${txtShdRule} }\n`;
+		// scaling help text shadow
+		this.markup.css += `.scale text { ${txtShdRule} }\n`;
 	};
 
 	/**
@@ -781,7 +828,7 @@ module.exports = (function () {
 	 * Renders the scale help.
 	 * @private
 	 */
-	SvgWriter.prototype.renderScaleHelp = function (settings, viewRect, pxPerLy) {
+	SvgWriter.prototype.renderScaleHelp = function (settings, scaleHelpSettings, viewRect, pxPerLy) {
 		var scaleMargin = 10 / pxPerLy;
 		var tplObj = {
 			tX  : viewRect.x + scaleMargin,
@@ -792,23 +839,26 @@ module.exports = (function () {
 			t40 : 40 - 1.365,
 			t50 : 50 - 1.365
 		};
+		var cssClasses = ['black', 'white'];
 
 		if(!settings.renderScaleHelp) {
 			return;
 		}
-		this.markup.scaleHelp = `<g transform="translate(${tplObj.tX}, ${tplObj.tY})">
-				<rect x="0" y="0" width="50" height="1.5" class="black" />
-				<rect x="10" y="0" width="10" height="1.5" class="white" />
-				<rect x="30" y="0" width="10" height="1.5" class="white" />
-				<rect x="0" y="0" width="50" height="1.5" class="frame" />
-				<text x="-0.682" y="-1">0</text>
-				<text x="${tplObj.t10}" y="-1">10</text>
-				<text x="${tplObj.t20}" y="-1">20</text>
-				<text x="${tplObj.t30}" y="-1">30</text>
-				<text x="${tplObj.t40}" y="-1">40</text>
-				<text x="${tplObj.t50}" y="-1">50</text>
-				<text x="51" y="1.85">LY</text>
-			</g>\n`;
+		if(!scaleHelpSettings) {
+			scaleHelpSettings = {};
+		}
+		scaleHelpSettings.max = scaleHelpSettings.max || 50;
+		scaleHelpSettings.step = scaleHelpSettings.step || 10;
+		this.markup.scaleHelp = `<g transform="translate(${tplObj.tX}, ${tplObj.tY})">`;
+		for(var i = 0, ly = 0; ly <= scaleHelpSettings.max; i++, ly += scaleHelpSettings.step) {
+			if(ly < scaleHelpSettings.max) {
+				this.markup.scaleHelp += `<rect x="${ly}" y="0" width="${scaleHelpSettings.step}" height="1.5" class="${cssClasses[i%2]}" />`;
+			}
+			this.markup.scaleHelp += `<text x="${ly}" y="-1" text-anchor="middle">${ly}</text>`;
+		}
+		this.markup.scaleHelp += `<rect x="0" y="0" width="${scaleHelpSettings.max}" height="1.5" class="frame" />`;
+		this.markup.scaleHelp += `<text x="${scaleHelpSettings.max + 1}" y="1.85">LY</text>`
+		this.markup.scaleHelp += `</g>\n`;
 	};
 
 	/**

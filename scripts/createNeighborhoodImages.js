@@ -1,3 +1,4 @@
+'use strict';
 var fs = require('fs');
 var Logger = require('./Logger.js');
 var LogRenderer = require('./LogRenderer.js');
@@ -12,7 +13,10 @@ var SvgWriter = require('./SvgWriter.js');
 
 var main = function () {
     // initialize objects
-    var logger = console;//new Logger(Logger.MESSAGE);
+    // the logger and log renderer just hog memory
+    // TODO make the logger smarter (flush at regular intervals to keep memory usage in check)
+    // var logger = new Logger(Logger.MESSAGE);
+    var logger = console;
     //var logRenderer = new LogRenderer(logger, '../data/script_log.html', '../data/log.tpl.html');
     var reader = new SystemsReader(logger);
 	var writer = new SvgWriter(logger);
@@ -51,18 +55,11 @@ var main = function () {
 
     // the visible rectangle, in map space:
 	var viewRect = {
-		x: -2000,
-		y: -2000,
-		w: 4000,
-		h: 4000
-	};
-
-    viewRect = {
         x: -70,
         y: -70,
         w: 140,
         h: 140
-    };
+	};
 
 	var minimapDimensions = {
 		w: 400,
@@ -84,7 +81,7 @@ var main = function () {
     // randomize nebulae
     nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
 
-    for(var fsi = 0; fsi < 206; fsi++) {// reader.systems.length; fsi++) {
+    for(var fsi = 0; fsi < reader.systems.length; fsi++) {// reader.systems.length; fsi++) {
         focusedSystem = reader.systems[fsi];
         focusedSystemName = focusedSystem.name;
         logger.log('Starting on ' + focusedSystemName);
@@ -203,10 +200,41 @@ var main = function () {
     			},
     			[30, 60]
     		);
+
+            // remove object references
+            while(reservedPoints.length > 0) {
+                reservedPoints[0] = null;
+                reservedPoints.shift();
+            }
+            reservedPoints = null;
+            while(voronoiSystems.length > 0) {
+                voronoiSystems[0].name = null;
+                voronoiSystems[0].col = null;
+                voronoiSystems[0] = null;
+                voronoiSystems.shift();
+            }
+            voronoiSystems = null;
     	}
+
+        // remove object references
+        while(clampedNebulae.length > 0) {
+            clampedNebulae[0].points = null;
+            clampedNebulae[0].allPoints = null;
+            clampedNebulae[0] = null;
+            clampedNebulae.shift();
+        }
+        clampedNebulae = null;
+        while(minimapNebulae.length > 0) {
+            minimapNebulae[0].points = null;
+            minimapNebulae[0].allPoints = null;
+            minimapNebulae[0] = null;
+            minimapNebulae.shift();
+        }
+        minimapNebulae = null;
     }
 
     // finish by rendering out the logs
+    // see reason for commenting this out at the top
     //logRenderer.render();
 };
 

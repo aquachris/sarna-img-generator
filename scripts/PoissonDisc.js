@@ -162,6 +162,10 @@ module.exports = (function () {
 	 */
     PoissonDisc.prototype.replaceReservedPoints = function (reservedPoints) {
         var poissonPoint, reservedPoint, pointsRejected = 0;
+        while(this.reservedPoints && this.reservedPoints.length > 0) {
+            this.reservedPoints[0] = null;
+            this.reservedPoints.shift();
+        }
         this.reservedPoints = reservedPoints;
         this.aggregatedGrid = new Array(this.gridWidth * this.gridHeight);
         this.aggregatedPoints = [];

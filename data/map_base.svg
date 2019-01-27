@@ -62,22 +62,20 @@
 		g.nebulae path { fill: url(#nebula-fill); stroke: rgba(0, 0, 0, .5); stroke-width: .25 }
 		text.nebulae-label { font-size: 2.5px; fill: #999; }
 		text.nebulae-label.large { font-size: 4px; fill: #999; }
-		text.system-label { font-size: 2.5px; text-shadow: 1px 1px 0 #fff, -1px 1px 0 #fff, 1px -1px 0 #fff, -1px -1px 0 #fff; }
+		text.system-label { font-size: 2.5px }
 		text.system-label.abandoned { fill: #555; font-style: italic; }
 		text.system-label.undiscovered { fill: #555; font-style: italic; }
 		text.system-label tspan.sup { font-size: 1.5px; }
 		text.system-label.apocryphal tspan.sup { fill: #c00 }
-		text.faction-label { fill: #aaa; font-size: 6px; font-style: italic; font-weight: bold; text-shadow: .05em .05em 0 #eee, -.05em .05em 0 #eee, .05em -.05em 0 #eee, -.05em -.05em 0 #eee; }
 		g.border-labels text { alignment-baseline: middle; font-size: 2px; font-style: italic; font-weight: bold; text-rendering: geometricPrecision; }
 		path.label-connector { fill: none; stroke: #000; stroke-width: 0.25; }
-		.minimap-outer text { font-size: 60px; text-shadow: 1px 1px 0 #fff, -1px 1px 0 #fff, 1px -1px 0 #fff, -1px -1px 0 #fff; }
+		.minimap-outer text { font-size: 60px; }
 		.minimap-outer text .smaller { font-size: 45px; }
 		.minimap-outer path.nebula { fill: rgba(0, 0, 0, .075); stroke: rgba(0, 0, 0, .5); stroke-width: .25; }
 		path { stroke-linejoin: round; stroke-linecap: round; }
 		.scale rect.black { stroke-width: 0; fill: #000; }
 		.scale rect.white { stroke-width: 0; fill: #fff; }
 		.scale rect.frame { stroke: #000; stroke-width: 0.4375; fill: none; }
-		.scale text { text-shadow: 1px 1px 0 #fff, -1px 1px 0 #fff, 1px -1px 0 #fff, -1px -1px 0 #fff; }
 		{CSS}
 
 		/* IE10+ specific styles */
