@@ -46,6 +46,35 @@ var main = function () {
 	// read label settings from the config file
 	reader.readLabelConfig();
 
+    // FWL AT FOUNDING
+    regionName = 'FWL Founding Region';
+    // image dimensions in pixels
+    var dimensions = {
+        w: 840,
+        h: 540
+    };
+
+    // the visible rectangle, in map space:
+	var viewRect = {
+        x: -350,
+        y: -290,
+        w: 420,
+        h: 270
+    };
+
+	var minimapDimensions = {
+		w: 200,
+		h: 150
+	};
+	var minimapViewRect = {
+		x: -400 -140,
+		y: -300 -155,
+		w: 800,
+		h: 600
+	};
+
+/* // CLAN INVASION CORRIDOR
+    regionName = 'Clan Invasion Corridor';
     // image dimensions in pixels
     var dimensions = {
         w: 1100,
@@ -70,14 +99,14 @@ var main = function () {
 		w: 1200,
 		h: 1200
 	};
+*/
+
     // size factor
     var sizeFactor = 1;
     dimensions.w *= sizeFactor;
     dimensions.h *= sizeFactor;
     minimapDimensions.w *= sizeFactor;
     minimapDimensions.h *= sizeFactor;
-
-    regionName = 'Clan Invasion Corridor';
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -92,16 +121,17 @@ var main = function () {
     // for each era ...
 	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
 		if(!(false
+            || eraI === 0 // 2271 FWL Founding
 			//|| eraI === 4 // 2367
             //|| eraI === 15 // 2864
             //|| eraI === 16 // 3025
-            || eraI === 18 // 3040
-            || eraI === 19 // 3050
-            || eraI === 20 // 3050
-            || eraI === 21 // 3050
-			|| eraI === 22 // 3050
-            || eraI === 23 // 3051
-            || eraI === 24 // 3052
+            //|| eraI === 18 // 3040
+            //|| eraI === 19 // 3050
+            //|| eraI === 20 // 3050
+            //|| eraI === 21 // 3050
+			//|| eraI === 22 // 3050
+            //|| eraI === 23 // 3051
+            //|| eraI === 24 // 3052
             //|| eraI === 26 // 3058
 		)) {
 			continue;
