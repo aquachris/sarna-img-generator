@@ -149,7 +149,7 @@ module.exports = (function () {
 
 		// render scale help
 		scaleHelpSettings = {};
-		scaleHelpSettings.max = 100;
+		scaleHelpSettings.max = 50;
 		scaleHelpSettings.step = 10;
 		this.renderScaleHelp(settings, scaleHelpSettings, viewRect, pxPerLy);
 
@@ -222,6 +222,7 @@ module.exports = (function () {
 		var curEdge, prevEdge, curD;
 		var rgba, hex, tplObj;
 		var polygon;
+		var factionFillOpacity = .3; // TODO make this configurable
 
 		// make sure there is a faction entry for disputed systems
 		if(!factions['D']) {
@@ -252,7 +253,7 @@ module.exports = (function () {
 			}
 			rgba = this.hexToRgba(factions[faction].color) || {r: 0, g:0, b:0};
 			if(!factions[faction].fill) {
-				factions[faction].fill = 'rgba('+rgba.r+','+rgba.g+','+rgba.b+', .3)';
+				factions[faction].fill = `rgb(${rgba.r},${rgba.g},${rgba.b})`;
 			}
 
 			// trace borders one edge at a time
@@ -288,7 +289,8 @@ module.exports = (function () {
 			};
 			if(settings.renderFactions) {
 				this.markup.borders += `<path fill-rule="evenodd" class="border ${tplObj.faction}"
-						style="stroke: ${tplObj.stroke}; stroke-width: 1px; fill: ${tplObj.fill};"
+						style="stroke: ${tplObj.stroke}; stroke-width: 1px; fill: ${tplObj.fill};
+						fill-opacity: ${factionFillOpacity};"
 						d="${tplObj.d}" />\n`;
 			}
 		}
@@ -624,6 +626,7 @@ module.exports = (function () {
 		var curD, curPoint, prevPoint;
 		var focusedCoords;
 		var nebulae;
+		var factionFillOpacity = .3; // TODO make this configurable
 
 		if(!settings.renderMinimap || !minimapSettings) {
 			return;
@@ -675,7 +678,7 @@ module.exports = (function () {
 			}
 			rgba = this.hexToRgba(factions[faction].color) || {r: 0, g:0, b:0};
 			if(!factions[faction].fill) {
-				factions[faction].fill = 'rgba('+rgba.r+','+rgba.g+','+rgba.b+', .3)';
+				factions[faction].fill = `rgb(${rgba.r},${rgba.g},${rgba.b})`;
 			}
 
 			curD = '';
@@ -697,7 +700,8 @@ module.exports = (function () {
 				fill : factions[faction].fill
 			};
 			this.markup.minimap += `<path fill-rule="evenodd" class="border ${faction}"
-					style="stroke: ${tplObj.stroke}; stroke-width:2px; fill:${tplObj.fill};"
+					style="stroke: ${tplObj.stroke}; stroke-width:2px; fill:${tplObj.fill};
+					fill-opacity: ${factionFillOpacity}"
 					d="${curD}" />\n`;
 		}
 

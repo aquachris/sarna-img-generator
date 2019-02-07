@@ -46,7 +46,7 @@
 			</feMerge>
 		</filter>
 		<pattern id="nebula-fill" width="2" height="2" patternUnits="userSpaceOnUse">
-			<path d="M-.5,.5 l1,-1 M0,2 l2,-2 M1.5,2.5 l1,-1" style="stroke:rgba(0, 0, 0, .075); stroke-width:.6" />
+			<path d="M-.5,.5 l1,-1 M0,2 l2,-2 M1.5,2.5 l1,-1" style="stroke:rgb(0, 0, 0); stroke-opacity: .075; stroke-width:.6" />
 		</pattern>
 		{DEFS}
 	</defs>
@@ -57,9 +57,9 @@
 		g.systems .system.U { stroke: #777; }
 		/*g.systems .system.undiscovered { stroke: #555; }*/
 		g.clusters .cluster { fill: #000; stroke: #000; stroke-width: .25; } /* default color */
-		g.jump-radius-rings circle { fill: none; stroke: rgba(80,80,80,.5); stroke-width: .25 }
-		g.nebulae ellipse { fill: rgba(0, 0, 0, .1); stroke: rgba(0, 0, 0, .3); stroke-width: .25 }
-		g.nebulae path { fill: url(#nebula-fill); stroke: rgba(0, 0, 0, .5); stroke-width: .25 }
+		g.jump-radius-rings circle { fill: none; stroke: rgb(80,80,80); stroke-opacity:.5; stroke-width: .25 }
+		g.nebulae ellipse { fill: rgb(0, 0, 0); fill-opacity: 0.1; stroke: rgb(0, 0, 0); stroke-opacity: .3; stroke-width: .25 }
+		g.nebulae path { fill: url(#nebula-fill); stroke: rgb(0, 0, 0); stroke-opacity: .5; stroke-width: .25 }
 		text.nebulae-label { font-size: 2.5px; fill: #999; }
 		text.nebulae-label.large { font-size: 4px; fill: #999; }
 		text.system-label { font-size: 2.5px }
@@ -71,7 +71,7 @@
 		path.label-connector { fill: none; stroke: #000; stroke-width: 0.25; }
 		.minimap-outer text { font-size: 60px; }
 		.minimap-outer text .smaller { font-size: 45px; }
-		.minimap-outer path.nebula { fill: rgba(0, 0, 0, .075); stroke: rgba(0, 0, 0, .5); stroke-width: .25; }
+		.minimap-outer path.nebula { fill: rgb(0, 0, 0); fill-opacity: .075; stroke: rgb(0, 0, 0); stroke-opacity: .5; stroke-width: .25; }
 		path { stroke-linejoin: round; stroke-linecap: round; }
 		.scale rect.black { stroke-width: 0; fill: #000; }
 		.scale rect.white { stroke-width: 0; fill: #fff; }
