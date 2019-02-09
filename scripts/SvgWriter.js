@@ -52,6 +52,7 @@ module.exports = (function () {
 		var safeEraName = era.year + '_' + era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
 		var dir = (this.baseDir + '/output/'+safeEraName).replace(/[\+\s\(\)]/g, '_');
 		var filename = (name.replace(/\s/g, '_')+'_' + safeEraName + '.svg').replace(/[\+\s\(\)]/g, '_');
+		var scaleHelpSettings;
 		this.writeSvg({
 			renderFactions : true,
 			renderBorderLabels : true,
@@ -64,13 +65,13 @@ module.exports = (function () {
 			renderJumpRings : true,
 			renderMinimap : true,
 			renderScaleHelp : true
-		}, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings);
+		}, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, scaleHelpSettings, minimapSettings, jumpRings);
 	};
 
 	/**
 	 * Create a region SVG file.
 	 */
-	SvgWriter.prototype.writeRegionSvg = function (dir, name, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings) {
+	SvgWriter.prototype.writeRegionSvg = function (dir, name, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, scaleHelpSettings, minimapSettings, jumpRings) {
 		var safeEraName = era.year + '_' + era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
 		var filename = (name.replace(/\s/g, '_')+'_' + safeEraName + '.svg').replace(/[\+\s\(\)]/g, '_');
 		dir = dir || safeEraName;
@@ -87,7 +88,7 @@ module.exports = (function () {
 			renderJumpRings : false,
 			renderMinimap : true,
 			renderScaleHelp : true
-		}, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings);
+		}, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, scaleHelpSettings, minimapSettings, jumpRings);
 	};
 
 	/**
@@ -106,7 +107,7 @@ module.exports = (function () {
 	 * @param minimapSettings {Object} Settings for an optional minimap (dimensions, viewRect and borders)
 	 * @param jumpRings {Array} List of jump ring radii
 	 */
-	SvgWriter.prototype.writeSvg = function (settings, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings) {
+	SvgWriter.prototype.writeSvg = function (settings, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, scaleHelpSettings, minimapSettings, jumpRings) {
 		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf-8' });
 		var viewBox;
 		var elementsStr;
@@ -148,9 +149,9 @@ module.exports = (function () {
 		this.renderMinimap(settings, minimapSettings, viewRect, pxPerLy, factions, nebulae);
 
 		// render scale help
-		scaleHelpSettings = {};
-		scaleHelpSettings.max = 50;
-		scaleHelpSettings.step = 10;
+		scaleHelpSettings = scaleHelpSettings || {};
+		scaleHelpSettings.max = scaleHelpSettings.max || 50;
+		scaleHelpSettings.step = scaleHelpSettings.step || 10;
 		this.renderScaleHelp(settings, scaleHelpSettings, viewRect, pxPerLy);
 
 		// concatenate markup

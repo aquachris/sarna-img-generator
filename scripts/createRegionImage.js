@@ -46,7 +46,7 @@ var main = function () {
 	// read label settings from the config file
 	reader.readLabelConfig();
 
-    // FWL AT FOUNDING
+/*    // FWL AT FOUNDING
     regionName = 'FWL Founding Region';
     // image dimensions in pixels
     var dimensions = {
@@ -71,6 +71,33 @@ var main = function () {
 		y: -300 -155,
 		w: 800,
 		h: 600
+	};*/
+
+    // Inhabited worlds at FWL Founding
+    regionName = 'Known space';
+    // image dimensions in pixels
+    var dimensions = {
+        w: 2000,
+        h: 2000
+    };
+
+    // the visible rectangle, in map space:
+	var viewRect = {
+        x: -2000,
+        y: -2000,
+        w: 4000,
+        h: 4000
+    };
+
+	var minimapDimensions = {
+		w: 300,
+		h: 300
+	};
+	var minimapViewRect = {
+		x: -2000,
+		y: -2000,
+		w: 4000,
+		h: 4000
 	};
 
 /* // CLAN INVASION CORRIDOR
@@ -121,10 +148,10 @@ var main = function () {
     // for each era ...
 	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
 		if(!(false
-            || eraI === 0 // 2271 FWL Founding
+            //|| eraI === 0 // 2271 FWL Founding
 			//|| eraI === 4 // 2367
             //|| eraI === 15 // 2864
-            //|| eraI === 16 // 3025
+            || eraI === 16 // 3025
             //|| eraI === 18 // 3040
             //|| eraI === 19 // 3050
             //|| eraI === 20 // 3050
@@ -227,6 +254,10 @@ var main = function () {
 			clampedBorders,
             borderLabeler.polylines,
             labelMgr.ellipticalObjects,
+            {
+                max: 100,
+                step: 10
+            },
             {
                 dimensions : minimapDimensions,
                 viewRect : minimapViewRect,

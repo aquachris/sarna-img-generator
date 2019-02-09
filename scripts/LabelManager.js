@@ -161,8 +161,10 @@ module.exports = (function () {
 				centroid = Utils.polygonCentroid(curObj.points);
 
 				// prevent nebula labels in the view box's center:
-				// check if label distance is at least 25% the view rect's width from center
-				var minDist = this.viewRect.w * .16;
+				// check if label distance is at least 16% the view rect's width from center
+                // TODO this logic needs to be changed, it does not work for region images
+				//var minDist = this.viewRect.w * .16;
+                var minDist = 22.5;
 				if(Utils.distance(centroid.x, centroid.y, viewRectCenter.x, viewRectCenter.y) < minDist) {
 					// distance is too small to be comfortable --> move label toward nebula's center
 					var moveVect = [curObj.centerX - centroid.x, curObj.centerY - centroid.y];
@@ -189,7 +191,10 @@ module.exports = (function () {
 				curObj.label.baseAngle = Utils.radToDeg(
 					Utils.angleBetweenVectors([1, 0],[centroid.x-viewRectCenter.x, centroid.y-viewRectCenter.y])
 				);
-                if(curObj.label.baseAngle <= 35 || curObj.label.baseAngle >= 145) {
+                if(curObj.x >= this.viewRect.x && curObj.x + curObj.w <= this.viewRect.x + this.viewRect.w
+                    && curObj.y >= this.viewRect.y && curObj.y + curObj.h <= this.viewRect.y + this.viewRect.h) {
+                    curObj.label.angle = 0;
+                } else if(curObj.label.baseAngle <= 35 || curObj.label.baseAngle >= 145) {
 				//if(curObj.label.baseAngle <= 50 || curObj.label.baseAngle >= 140) {
 
                     if(viewRectCenter.y < centroid.y) {
