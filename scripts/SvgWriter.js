@@ -580,9 +580,22 @@ module.exports = (function () {
 				if(systems[i].status.toLowerCase() === 'apocryphal') {
 					tplObj.additionalClasses += 'apocryphal';
 				}
+				if(systems[i].isFactionCapital) {
+					tplObj.additionalClasses += ' faction-capital';
+				}
+				tplObj.additionalClasses = tplObj.additionalClasses.trim();
 				if(settings.renderSystems) {
-					this.markup.systems += `<circle class="system ${tplObj.faction} ${tplObj.additionalClasses}"
-								data-name="${tplObj.name}" cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r}"
+					if(systems[i].isFactionCapital) {
+						this.markup.systems += `<circle class="system-decoration ${(tplObj.faction + ' ' + tplObj.additionalClasses).trim()}"
+									data-name="${tplObj.name}"
+									cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r * 2}" />\n`;
+						this.markup.systems += `<circle class="system-decoration ${(tplObj.faction + ' ' + tplObj.additionalClasses).trim()}"
+									data-name="${tplObj.name}"
+									cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r * 1.5}" />\n`;
+					}
+					this.markup.systems += `<circle class="system ${tplObj.faction} ${tplObj.additionalClasses.trim()}"
+								data-name="${tplObj.name}"
+								cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r}"
 								style="fill: ${tplObj.fill}" />\n`;
 				}
 
@@ -738,6 +751,27 @@ module.exports = (function () {
 						d="${curD}" />\n`;
 		}
 
+		// focused system position
+		tplObj = {
+			x : (minimapSettings.viewRect.x + minimapSettings.viewRect.w * .5).toFixed(1),
+			y : (-minimapSettings.viewRect.y - minimapSettings.viewRect.h * .5).toFixed(1)
+		};
+		if(!!minimapSettings.centerDot) {
+			this.markup.minimap += `<circle cx="${tplObj.x}" cy="${tplObj.y}" r="3"
+									style="fill: #a00" />\n`;
+			/*curD = `M${tplObj.x - 27},${tplObj.y} l20,0 `;
+			curD += `m14,0 l20,0 `;
+			curD += `M${tplObj.x},${tplObj.y - 27} l0,20 `;
+			curD += `m0,14 l0,20 `;
+			this.markup.minimap += `<path d="${curD}" style="stroke: #111; stroke-width: 3; fill: none;" />\n`*/
+		}
+		if(minimapSettings.rings) {
+			for(var ri = 0; ri < minimapSettings.rings.length; ri++) {
+				this.markup.minimap += `<circle cx="${tplObj.x}" cy="${tplObj.y}" r="${minimapSettings.rings[ri]}"
+										style="fill: none; stroke: #333; stroke-width: 2" />\n`;
+			}
+		}
+
 		// map cutout rectangle
 		tplObj = {
 			x: viewRect.x,
@@ -745,18 +779,18 @@ module.exports = (function () {
 			w: viewRect.w,
 			h: viewRect.h
 		};
-		this.markup.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}"
+		/*this.markup.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}"
 							style="fill: none; stroke: #fff; stroke-width: 10;" />\n`;
 		this.markup.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}"
-							style="fill: none; stroke: #a00; stroke-width: 3;" />\n`;
+							style="fill: none; stroke: #a00; stroke-width: 3;" />\n`;*/
 
 		// Terra indicator
 		focusedCoords = [viewRect.x+viewRect.w*.5,-viewRect.y-viewRect.h*.5];
 		if(Utils.pointInRectangle({x:0, y:0}, minimapSettings.viewRect)) {
-			/*els.minimap += '<circle cx="0" cy="0" r="8" style="fill: transparent; stroke: #fff; stroke-width: 8;" />'
-			els.minimap += '<circle cx="0" cy="0" r="20" style="fill: transparent; stroke: #fff; stroke-width: 8;" />'
-			els.minimap += '<circle cx="0" cy="0" r="8" style="fill: transparent; stroke: #000; stroke-width: 3;" />'
-			els.minimap += '<circle cx="0" cy="0" r="20" style="fill: transparent; stroke: #000; stroke-width: 3;" />'*/
+			/*this.markup.minimap += '<circle cx="0" cy="0" r="8" style="fill: transparent; stroke: #fff; stroke-width: 8;" />'
+			this.markup.minimap += '<circle cx="0" cy="0" r="20" style="fill: transparent; stroke: #fff; stroke-width: 8;" />'
+			this.markup.minimap += '<circle cx="0" cy="0" r="8" style="fill: transparent; stroke: #000; stroke-width: 3;" />'
+			this.markup.minimap += '<circle cx="0" cy="0" r="20" style="fill: transparent; stroke: #000; stroke-width: 3;" />'*/
 			//els.minimap += '<circle cx="0" cy="0" r="32" style="fill: transparent; stroke: #000; stroke-width: 3;" />'
 		} else {
 			// line to origin

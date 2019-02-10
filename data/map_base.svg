@@ -54,6 +54,7 @@
 	<style>
 		text { fill: #000; font-family: Tahoma, Arial, sans-serif; font-size: 2.75px; text-rendering: optimizeLegibility; }
 		g.systems .system { fill: #000; stroke: #000; stroke-width: .25; } /* default color */
+		g.systems .system-decoration { fill: none; stroke: #000; stroke-width: 0; } /*].25; }*/
 		g.systems .system.U { stroke: #777; }
 		/*g.systems .system.undiscovered { stroke: #555; }*/
 		g.clusters .cluster { fill: #000; stroke: #000; stroke-width: .25; } /* default color */

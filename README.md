@@ -1,5 +1,5 @@
 # sarna-img-generator
-A collection of scripts that generate planetary systems images used on sarna.net
+A collection of scripts that generate planetary systems images used on sarna.net.
 
 ## TODOs (priority category):
 - ~~State labels (A)~~ **DONE**
@@ -18,3 +18,4 @@ A collection of scripts that generate planetary systems images used on sarna.net
 - border label top / bottom lines completely (mostly?) beyond border -->
     - Clan Invasion Corridor 3040: Tamar
     - Clan Invasion Corridor 3052: Corfu
+- Faction capitals (marked in SUCKit)
