@@ -194,16 +194,20 @@ module.exports = (function () {
 
             // era affiliations
 			curSystem.affiliations = [];
-            curSystem.capital = [];
+            curSystem.capitalLvls = [];
 			curSystem.names = [];
             for(var eraIdx = 0; eraIdx < this.eras.length; eraIdx++) {
                 curEra = this.eras[eraIdx];
                 curAffiliation = curRow[columnIdxMap['era_'+eraIdx]] || '';//eras[eraI].idx] || '';
                 curSystem.affiliations.push(curAffiliation);
                 if(curAffiliation.match(/faction capital/gi)) {
-                    curSystem.capital.push('f');
+                    curSystem.capitalLvls.push(1);
+                } else if(curAffiliation.match(/major capital/gi)) {
+                    curSystem.capitalLvls.push(2);
+                } else if(curAffiliation.match(/minor capital/gi)) {
+                    curSystem.capitalLvls.push(3);
                 } else {
-                    curSystem.capital.push('');
+                    curSystem.capitalLvls.push(0);
                 }
 				// default: use the regular name
 				curSystem.names.push(curSystem.name.replace(/\s*\([^\)]+\)\s*/gi, ''));

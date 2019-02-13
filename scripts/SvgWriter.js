@@ -580,23 +580,38 @@ module.exports = (function () {
 				if(systems[i].status.toLowerCase() === 'apocryphal') {
 					tplObj.additionalClasses += 'apocryphal';
 				}
-				if(systems[i].isFactionCapital) {
-					tplObj.additionalClasses += ' faction-capital';
+				switch(systems[i].capitalLvl) {
+					case 1:
+						tplObj.additionalClasses += ' faction-capital';
+						break;
+					case 2:
+						tplObj.additionalClasses += ' major-capital';
+						break;
+					case 3:
+						tplObj.additionalClasses += ' minor-capital';
+						break;
 				}
 				tplObj.additionalClasses = tplObj.additionalClasses.trim();
 				if(settings.renderSystems) {
-					if(systems[i].isFactionCapital) {
-						this.markup.systems += `<circle class="system-decoration ${(tplObj.faction + ' ' + tplObj.additionalClasses).trim()}"
-									data-name="${tplObj.name}"
-									cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r * 2}" />\n`;
+					if(systems[i].capitalLvl > 0 && systems[i].capitalLvl <= 2) {
 						this.markup.systems += `<circle class="system-decoration ${(tplObj.faction + ' ' + tplObj.additionalClasses).trim()}"
 									data-name="${tplObj.name}"
 									cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r * 1.5}" />\n`;
+						if(systems[i].capitalLvl === 1) {
+							this.markup.systems += `<circle class="system-decoration ${(tplObj.faction + ' ' + tplObj.additionalClasses).trim()}"
+										data-name="${tplObj.name}"
+										cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r * 2}" />\n`;
+						}
 					}
 					this.markup.systems += `<circle class="system ${tplObj.faction} ${tplObj.additionalClasses.trim()}"
 								data-name="${tplObj.name}"
 								cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r}"
 								style="fill: ${tplObj.fill}" />\n`;
+					if(systems[i].capitalLvl > 0) {
+						this.markup.systems += `<circle class="system-decoration ${(tplObj.faction + ' ' + tplObj.additionalClasses).trim()}"
+									data-name="${tplObj.name}"
+									cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r * .15}" />\n`;
+					}
 				}
 
 				if(settings.renderSystemLabels) {

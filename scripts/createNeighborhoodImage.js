@@ -175,9 +175,11 @@ var main = function () {
     //focusedSystems.push('Sol');
     //focusedSystems.push('Sian');
     //focusedSystems.push('Rasalhague');
-    focusedSystems.push('Romita');
+    //focusedSystems.push('Romita');
     focusedSystems.push('Pobeda');
     focusedSystems.push('Luthien');
+    focusedSystems.push('Zurich');
+    focusedSystems.push('St. Andre');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -227,7 +229,7 @@ var main = function () {
                     curAff = curSys.affiliations[eraI].split(',')[0].trim();
                 }
     			reader.systems[i].col = curAff;
-                reader.systems[i].isFactionCapital = curSys.capital[eraI] === 'f';
+                reader.systems[i].capitalLvl = curSys.capitalLvls[eraI];
     			if(curAff === '' || curAff === 'U' || curAff === 'A') {
     		          continue;
     			}
