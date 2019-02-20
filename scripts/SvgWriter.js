@@ -620,16 +620,27 @@ module.exports = (function () {
 						x : systems[i].label.x.toFixed(3),
 						y : (-systems[i].label.y).toFixed(3),
 						labelClass : labelCls,
-						name : systems[i].name,
-						sup : ''
+						name : systems[i].label.name
 					};
-					if((systems[i].status || '').toLowerCase() === 'apocryphal') {
+					/*if((systems[i].status || '').toLowerCase() === 'apocryphal') {
 						tplObj.labelClass += ' apocryphal';
 						tplObj.sup = '<tspan class="sup" dx="0.5" dy="-1">(apocryphal)</tspan>';
-					}
+					}*/
 					this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
 											class="system-label ${tplObj.labelClass}">
-								${tplObj.name}${tplObj.sup}</text>\n`;
+								${tplObj.name}</text>\n`;
+					// label additions (capital, hidden, apocryphal)
+					if(systems[i].label.additions && systems[i].label.additions.length > 0) {
+						tplObj.y = (-systems[i].label.y + 2).toFixed(3); // TODO
+						this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
+							class="system-label additions ${tplObj.labelClass}">`;
+						for(var lai = 0; lai < systems[i].label.additions.length; lai++) {
+							tplObj.aTxt = systems[i].label.additions[lai].text;
+							tplObj.aCls = systems[i].label.additions[lai].class;
+							this.markup.systemLabels += `<tspan class="${tplObj.aCls}">${tplObj.aTxt}</tspan>`;
+						}
+						this.markup.systemLabels += `</text>`;
+					}
 				}
 			}
 		}

@@ -176,10 +176,15 @@ var main = function () {
     //focusedSystems.push('Sian');
     //focusedSystems.push('Rasalhague');
     //focusedSystems.push('Romita');
-    focusedSystems.push('Pobeda');
-    focusedSystems.push('Luthien');
-    focusedSystems.push('Zurich');
-    focusedSystems.push('St. Andre');
+
+    // capitals
+    //focusedSystems.push('Pobeda');
+    //focusedSystems.push('Luthien');
+    //focusedSystems.push('Zurich');
+    //focusedSystems.push('St. Andre');
+
+    // system suffixes
+    focusedSystems.push('Coromodir');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);

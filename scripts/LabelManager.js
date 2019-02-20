@@ -49,6 +49,9 @@ module.exports = (function () {
 		this.glyphSettings = labelConfig._glyphSettings || {};
         this.glyphSettings.lineHeight = this.glyphSettings.lineHeight || 3;
         this.glyphSettings.widths = this.glyphSettings.widths || { default: 1.6 };
+        this.glyphSettingsSmall = labelConfig._glyphSettingsSmall || {};
+        this.glyphSettingsSmall.lineHeight = this.glyphSettingsSmall.lineHeight || 2;
+        this.glyphSettingsSmall.widths = this.glyphSettingsSmall.widths || { default: 1 };
         // cannot really determine why, but there seems to be a .5 shift required
         // for the labels to be at the correct y position. Upon further review, this
         // is probably a problem with the configured line height.
@@ -80,19 +83,36 @@ module.exports = (function () {
             var lineH = this.glyphSettings.lineHeight;
             var defaultWidth = this.glyphSettings.widths.default;
             var labelWidth = 0;
+            var labelHeight = lineH;
             var labelId;
 			var x, y;
 			var sup;
+            var labelAdditions = [];
+            var labelAdditionsWidth = 0;
             for(var i = 0; i < obj.name.length; i++) {
                 labelWidth += this.glyphSettings.widths[obj.name[i]] || defaultWidth;
             }
 			if((obj.status || '').toLowerCase() === 'apocryphal') {
-				sup = '(apocryphal)';
-				labelWidth += this.glyphSettings.widths[' '] || defaultWidth;
-				for(var i = 0; i < sup.length; i++) {
-					labelWidth += .6 * this.glyphSettings.widths[sup[i]] || defaultWidth;
-				}
+                labelAdditions.push({
+                    text : 'apocryphal',
+                    class : 'apocryphal'
+                });
 			}
+            for(var li = 0; li < labelAdditions.length; li++) {
+                labelHeight = lineH + this.glyphSettingsSmall.lineHeight;
+                for(var lai = 0; lai < labelAdditions[li].text.length; lai++) {
+                    if(lai > 0) {
+                        labelAdditionsWidth += this.glyphSettingsSmall.widths[' '];
+                    }
+                    labelAdditionsWidth += this.glyphSettingsSmall.widths[labelAdditions[li].text[lai]] || defaultWidth;
+                }
+            }
+            /*labelWidth += this.glyphSettings.widths[' '] || defaultWidth;
+            for(var i = 0; i < sup.length; i++) {
+                labelWidth += .6 * this.glyphSettings.widths[sup[i]] || defaultWidth;
+            }*/
+
+            labelWidth = Math.max(labelWidth, labelAdditionsWidth);
 
             labelId = 'label_';
             if(!isElliptical) {
@@ -102,6 +122,9 @@ module.exports = (function () {
                 labelId += 'e_';
             }
             y = obj.centerY - lineH * .5;
+            if(labelAdditions.length > 0) {
+                y -= this.glyphSettingsSmall.lineHeight;
+            }
             // make sure label is in view rect
 			x = Utils.clampNumber(x, this.viewRect.x, this.viewRect.x + this.viewRect.w - labelWidth);
 			y = Utils.clampNumber(y, this.viewRect.y + lineH, this.viewRect.y + this.viewRect.h - lineH);
@@ -111,7 +134,9 @@ module.exports = (function () {
                 x: x,
                 y: y,
                 w: labelWidth,
-                h: lineH
+                h: labelHeight,
+                name : obj.name,
+                additions : labelAdditions
             }
         };
 
