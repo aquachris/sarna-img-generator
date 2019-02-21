@@ -55,7 +55,9 @@ module.exports = (function () {
         // cannot really determine why, but there seems to be a .5 shift required
         // for the labels to be at the correct y position. Upon further review, this
         // is probably a problem with the configured line height.
-        this.defaultDelta = { x: 0, y: .5 };
+        this.defaultDelta = { x: 0, y: 0 }; //.5 };
+        // negative margin between the main label and the additional label part
+        this.labelSqueeze = .5;
 
         this.grid = new RectangleGrid().init(viewRect);
         this.setInitialState();
@@ -92,6 +94,22 @@ module.exports = (function () {
             for(var i = 0; i < obj.name.length; i++) {
                 labelWidth += this.glyphSettings.widths[obj.name[i]] || defaultWidth;
             }
+            if(obj.capitalLvl === 1) {
+                labelAdditions.push({
+                    text: 'faction capital',
+                    class: 'capital faction'
+                });
+            } else if(obj.capitalLvl === 2) {
+                labelAdditions.push({
+                    text: 'major capital',
+                    class: 'capital major'
+                });
+            } else if(obj.capitalLvl === 3) {
+                labelAdditions.push({
+                    text: 'minor capital',
+                    class: 'capital minor'
+                });
+            }
 			if((obj.status || '').toLowerCase() === 'apocryphal') {
                 labelAdditions.push({
                     text : 'apocryphal',
@@ -99,11 +117,11 @@ module.exports = (function () {
                 });
 			}
             for(var li = 0; li < labelAdditions.length; li++) {
-                labelHeight = lineH + this.glyphSettingsSmall.lineHeight;
+                labelHeight = lineH + this.glyphSettingsSmall.lineHeight - this.labelSqueeze;
+                if(li > 0) {
+                    labelAdditionsWidth += this.glyphSettingsSmall.widths[' '];
+                }
                 for(var lai = 0; lai < labelAdditions[li].text.length; lai++) {
-                    if(lai > 0) {
-                        labelAdditionsWidth += this.glyphSettingsSmall.widths[' '];
-                    }
                     labelAdditionsWidth += this.glyphSettingsSmall.widths[labelAdditions[li].text[lai]] || defaultWidth;
                 }
             }
@@ -121,7 +139,7 @@ module.exports = (function () {
                 x = obj.centerX + obj.w * .5 + dist;
                 labelId += 'e_';
             }
-            y = obj.centerY - lineH * .5;
+            y = obj.centerY - labelHeight * .5;
             if(labelAdditions.length > 0) {
                 y -= this.glyphSettingsSmall.lineHeight;
             }
@@ -135,6 +153,7 @@ module.exports = (function () {
                 y: y,
                 w: labelWidth,
                 h: labelHeight,
+                lineHeight: lineH,
                 name : obj.name,
                 additions : labelAdditions
             }
@@ -467,6 +486,7 @@ module.exports = (function () {
         var curOverlap, minOverlap;
         var minOverlapX, minOverlapY;
         var ovData;
+        var lineH = this.glyphSettings.lineHeight;
 
         var evaluateCurrentPos = function () {
             this.keepInViewRect(label);
@@ -488,6 +508,10 @@ module.exports = (function () {
         minOverlapX = label.x = obj.centerX + objRad + dist + this.defaultDelta.x;
         minOverlapY = label.y = obj.centerY - label.h * .5 + this.defaultDelta.y;
         evaluateCurrentPos.call(this);
+        if(obj.name === 'Sol') {
+            console.log('Sol label overlap', curOverlap)
+            console.log(label.x, label.y, label.w, label.h);
+        }
         if(curOverlap === 0) {
             return 0;
         }
@@ -570,6 +594,7 @@ module.exports = (function () {
         // check left side
         label.x = obj.x - label.w - dist * 1.5 + this.defaultDelta.x;// * 0.25;
         label.y = obj.centerY - label.h * 0.5 + this.defaultDelta.y;
+        //label.y = obj.centerY - lineH * 0.5 + this.defaultDelta.y;
         evaluateCurrentPos.call(this);
         if(curOverlap === 0) {
             return 0;
@@ -603,6 +628,7 @@ module.exports = (function () {
         // check alternatives on the right side, large tolerance
         label.x = obj.centerX + objRad + dist + this.defaultDelta.x;
         label.y = obj.centerY - label.h * .5 + this.defaultDelta.y;
+        //label.y = obj.centerY - lineH * .5 + this.defaultDelta.y;
         evaluateCurrentPos.call(this);
 
         // push label up
@@ -632,6 +658,7 @@ module.exports = (function () {
         // check alternatives on the left side, large tolerance
         label.x = obj.x - label.w - dist + this.defaultDelta.x;
         label.y = obj.centerY - label.h * .5 + this.defaultDelta.y;
+        //label.y = obj.centerY - lineH * .5 + this.defaultDelta.y;
         evaluateCurrentPos.call(this);
 
         // push label up

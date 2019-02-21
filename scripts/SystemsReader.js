@@ -5,6 +5,10 @@ module.exports = (function () {
 	var fs = require('fs');
     var Observable = require('./Observable.js');
 
+    var SHEET_FACTIONS = 3;
+    var SHEET_SYSTEMS = 2;
+    var SHEET_NEBULAE = 4;
+
     /**
      * An instance of this class reads the planetary systems list from the
      * SUCK master list.
@@ -56,7 +60,7 @@ module.exports = (function () {
 		this.logger.log('Faction reader started');
 		this.factions = {};
 
-		var factionsSheet = this.workbook[2]; // TODO magic number
+		var factionsSheet = this.workbook[SHEET_FACTIONS];
 		var curRow, curFaction, curR, curG, curB, curColor;
 
 		// headers
@@ -108,7 +112,7 @@ module.exports = (function () {
 
         this.logger.log('Systems reader started');
 
-		var systemsSheet = this.workbook[1];
+		var systemsSheet = this.workbook[SHEET_SYSTEMS];
         //var nebulaeSheet = this.workbook[3];
 
 		var curRow, curSystem, curAltNames, altRegexResult, curAffiliation, curScale;
@@ -249,7 +253,7 @@ module.exports = (function () {
 
         this.logger.log('Nebulae reader started');
 
-        var nebulaeSheet = this.workbook[3];
+        var nebulaeSheet = this.workbook[SHEET_NEBULAE];
 
 		var curRow;
 		// sort out headers

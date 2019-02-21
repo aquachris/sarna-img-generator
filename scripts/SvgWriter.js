@@ -615,10 +615,12 @@ module.exports = (function () {
 				}
 
 				if(settings.renderSystemLabels) {
+					var labelDelta = { x: 0, y: -0.5 };
+					var minorLabelDelta = { x: .15, y: 0 };
 					// system label
 					tplObj = {
 						x : systems[i].label.x.toFixed(3),
-						y : (-systems[i].label.y).toFixed(3),
+						y : (-systems[i].label.y - systems[i].label.h + systems[i].label.lineHeight + labelDelta.y).toFixed(3),
 						labelClass : labelCls,
 						name : systems[i].label.name
 					};
@@ -629,9 +631,13 @@ module.exports = (function () {
 					this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
 											class="system-label ${tplObj.labelClass}">
 								${tplObj.name}</text>\n`;
+					this.markup.systemLabels += `<rect x="${tplObj.x}" y="${-systems[i].label.y - systems[i].label.h}"
+					 					width="${systems[i].label.w}" height="${systems[i].label.h}"
+										style="fill: none; stroke: #f00; stroke-width: .25" />`
 					// label additions (capital, hidden, apocryphal)
 					if(systems[i].label.additions && systems[i].label.additions.length > 0) {
-						tplObj.y = (-systems[i].label.y + 2).toFixed(3); // TODO
+						tplObj.x = (systems[i].label.x + minorLabelDelta.x).toFixed(3);
+						tplObj.y = (-systems[i].label.y + minorLabelDelta.y).toFixed(3); // TODO
 						this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
 							class="system-label additions ${tplObj.labelClass}">`;
 						for(var lai = 0; lai < systems[i].label.additions.length; lai++) {
