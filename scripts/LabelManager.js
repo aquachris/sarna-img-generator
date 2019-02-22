@@ -116,21 +116,28 @@ module.exports = (function () {
                     class : 'apocryphal'
                 });
 			}
+			
             for(var li = 0; li < labelAdditions.length; li++) {
-                labelHeight = lineH + this.glyphSettingsSmall.lineHeight - this.labelSqueeze;
-                if(li > 0) {
+                labelHeight += this.glyphSettingsSmall.lineHeight;
+				labelAdditionsWidth = 0;
+				for(var lai = 0; lai < labelAdditions[li].text.length; lai++) {
+                    labelAdditionsWidth += this.glyphSettingsSmall.widths[labelAdditions[li].text[lai]] || defaultWidth;
+                }
+				labelWidth = Math.max(labelWidth, labelAdditionsWidth);
+                /*if(li > 0) {
                     labelAdditionsWidth += this.glyphSettingsSmall.widths[' '];
                 }
                 for(var lai = 0; lai < labelAdditions[li].text.length; lai++) {
                     labelAdditionsWidth += this.glyphSettingsSmall.widths[labelAdditions[li].text[lai]] || defaultWidth;
-                }
+                }*/
             }
+			labelHeight -= this.labelSqueeze;
             /*labelWidth += this.glyphSettings.widths[' '] || defaultWidth;
             for(var i = 0; i < sup.length; i++) {
                 labelWidth += .6 * this.glyphSettings.widths[sup[i]] || defaultWidth;
             }*/
 
-            labelWidth = Math.max(labelWidth, labelAdditionsWidth);
+            //labelWidth = Math.max(labelWidth, labelAdditionsWidth);
 
             labelId = 'label_';
             if(!isElliptical) {

@@ -184,7 +184,7 @@ var main = function () {
     //focusedSystems.push('St. Andre');
 
     // system suffixes
-    //focusedSystems.push('Coromodir');
+    focusedSystems.push('Coromodir');
     focusedSystems.push('Sol');
 
     // generate points randomly scattered in 2D space
