@@ -30,6 +30,7 @@ var main = function () {
     var curSys, curAff, curP;
     var systemRadius = 1;
     var labelDist = 0.5;
+    var tmpIdx;
 
     // read factions from the xlsx
 	reader.readFactions();
@@ -165,6 +166,11 @@ var main = function () {
     //focusedSystems.push('Versailles');
 
     // hidden systems
+    //focusedSystems.push('Colleen');
+    //focusedSystems.push('Fasa');
+    //focusedSystems.push('Rim Worlds Republic Outpost #27');
+    //focusedSystems.push('Alfirk');
+    //focusedSystems.push('Farhome');
     //focusedSystems.push('Sharpe');
     //focusedSystems.push('Versailles');
 
@@ -176,16 +182,18 @@ var main = function () {
     //focusedSystems.push('Sian');
     //focusedSystems.push('Rasalhague');
     //focusedSystems.push('Romita');
+    //focusedSystems.push('Fylovar');
 
     // capitals
-    //focusedSystems.push('Pobeda');
+    focusedSystems.push('Pobeda');
     focusedSystems.push('Luthien');
     //focusedSystems.push('Zurich');
     //focusedSystems.push('St. Andre');
+    focusedSystems.push('Sol');
 
     // system suffixes
     focusedSystems.push('Coromodir');
-    focusedSystems.push('Sol');
+    //focusedSystems.push('Sol');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -217,8 +225,12 @@ var main = function () {
     	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
 			if(!(false
 				//|| eraI === 4 // 2367
+                || eraI === 12 // 2821
                 //|| eraI === 15 // 2864
 				|| eraI === 16 // 3025
+                || eraI === 36 // 3081
+                //|| eraI === 40 // 3135
+                || eraI === 42 // 3151
 			)) {
 				continue;
 			}
@@ -234,9 +246,15 @@ var main = function () {
                 } else {
                     curAff = curSys.affiliations[eraI].split(',')[0].trim();
                 }
+                if((tmpIdx = curAff.search(/\(\s*H\s*\)/g)) >= 0) {
+                    reader.systems[i].hidden = true;
+                    curAff = curAff.substr(0,tmpIdx).trim();
+                } else {
+                    reader.systems[i].hidden = false;
+                }
     			reader.systems[i].col = curAff;
                 reader.systems[i].capitalLvl = curSys.capitalLvls[eraI];
-    			if(curAff === '' || curAff === 'U' || curAff === 'A') {
+    			if(curAff === '' || curAff === 'U' || curAff === 'A' || reader.systems[i].hidden) {
     		          continue;
     			}
     			if(curSys.status.toLowerCase() === 'apocryphal') {

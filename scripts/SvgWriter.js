@@ -632,9 +632,9 @@ module.exports = (function () {
 					this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
 											class="system-label ${tplObj.labelClass}">
 								${tplObj.name}</text>\n`;
-					this.markup.systemLabels += `<rect x="${tplObj.x}" y="${-systems[i].label.y - systems[i].label.h}"
+					/*this.markup.systemLabels += `<rect x="${tplObj.x}" y="${-systems[i].label.y - systems[i].label.h}"
 					 					width="${systems[i].label.w}" height="${systems[i].label.h}"
-										style="fill: none; stroke: #f00; stroke-width: .25" />`
+										style="fill: none; stroke: #f00; stroke-width: .25" />`*/
 					// label additions (capital, hidden, apocryphal)
 					if(systems[i].label.additions && systems[i].label.additions.length > 0) {
 						tplObj.x = (systems[i].label.x + minorLabelDelta.x).toFixed(3);

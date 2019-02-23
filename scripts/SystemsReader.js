@@ -48,7 +48,7 @@ module.exports = (function () {
 
 		// Read xlsx file
         // TODO make file name configurable
-		this.workbook = xlsx.parse(__dirname + '/../data/Systems By Era.xlsx');
+		this.workbook = xlsx.parse(__dirname + '/../data/Systems By Era.xls');
 	};
 
 	/**

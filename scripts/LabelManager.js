@@ -44,7 +44,7 @@ module.exports = (function () {
         this.objectRadius = objectRadius || 1;
         this.ellipticalObjects = Utils.deepCopy(ellipticalObjects || []);
         this.objLabelDist = objLabelDist || 0;
-        this.factions = Utils.deepCopy(factions);
+        this.factions = factions; //Utils.deepCopy(factions);
 		this.labelConfig = labelConfig || {};
 		this.glyphSettings = labelConfig._glyphSettings || {};
         this.glyphSettings.lineHeight = this.glyphSettings.lineHeight || 3;
@@ -110,13 +110,19 @@ module.exports = (function () {
                     class: 'capital minor'
                 });
             }
+            if(!!obj.hidden) {
+                labelAdditions.push({
+                    text: 'hidden (' + this.factions[obj.col].longName + ')',
+                    class: 'hidden'
+                });
+            }
 			if((obj.status || '').toLowerCase() === 'apocryphal') {
                 labelAdditions.push({
                     text : 'apocryphal',
                     class : 'apocryphal'
                 });
 			}
-			
+
             for(var li = 0; li < labelAdditions.length; li++) {
                 labelHeight += this.glyphSettingsSmall.lineHeight;
 				labelAdditionsWidth = 0;
@@ -182,7 +188,7 @@ module.exports = (function () {
 			}
             this.grid.placeObject(curObj.label);
 
-			if(curObj.hasOwnProperty('col')) {
+			/*if(curObj.hasOwnProperty('col')) {
                 curFaction = this.factions[curObj.col];
                 if(curFaction) {
                     curFaction.centroidSums = curFaction.centroidSums || {x:0,y:0};
@@ -192,7 +198,7 @@ module.exports = (function () {
 					curFaction.centerX = curFaction.centroidSums.x / curFaction.numObj;
 					curFaction.centerY = curFaction.centroidSums.y / curFaction.numObj;
 				}
-            }
+            }*/
         }
 
         for(var i = 0, len = this.ellipticalObjects.length; i < len; i++) {
@@ -515,10 +521,6 @@ module.exports = (function () {
         minOverlapX = label.x = obj.centerX + objRad + dist + this.defaultDelta.x;
         minOverlapY = label.y = obj.centerY - label.h * .5 + this.defaultDelta.y;
         evaluateCurrentPos.call(this);
-        if(obj.name === 'Sol') {
-            console.log('Sol label overlap', curOverlap)
-            console.log(label.x, label.y, label.w, label.h);
-        }
         if(curOverlap === 0) {
             return 0;
         }
