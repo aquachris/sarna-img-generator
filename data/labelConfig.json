@@ -111,6 +111,10 @@
 	"Sirius" : [{
 		"position": "left center"
 	}],
+	"Sol" : [{
+		"position": "right center",
+		"delta": [0, 0.5]
+	}],
 	"Tau Ceti" : [{
 		"position": "center top"
 	}],

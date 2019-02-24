@@ -178,21 +178,21 @@ var main = function () {
     //focusedSystems.push('Acoma');
     //focusedSystems.push('Aconcagua');
     //focusedSystems.push('Alexandria (CC)');
-    //focusedSystems.push('Sol');
+    focusedSystems.push('Sol');
     //focusedSystems.push('Sian');
     //focusedSystems.push('Rasalhague');
     //focusedSystems.push('Romita');
     //focusedSystems.push('Fylovar');
 
     // capitals
-    focusedSystems.push('Pobeda');
-    focusedSystems.push('Luthien');
+    //focusedSystems.push('Pobeda');
+    //focusedSystems.push('Luthien');
     //focusedSystems.push('Zurich');
     //focusedSystems.push('St. Andre');
-    focusedSystems.push('Sol');
+    //focusedSystems.push('Sol');
 
     // system suffixes
-    focusedSystems.push('Coromodir');
+    //focusedSystems.push('Coromodir');
     //focusedSystems.push('Sol');
 
     // generate points randomly scattered in 2D space
@@ -225,12 +225,12 @@ var main = function () {
     	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
 			if(!(false
 				//|| eraI === 4 // 2367
-                || eraI === 12 // 2821
+                //|| eraI === 12 // 2821
                 //|| eraI === 15 // 2864
 				|| eraI === 16 // 3025
-                || eraI === 36 // 3081
+                //|| eraI === 36 // 3081
                 //|| eraI === 40 // 3135
-                || eraI === 42 // 3151
+                //|| eraI === 42 // 3151
 			)) {
 				continue;
 			}

@@ -200,14 +200,15 @@ module.exports = (function () {
 	 */
 	SvgWriter.prototype.generateCSS = function (pxPerLy) {
 		var txtShd = 0.14*pxPerLy + 'px';
+		txtShd = '0.35em'
 		var txtShdRule = 'text-shadow: ';
-		txtShdRule += `${txtShd} ${txtShd} #fff,`;
-		txtShdRule += `-${txtShd} ${txtShd} #fff,`;
-		txtShdRule += `${txtShd} -${txtShd} #fff,`;
-		txtShdRule += `-${txtShd} -${txtShd} #fff;`;
+		txtShdRule += `#fff ${txtShd} ${txtShd},`;
+		txtShdRule += `#fff -${txtShd} ${txtShd},`;
+		txtShdRule += `#fff ${txtShd} -${txtShd},`;
+		txtShdRule += `#fff -${txtShd} -${txtShd};`;
 
 		// system label text shadow
-		this.markup.css += `text.system-label { ${txtShdRule} }\n`;
+		//this.markup.css += `text.system-label { ${txtShdRule} }\n`;
 		// minimap text shadow
 		this.markup.css += `.minimap-outer text { ${txtShdRule} }\n`;
 		// scaling help text shadow
@@ -561,6 +562,7 @@ module.exports = (function () {
 						tplObj.sup = '<tspan class="sup" dx="0.5" dy="1">(apocryphal)</tspan>';
 					}
 					this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
+											filter="url(#sLblShd)"
 											class="system-label ${tplObj.labelClass}" >
 								${tplObj.name}${tplObj.sup}
 								</text>\n`;
@@ -630,7 +632,8 @@ module.exports = (function () {
 						tplObj.sup = '<tspan class="sup" dx="0.5" dy="-1">(apocryphal)</tspan>';
 					}*/
 					this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
-											class="system-label ${tplObj.labelClass}">
+											class="system-label ${tplObj.labelClass}"
+											filter="url(#sLblShd)">
 								${tplObj.name}</text>\n`;
 					/*this.markup.systemLabels += `<rect x="${tplObj.x}" y="${-systems[i].label.y - systems[i].label.h}"
 					 					width="${systems[i].label.w}" height="${systems[i].label.h}"
@@ -640,6 +643,7 @@ module.exports = (function () {
 						tplObj.x = (systems[i].label.x + minorLabelDelta.x).toFixed(3);
 						tplObj.y = (-systems[i].label.y + minorLabelDelta.y).toFixed(3); // TODO
 						this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
+							filter="url(#sLblShd)"
 							class="system-label additions ${tplObj.labelClass}">`;
 						for(var lai = 0; lai < systems[i].label.additions.length; lai++) {
 							tplObj.y = (-baseline + (lai+1)*(1.5) + minorLabelDelta.y).toFixed(3); // TODO
