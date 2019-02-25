@@ -617,9 +617,12 @@ module.exports = (function () {
 				}
 
 				if(settings.renderSystemLabels) {
-					var labelDelta = { x: 0, y: 0.5 };
+					var labelDelta = { x: 0, y: 0.35 };
 					var minorLabelDelta = { x: .15, y: 0 };
-					var baseline = systems[i].label.y + systems[i].label.h - systems[i].label.lineHeight + labelDelta.y;
+					var baseline = systems[i].label.y + systems[i].label.h - systems[i].label.lineHeight;
+					//if(systems[i].label.additions.length > 0) {
+						baseline += labelDelta.y;
+					//}
 					// system label
 					tplObj = {
 						x : systems[i].label.x.toFixed(3),
@@ -794,7 +797,7 @@ module.exports = (function () {
 			x : (minimapSettings.viewRect.x + minimapSettings.viewRect.w * .5).toFixed(1),
 			y : (-minimapSettings.viewRect.y - minimapSettings.viewRect.h * .5).toFixed(1)
 		};
-		if(!!minimapSettings.centerDot) {
+		if(minimapSettings.centerDot) {
 			this.markup.minimap += `<circle cx="${tplObj.x}" cy="${tplObj.y}" r="3"
 									style="fill: #a00" />\n`;
 			/*curD = `M${tplObj.x - 27},${tplObj.y} l20,0 `;
@@ -811,16 +814,18 @@ module.exports = (function () {
 		}
 
 		// map cutout rectangle
-		tplObj = {
-			x: viewRect.x,
-			y: -viewRect.y - viewRect.h,
-			w: viewRect.w,
-			h: viewRect.h
-		};
-		/*this.markup.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}"
-							style="fill: none; stroke: #fff; stroke-width: 10;" />\n`;
-		this.markup.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}"
-							style="fill: none; stroke: #a00; stroke-width: 3;" />\n`;*/
+		if(minimapSettings.cutoutRect) {
+			tplObj = {
+				x: viewRect.x,
+				y: -viewRect.y - viewRect.h,
+				w: viewRect.w,
+				h: viewRect.h
+			};
+			this.markup.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}"
+								style="fill: none; stroke: #fff; stroke-width: 10;" />\n`;
+			this.markup.minimap += `<rect x="${tplObj.x}" y="${tplObj.y}" width="${tplObj.w}" height="${tplObj.h}"
+								style="fill: none; stroke: #a00; stroke-width: 3;" />\n`;
+		}
 
 		// Terra indicator
 		focusedCoords = [viewRect.x+viewRect.w*.5,-viewRect.y-viewRect.h*.5];

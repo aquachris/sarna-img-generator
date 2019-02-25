@@ -67,7 +67,7 @@
 		text.system-label.abandoned { fill: #555; font-style: italic; }
 		text.system-label.undiscovered { fill: #555; font-style: italic; }
 		text.system-label tspan.sup { font-size: 1.5px; }
-		text.system-label.additions { fill: #666; font-size: 1.5px; font-style: italic; }
+		text.system-label.additions { fill: #666; font-size: 1.5px; }
 		text.system-label.additions tspan.apocryphal { fill: #c00; }
 		text.system-label.apocryphal tspan.sup { fill: #c00 }
 		g.border-labels text { alignment-baseline: middle; font-size: 2px; font-style: italic; font-weight: bold; text-rendering: geometricPrecision; }

@@ -108,12 +108,16 @@
 	"Procyon" : [{
 		"position": "center bottom"
 	}],
+	"Rigil Kentarus" : [{
+		"position": "center top",
+		"delta" : [0, 0]
+	}],
 	"Sirius" : [{
 		"position": "left center"
 	}],
 	"Sol" : [{
 		"position": "right center",
-		"delta": [0, 0.5]
+		"delta": [0, 0.75]
 	}],
 	"Tau Ceti" : [{
 		"position": "center top"

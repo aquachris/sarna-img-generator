@@ -688,6 +688,19 @@ module.exports = (function () {
                     candidateDisqualified = true;
                 }
             }
+			
+			// check whether the candidate's baseline lies entirely beyond the border
+			/*if(!candidateDisqualified) {
+				if((!inInnerLoop &&  Utils.pointIsLeftOfLine(newCandidate.tl, startPt, endPt))
+                    || ( inInnerLoop && !Utils.pointIsLeftOfLine(curCtrlPt, startPt, endPt)) ) {
+                    continue;
+                }
+				newCandidate.bl 
+				newCandidate.br
+
+				this.logger.info('candidate '+newCandidate.id+' will be disqualified because its baseline lies beyond the state border');
+                candidateDisqualified = true;
+			}*/
 
             // evaluate disqualification status
             if(candidateDisqualified) {
@@ -893,6 +906,28 @@ module.exports = (function () {
 						Math.min(
 							Utils.pointDistance(candidate.tl, iPoint),
 							Utils.pointDistance(candidate.tr, iPoint)
+						)
+					);
+				}
+				iPoint = Utils.getLineSegmentsIntersection(polylines[pi].edges[ei].n1,
+						polylines[pi].edges[ei].n2, 
+						candidate.bl, candidate.tr);
+				if(iPoint !== null) {
+					candidate.plIntMax = Math.max(candidate.plIntMax,
+						Math.min(
+							Utils.pointDistance(candidate.bl, iPoint),
+							Utils.pointDistance(candidate.tr, iPoint)
+						)
+					);
+				}
+				iPoint = Utils.getLineSegmentsIntersection(polylines[pi].edges[ei].n1,
+						polylines[pi].edges[ei].n2, 
+						candidate.br, candidate.tl);
+				if(iPoint !== null) {
+					candidate.plIntMax = Math.max(candidate.plIntMax,
+						Math.min(
+							Utils.pointDistance(candidate.br, iPoint),
+							Utils.pointDistance(candidate.tl, iPoint)
 						)
 					);
 				}

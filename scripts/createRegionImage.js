@@ -33,6 +33,7 @@ var main = function () {
     var systemRadius = 1;
     var labelDist = 0.5;
     var regionName;
+	var tmpIdx;
 
     // read factions from the xlsx
 	reader.readFactions();
@@ -73,7 +74,7 @@ var main = function () {
 		h: 600
 	};*/
 
-    // Inhabited worlds at FWL Founding
+/*    // ENTIRE KNOWN SPACE
     regionName = 'Known space';
     // image dimensions in pixels
     var dimensions = {
@@ -98,9 +99,9 @@ var main = function () {
 		y: -2000,
 		w: 4000,
 		h: 4000
-	};
+	};*/
 
-/* // CLAN INVASION CORRIDOR
+ // CLAN INVASION CORRIDOR
     regionName = 'Clan Invasion Corridor';
     // image dimensions in pixels
     var dimensions = {
@@ -126,7 +127,6 @@ var main = function () {
 		w: 1200,
 		h: 1200
 	};
-*/
 
     // size factor
     var sizeFactor = 1;
@@ -151,15 +151,15 @@ var main = function () {
             //|| eraI === 0 // 2271 FWL Founding
 			//|| eraI === 4 // 2367
             //|| eraI === 15 // 2864
-            || eraI === 16 // 3025
-            //|| eraI === 18 // 3040
+            //|| eraI === 16 // 3025
+            || eraI === 18 // 3040
             //|| eraI === 19 // 3050
             //|| eraI === 20 // 3050
             //|| eraI === 21 // 3050
 			//|| eraI === 22 // 3050
             //|| eraI === 23 // 3051
-            //|| eraI === 24 // 3052
-            //|| eraI === 26 // 3058
+            || eraI === 24 // 3052
+            || eraI === 26 // 3058
 		)) {
 			continue;
 		}
@@ -171,13 +171,20 @@ var main = function () {
 			curSys = reader.systems[i];
             curAff = '';
             if(curSys.affiliations[eraI].search(/^D\s*\(/g) >= 0) {
-                curAff = curSys.affiliations[eraI];
-            } else {
-                curAff = curSys.affiliations[eraI].split(',')[0].trim();
-            }
+				curAff = curSys.affiliations[eraI];
+			} else {
+				curAff = curSys.affiliations[eraI].split(',')[0].trim();
+			}
+			if((tmpIdx = curAff.search(/\(\s*H\s*\)/g)) >= 0) {
+				reader.systems[i].hidden = true;
+				curAff = curAff.substr(0,tmpIdx).trim();
+			} else {
+				reader.systems[i].hidden = false;
+			}
 			reader.systems[i].col = curAff;
-			if(curAff === '' || curAff === 'U' || curAff === 'A') {
-		          continue;
+			reader.systems[i].capitalLvl = curSys.capitalLvls[eraI];
+			if(curAff === '' || curAff === 'U' || curAff === 'A' || reader.systems[i].hidden) {
+				  continue;
 			}
 			if(curSys.status.toLowerCase() === 'apocryphal') {
 				continue;
@@ -262,7 +269,8 @@ var main = function () {
                 dimensions : minimapDimensions,
                 viewRect : minimapViewRect,
                 borders: minimapBorders,
-                nebulae: minimapNebulae
+                nebulae: minimapNebulae,
+				cutoutRect : true
             },
 			null
 		);

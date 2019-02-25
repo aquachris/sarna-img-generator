@@ -7,15 +7,16 @@ A collection of scripts that generate planetary systems images used on sarna.net
 - ~~Properly parse and use system names (A)~~ **DONE**
 - ~~Script arguments & packaging (A)~~ **DONE**
 - ~~Apocryphal text below labels (B)~~ **DONE**
+- ~~Capitals as marked in SUCKit (B)~~ **DONE**
 ---
-- Borders overlap at disputed systems (B)
-- Dark theme (B)
-- Better nebula labels (B)
-- Rounded three-way border meeting points (B)
+- Borders overlap at disputed systems (C)
+- Dark theme (C)
+- Better nebula labels (C)
+- Rounded three-way border meeting points (C)
 ---
-- Corfu 3058 --> Clan Wolf label
+### Bugs and known issues ###
 - filter shadows for full iPhone compatibility
-- border label top / bottom lines completely (mostly?) beyond border -->
-    - Clan Invasion Corridor 3040: Tamar
-    - Clan Invasion Corridor 3052: Corfu
-- Faction capitals (marked in SUCKit)
+- ~~border label top / bottom lines completely (mostly?) beyond border -->~~ **FIXED**
+    - ~~Clan Invasion Corridor 3040: Tamar (FedCom label) ~~
+    - ~~Clan Invasion Corridor 3052: Corfu~~
+	- ~~Clan Invasion Corridor 3058: Corfu (Clan Wolf label)~~

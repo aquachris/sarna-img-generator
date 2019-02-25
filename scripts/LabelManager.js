@@ -137,7 +137,9 @@ module.exports = (function () {
                     labelAdditionsWidth += this.glyphSettingsSmall.widths[labelAdditions[li].text[lai]] || defaultWidth;
                 }*/
             }
-			labelHeight -= this.labelSqueeze;
+			if(labelAdditions.length > 0) {
+				labelHeight -= this.labelSqueeze;
+			}
             /*labelWidth += this.glyphSettings.widths[' '] || defaultWidth;
             for(var i = 0; i < sup.length; i++) {
                 labelWidth += .6 * this.glyphSettings.widths[sup[i]] || defaultWidth;
