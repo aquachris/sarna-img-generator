@@ -210,7 +210,7 @@ module.exports = (function () {
 		// system label text shadow
 		//this.markup.css += `text.system-label { ${txtShdRule} }\n`;
 		// minimap text shadow
-		this.markup.css += `.minimap-outer text { ${txtShdRule} }\n`;
+		//this.markup.css += `.minimap-outer text { ${txtShdRule} }\n`;
 		// scaling help text shadow
 		this.markup.css += `.scale text { ${txtShdRule} }\n`;
 	};
@@ -306,10 +306,13 @@ module.exports = (function () {
 					curPolyline = borderLabelLines[faction][pi];
 					// make sure the border labels are visible against the faction background
 					rgba = this.hexToRgba(curPolyline.fill) || {r:0,g:0,b:0};
-					if(rgba.r + rgba.g + rgba.b >= 600) {
-						rgba.r = rgba.g = rgba.b = 0;
+					while(rgba.r + rgba.g >= 420 || rgba.r + rgba.g + rgba.b >= 600) {
+						//rgba.r = rgba.g = rgba.b = 0;
+						rgba.r *= .4;
+						rgba.g *= .4;
+						rgba.b *= .4;
 					}
-					hex = this.rgbToHex(rgba.r, rgba.g, rgba.b);
+					hex = this.rgbToHex(Math.round(rgba.r), Math.round(rgba.g), Math.round(rgba.b));
 					//console.log(curPolyline.id, curPolyline.edges.length);
 					curD = '';
 					curCtrlPoints = '';
@@ -332,14 +335,13 @@ module.exports = (function () {
 							d="M${tplObj.x1},${tplObj.y1} L${tplObj.x2},${tplObj.y2}" />`;
 						// add label text element to borderLabels group
 						this.markup.borderLabels += `<text text-anchor="left"
-							data-candidate-rating="${tplObj.rating}">
+							data-candidate-rating="${tplObj.rating}" style="fill: ${tplObj.fill};">
 		    				<textPath xlink:href="#label-path-${tplObj.lId}">`;
 						for(var ltpi = 0; ltpi < curPolyline.labels[li].labelParts.length; ltpi++) {
 							tplObj.text = curPolyline.labels[li].labelParts[ltpi];
 							tplObj.dx = (curPolyline.labels[li].dxValues[ltpi]).toFixed(2);
 							tplObj.dy = (curPolyline.labels[li].dyValues[ltpi]).toFixed(2);
-							this.markup.borderLabels += `<tspan x="${tplObj.dx}" dy="${tplObj.dy}"
-								style="fill: ${tplObj.fill};">${tplObj.text}</tspan>`;
+							this.markup.borderLabels += `<tspan x="${tplObj.dx}" dy="${tplObj.dy}">${tplObj.text}</tspan>`;
 						}
 						this.markup.borderLabels += `</textPath></text>`;
 					}
@@ -617,7 +619,7 @@ module.exports = (function () {
 				}
 
 				if(settings.renderSystemLabels) {
-					var labelDelta = { x: 0, y: 0.35 };
+					var labelDelta = { x: 0, y: 0.5 };
 					var minorLabelDelta = { x: .15, y: 0 };
 					var baseline = systems[i].label.y + systems[i].label.h - systems[i].label.lineHeight;
 					//if(systems[i].label.additions.length > 0) {
@@ -885,7 +887,7 @@ module.exports = (function () {
 				tplObj.distStr = `<tspan x="${tplObj.x}" dy="1.1em" class="smaller">${tplObj.roundedDist} LY</tspan>`;
 			}
 
-			this.markup.minimap += `<text x="${tplObj.x}" y="${tplObj.y}">
+			this.markup.minimap += `<text x="${tplObj.x}" y="${tplObj.y}" filter="url(#sLblShdMM)">
 								<tspan>Terra</tspan>
 								${tplObj.distStr}
 							</text>\n`;
