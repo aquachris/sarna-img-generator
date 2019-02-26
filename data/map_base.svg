@@ -79,6 +79,7 @@
 		.scale rect.black { stroke-width: 0; fill: #000; }
 		.scale rect.white { stroke-width: 0; fill: #fff; }
 		.scale rect.frame { stroke: #000; stroke-width: 0.4375; fill: none; }
+		path.logo { fill: #000; fill-rule: evenodd; stroke: none; }
 		{CSS}
 
 		/* IE10+ specific styles */

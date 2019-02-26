@@ -178,8 +178,8 @@ var main = function () {
     //focusedSystems.push('Acoma');
     //focusedSystems.push('Aconcagua');
     //focusedSystems.push('Alexandria (CC)');
-    //focusedSystems.push('Sol');
-	focusedSystems.push('Radstadt');
+    focusedSystems.push('Sol');
+	//focusedSystems.push('Radstadt');
     //focusedSystems.push('Sian');
     //focusedSystems.push('Rasalhague');
     //focusedSystems.push('Romita');

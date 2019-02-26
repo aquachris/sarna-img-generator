@@ -64,7 +64,8 @@ module.exports = (function () {
 			renderNebulaeLabels : true,
 			renderJumpRings : true,
 			renderMinimap : true,
-			renderScaleHelp : true
+			renderScaleHelp : true,
+			renderLogo : true
 		}, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, scaleHelpSettings, minimapSettings, jumpRings);
 	};
 
@@ -87,7 +88,8 @@ module.exports = (function () {
 			renderNebulaeLabels : true,
 			renderJumpRings : false,
 			renderMinimap : true,
-			renderScaleHelp : true
+			renderScaleHelp : true,
+			renderLogo : true
 		}, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, scaleHelpSettings, minimapSettings, jumpRings);
 	};
 
@@ -126,6 +128,7 @@ module.exports = (function () {
 		settings.renderJumpRings = settings.renderJumpRings === undefined ? true : settings.renderJumpRings;
 		settings.renderMinimap = settings.renderMinimap === undefined ? true : settings.renderMinimap;
 		settings.renderScaleHelp = settings.renderScaleHelp === undefined ? true : settings.renderScaleHelp;
+		settings.renderLogo = settings.renderLogo === undefined ? true : settings.renderLogo;
 
 		// reset markup
 		this.initMarkup();
@@ -147,6 +150,9 @@ module.exports = (function () {
 
 		// render the minimap
 		this.renderMinimap(settings, minimapSettings, viewRect, pxPerLy, factions, nebulae);
+
+		// render logo
+		this.renderLogo(viewRect, pxPerLy);
 
 		// render scale help
 		scaleHelpSettings = scaleHelpSettings || {};
@@ -215,8 +221,50 @@ module.exports = (function () {
 		this.markup.css += `.scale text { ${txtShdRule} }\n`;
 	};
 
+
 	/**
 	 * @private
+	 */
+	SvgWriter.prototype.renderLogo = function (viewRect, pxPerLy) {
+		var sizeInLy = {
+			w: 641.494,
+			h: 542.43
+		};
+		var ratio = sizeInLy.w / sizeInLy.h;
+		var targetHeightInLy = 20;
+		var targetWidthInLy = targetHeightInLy * ratio;
+		var scale = targetHeightInLy / sizeInLy.h;
+		console.log(viewRect);
+		var origin = {
+			x: (viewRect.x + viewRect.w - targetWidthInLy) / scale,
+			y: -(viewRect.y + viewRect.h) / scale
+		};
+		var d = `m${origin.x},${origin.y} c14.02,-6.23 84.44,2.69 60.61,74.28 88.27,-19.22 60.53,93.34 40.18,84.55
+			-12.14,17.14 -10.71,32.14 -10.71,32.14 83.57,-0.71 129.29,25.71 129.29,25.71
+			7.14,20 140.71,65.71 140.71,65.71 l-0.71,14.29 c-120.72,-48.56 -145.72,-49.99 -145.72,-49.99
+			-1.13,42.86 -12.48,66.11 -35.81,59.53 -17.21,-4.86 -35.8,-15.87 -39.19,-22.39 -17.21,-2.31
+			-35,-1.43 -35,-1.43 l-4.29,-11.43 -7.86,0 c-5.06,26.02 -22.73,20.92 -22.73,20.92
+			l3.87,38.42 -4.04,26.77 1.52,65.15 -3.54,18.69 4.48,21.87 16.2,11.97 c2.18,-20.01
+			12.01,-11.94 19.45,-12.68 13.29,10.71 26.58,22.83 39.87,24.4 6.89,4.4 14.71,8.62
+			19.02,15.97 l45.38,7.79 60.16,-1.14 87.88,2.02 1.01,13.13 -641.45,-2.02 2.02,-30.3
+			35.88,1.43 19.92,-9.72 16.94,9.3 42.43,-8.21 c26.42,-9.13 29.39,-16.09 34.35,-49.36
+			7.59,-22.95 5.02,-49.28 5.05,-74.75 6.37,3.62 6.76,-20.79 6.74,-30.56 -0.04,-16.58
+			8.42,-40.23 11.95,-57.08 l-21.72,-21.47 10.1,-30.3 -1.01,-57.58 c14.93,-11.45
+			9.54,-22.9 -2.02,-34.35	l-22.22,4.04 -2.68,121.81 -34.65,14.66 c-9.53,7.16
+			-19.08,11.64 -28.59,13.09 -11.69,-9.45 -9.8,-18.89 -12.87,-28.34 0,0 -5.05,-1.01
+			-18.18,-5.05 l9.09,-29.29 18.18,-70.71 c11.91,5.97 7.93,-30.86 42.43,-62.63 -6.57,-67.36
+			20.86,-85.87 48.49,-91.92 13.13,-1.03 26.26,-3.98 39.4,0 13.78,10.8 25.93,23.23 34.35,39.4
+			6.93,-1.99 6.4,-6.45 8.49,-8.76 0,0 -20.19,-20.7 -22.35,-23.61 -1.96,-2.65 1.09,-1.28
+			1.09,-1.28 7.24,6.7 23.96,22.17 24.45,21.04 3.79,-8.72 7.16,-30.16 8.53,-39.91 l16.16,2.02
+			6.06,8.08 m-37,306 c2.99,11.26 27.35,9.68 48.57,10 l-2.86,61.43 c-21.37,24.45 6.11,68.21
+			-15.71,102.86 -14.29,7.09 -28.57,20.2 w42.86,5.71 l-5.71,-48.57 c21.31,-43.17 -7.44,-67.8
+			18.57,-131.43 z`;
+		this.markup.overlays += `<path class="logo" d="${d}" style="transform: scale(${scale})" />`;
+	};
+
+
+	/**
+${origin.x} ${origin.y} @private
 	 */
 	SvgWriter.prototype.renderFactions = function (settings, factions, borders, borderLabelLines) {
 		var borderLoops, curLoop;
