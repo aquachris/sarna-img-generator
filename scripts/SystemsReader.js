@@ -48,7 +48,7 @@ module.exports = (function () {
 
 		// Read xlsx file
         // TODO make file name configurable
-		this.workbook = xlsx.parse(__dirname + '/../data/Systems By Era.xls');
+		this.workbook = xlsx.parse(__dirname + '/../data/Systems By Era.xlsx');
 	};
 
 	/**
@@ -118,7 +118,7 @@ module.exports = (function () {
 		var curRow, curSystem, curAltNames, altRegexResult, curAffiliation, curScale;
 		var parentheses;
 		// sort out headers
-		var headerRowIdx = 2; // TODO magic number
+		var headerRowIdx = 1; // TODO magic number
 		var columnIdxMap = {}; // map of column titles (lowercase) to column indices
         var curEra;
 
@@ -135,7 +135,7 @@ module.exports = (function () {
                 columnIdxMap['era_'+this.eras.length] = i;
                 this.eras.push({
                     idx: i,
-                    name: systemsSheet.data[0][i], // TODO magic number
+                    name: systemsSheet.data[1][i]+'',//systemsSheet.data[0][i], // TODO magic number
                     year: curRow[i]
                 });
             }
