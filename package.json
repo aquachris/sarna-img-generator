@@ -1,0 +1,29 @@
+{
+  "name": "sarna-img-generator",
+  "version": "1.0.0",
+  "description": "Battletech map image generator, based on sarna.net's SUCK",
+  "main": "createNeighborhoodImage.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aquachris/sarna-img-generator.git"
+  },
+  "keywords": [
+    "battletech",
+    "sarna",
+    "map"
+  ],
+  "author": "Christoph Wassermann",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/aquachris/sarna-img-generator/issues"
+  },
+  "homepage": "https://github.com/aquachris/sarna-img-generator#readme",
+  "dependencies": {
+    "delaunator": "^4.0.0",
+    "node-xlsx": "^0.15.0",
+    "seedrandom": "^3.0.3"
+  }
+}

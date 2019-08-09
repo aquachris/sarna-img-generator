@@ -2,6 +2,7 @@ module.exports = (function () {
 	'use strict';
 
 	var fs = require('fs');
+	var path = require('path');
 	var Utils = require('./Utils.js');
 
 	/**
@@ -9,7 +10,7 @@ module.exports = (function () {
 	 * base map and the desired center coordinates and bounds.
 	 */
 	var SvgWriter = function (logger, baseDir) {
-		this.baseDir = baseDir || '.';
+		this.baseDir = baseDir || __dirname;
 		this.logger = logger;
 		this.markup = {};
 		this.initMarkup();
@@ -50,7 +51,7 @@ module.exports = (function () {
 	 */
 	SvgWriter.prototype.writeNeighborhoodSvg = function (name, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings) {
 		var safeEraName = era.year + '_' + era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
-		var dir = (this.baseDir + '/output/'+safeEraName).replace(/[\+\s\(\)]/g, '_');
+		var dir = path.join(this.baseDir, '/output/'+safeEraName).replace(/[\+\s\(\)]/g, '_');
 		var filename = (name.replace(/\s/g, '_')+'_' + safeEraName + '.svg').replace(/[\+\s\(\)]/g, '_');
 		var scaleHelpSettings;
 		this.writeSvg({
@@ -76,7 +77,7 @@ module.exports = (function () {
 		var safeEraName = era.year + '_' + era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
 		var filename = (name.replace(/\s/g, '_')+'_' + safeEraName + '.svg').replace(/[\+\s\(\)]/g, '_');
 		dir = dir || safeEraName;
-		dir = (this.baseDir + '/output/' + dir).replace(/[\+\s\(\)]/g, '_');
+		dir = path.join(this.baseDir, '/output/', dir).replace(/[\+\s\(\)]/g, '_');
 		this.writeSvg({
 			renderFactions : true,
 			renderBorderLabels : true,
@@ -110,7 +111,7 @@ module.exports = (function () {
 	 * @param jumpRings {Array} List of jump ring radii
 	 */
 	SvgWriter.prototype.writeSvg = function (settings, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, scaleHelpSettings, minimapSettings, jumpRings) {
-		var tpl = fs.readFileSync(this.baseDir + '/../data/map_base.svg', { encoding: 'utf-8' });
+		var tpl = fs.readFileSync(path.join(this.baseDir, '/../data/map_base.svg'), { encoding: 'utf-8' });
 		var viewBox;
 		var elementsStr;
 		var pxPerLy = dimensions.w / viewRect.w;

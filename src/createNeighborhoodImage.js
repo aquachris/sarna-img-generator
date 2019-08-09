@@ -1,4 +1,5 @@
 var fs = require('fs');
+var path = require('path');
 var Logger = require('./Logger.js');
 var LogRenderer = require('./LogRenderer.js');
 var Utils = require('./Utils.js');
@@ -13,7 +14,9 @@ var SvgWriter = require('./SvgWriter.js');
 var main = function () {
     // initialize objects
     var logger = new Logger(Logger.MESSAGE);
-    var logRenderer = new LogRenderer(logger, '../data/script_log.html', '../data/log.tpl.html');
+    var logRenderer = new LogRenderer(logger,
+            path.join(__dirname, '../data/script_log.html'), 
+            path.join(__dirname, '../data/log.tpl.html'));
     var reader = new SystemsReader(logger);
 	var writer = new SvgWriter(logger);
 	var pDisc;
@@ -47,22 +50,15 @@ var main = function () {
     // image dimensions in pixels
     var dimensions = {
         w: 1000,
-        h: 1000
+        h: 1143
     };
 
     // the visible rectangle, in map space:
-	var viewRect = {
-		x: -2000,
-		y: -2000,
-		w: 4000,
-		h: 4000
-	};
-
-    viewRect = {
+    var viewRect = {
         x: -70,
-        y: -70,
+        y: -80,
         w: 140,
-        h: 140
+        h: 160
     };
 
 	var minimapDimensions = {
@@ -175,11 +171,11 @@ var main = function () {
     //focusedSystems.push('Versailles');
 
     // debugging / tests
-    //focusedSystems.push('Acoma');
+    focusedSystems.push('Acoma');
     //focusedSystems.push('Aconcagua');
     //focusedSystems.push('Alexandria (CC)');
     //focusedSystems.push('Sol');
-    focusedSystems.push('New Avalon');
+    //focusedSystems.push('New Avalon');
 	//focusedSystems.push('Radstadt');
     //focusedSystems.push('Sian');
     //focusedSystems.push('Rasalhague');
