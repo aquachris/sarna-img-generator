@@ -1,6 +1,7 @@
 'use strict';
 var fs = require('fs');
 var Logger = require('./Logger.js');
+var StupidLogger = require('./StupidLogger.js');
 var LogRenderer = require('./LogRenderer.js');
 var Utils = require('./Utils.js');
 var SystemsReader = require('./SystemsReader.js');
@@ -16,7 +17,8 @@ var main = function () {
     // the logger and log renderer just hog memory
     // TODO make the logger smarter (flush at regular intervals to keep memory usage in check)
     // var logger = new Logger(Logger.MESSAGE);
-    var logger = console;
+    var logger = new StupidLogger();
+    //var logger = console;
     //var logRenderer = new LogRenderer(logger, '../data/script_log.html', '../data/log.tpl.html');
     var reader = new SystemsReader(logger);
 	var writer = new SvgWriter(logger);
@@ -34,6 +36,7 @@ var main = function () {
     var curSys, curAff, curP;
     var systemRadius = 1;
     var labelDist = 0.5;
+    var tmpIdx;
 
     // read factions from the xlsx
 	reader.readFactions();
@@ -41,12 +44,16 @@ var main = function () {
     // read nebulae from the xlsx
     reader.readNebulae();
 
+    // read eras from the xlsx
+    reader.readEras();
+
     // read planetary systems from the xlsx
-    reader.readSystemsAndEras();
+    reader.readSystems();
 
 	// read label settings from the config file
 	reader.readLabelConfig();
 
+    /*
     // image dimensions in pixels
     var dimensions = {
         w: 1000,
@@ -60,6 +67,32 @@ var main = function () {
         w: 140,
         h: 140
 	};
+
+	var minimapDimensions = {
+		w: 400,
+		h: 200
+	};
+	var minimapViewRect = {
+		x: -600,
+		y: -300,
+		w: 1200,
+		h: 600
+	};
+    */
+
+    // image dimensions in pixels
+    var dimensions = {
+        w: 1000,
+        h: 1143
+    };
+
+    // the visible rectangle, in map space:
+    var viewRect = {
+        x: -70,
+        y: -80,
+        w: 140,
+        h: 160
+    };
 
 	var minimapDimensions = {
 		w: 400,
@@ -87,7 +120,7 @@ var main = function () {
         logger.log('Starting on ' + focusedSystemName);
 
         viewRect.x = focusedSystem.x - viewRect.w * .5;
-        viewRect.y = focusedSystem.y - viewRect.h * .5;
+        viewRect.y = focusedSystem.y - viewRect.h * .5 - 10; // TODO 10 LY off because map is not rectangular?
         minimapViewRect.x = focusedSystem.x - minimapViewRect.w * .5;
         minimapViewRect.y = focusedSystem.y - minimapViewRect.h * .5;
 
@@ -114,7 +147,14 @@ var main = function () {
                 } else {
                     curAff = curSys.affiliations[eraI].split(',')[0].trim();
                 }
+                if((tmpIdx = curAff.search(/\(\s*H\s*\)/g)) >= 0) {
+                    reader.systems[i].hidden = true;
+                    curAff = curAff.substr(0,tmpIdx).trim();
+                } else {
+                    reader.systems[i].hidden = false;
+                }
     			reader.systems[i].col = curAff;
+                reader.systems[i].capitalLvl = curSys.capitalLvls[eraI];
     			if(curAff === '' || curAff === 'U' || curAff === 'A') {
     		          continue;
     			}
@@ -129,7 +169,6 @@ var main = function () {
     				name : curSys.names[eraI]
     			});
     		}
-
             pDisc.replaceReservedPoints(reservedPoints);
 
     		for(var i = 0; i < pDisc.aggregatedPoints.length; i++) {
@@ -196,7 +235,9 @@ var main = function () {
     				dimensions : minimapDimensions,
     				viewRect : minimapViewRect,
     				borders: minimapBorders,
-    				nebulae: minimapNebulae
+    				nebulae: minimapNebulae,
+                    centerDot : true,
+                    rings: [30,60]
     			},
     			[30, 60]
     		);

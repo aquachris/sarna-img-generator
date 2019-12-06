@@ -1077,7 +1077,7 @@ ${origin.x} ${origin.y} @private
 		}
 		tplObj = {
 			cx: (viewRect.x + viewRect.w * .5).toFixed(3),
-			cy: (-viewRect.y - viewRect.h * .5).toFixed(3)
+			cy: (-viewRect.y - viewRect.h * .5).toFixed(3) - 10
 		};
 		for(var i = 0; i < jumpRingDistances.length; i++) {
 			tplObj.r = jumpRingDistances[i];

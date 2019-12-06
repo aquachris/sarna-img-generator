@@ -15,7 +15,7 @@ var main = function () {
     // initialize objects
     var logger = new Logger(Logger.MESSAGE);
     var logRenderer = new LogRenderer(logger,
-            path.join(__dirname, '../data/script_log.html'), 
+            path.join(__dirname, '../data/script_log.html'),
             path.join(__dirname, '../data/log.tpl.html'));
     var reader = new SystemsReader(logger);
 	var writer = new SvgWriter(logger);
@@ -41,8 +41,11 @@ var main = function () {
     // read nebulae from the xlsx
     reader.readNebulae();
 
+    // read eras from the xlsx
+    reader.readEras();
+
     // read planetary systems from the xlsx
-    reader.readSystemsAndEras();
+    reader.readSystems();
 
 	// read label settings from the config file
 	reader.readLabelConfig();
@@ -138,7 +141,7 @@ var main = function () {
 	//focusedSystems.push('Sol');
 	//focusedSystems.push('Cassias');
     //focusedSystems.push('Desolate Plains');
-    //focusedSystems.push('Strana Mechty');
+    focusedSystems.push('Strana Mechty');
     //focusedSystems.push('Versailles');
     //focusedSystems.push('El Dorado');
     //focusedSystems.push('Bremen');
@@ -148,13 +151,13 @@ var main = function () {
 
     // dynamic names
     //focusedSystems.push('Badlands Cluster');
-    //focusedSystems.push('Desolate Plains')
+    focusedSystems.push('Desolate Plains')
 
     // nebula fine tuning
-    //focusedSystems.push('Badlands Cluster');
+    focusedSystems.push('Badlands Cluster');
     //focusedSystems.push('Desolate Plains')
     //focusedSystems.push('Heathville');
-    //focusedSystems.push('Trell');
+    focusedSystems.push('Trell');
     //focusedSystems.push('Tortuga Prime');
     //focusedSystems.push('New Roland');
 
@@ -171,13 +174,14 @@ var main = function () {
     //focusedSystems.push('Versailles');
 
     // debugging / tests
-    focusedSystems.push('Acoma');
+    //focusedSystems.push('Acoma');
     //focusedSystems.push('Aconcagua');
     //focusedSystems.push('Alexandria (CC)');
-    //focusedSystems.push('Sol');
-    //focusedSystems.push('New Avalon');
+    focusedSystems.push('Sol');
+    focusedSystems.push('New Avalon');
+    focusedSystems.push('Luthien');
 	//focusedSystems.push('Radstadt');
-    //focusedSystems.push('Sian');
+    focusedSystems.push('Sian');
     //focusedSystems.push('Rasalhague');
     //focusedSystems.push('Romita');
     //focusedSystems.push('Fylovar');
@@ -186,11 +190,11 @@ var main = function () {
     //focusedSystems.push('Pobeda');
     //focusedSystems.push('Luthien');
     //focusedSystems.push('Zurich');
-    //focusedSystems.push('St. Andre');
+    focusedSystems.push('St. Andre');
     //focusedSystems.push('Sol');
 
     // system suffixes
-    //focusedSystems.push('Coromodir');
+    focusedSystems.push('Coromodir');
     //focusedSystems.push('Sol');
 
     // generate points randomly scattered in 2D space
@@ -205,7 +209,7 @@ var main = function () {
         for(var i = 0, len = reader.systems.length; i < len; i++) {
             if(reader.systems[i].name === focusedSystemName) {
                 viewRect.x = reader.systems[i].x - viewRect.w * .5;
-                viewRect.y = reader.systems[i].y - viewRect.h * .5;
+                viewRect.y = reader.systems[i].y - viewRect.h * .5 - 10;
                 //viewRect.x = -viewRect.w * .5;
                 //viewRect.y = -viewRect.h * .5;
                 minimapViewRect.x = reader.systems[i].x - 600;
@@ -225,11 +229,11 @@ var main = function () {
 				//|| eraI === 4 // 2367
                 //|| eraI === 12 // 2821
                 //|| eraI === 15 // 2864
-				//|| eraI === 16 // 3025
+				|| eraI === 16 // 3025
 				//|| eraI === 26 // 3058
                 //|| eraI === 36 // 3081
                 //|| eraI === 40 // 3135
-                || eraI === 42 // 3151
+                //|| eraI === 42 // 3151
 			)) {
 				continue;
 			}

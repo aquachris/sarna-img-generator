@@ -5,6 +5,7 @@ module.exports = (function () {
 	var fs = require('fs');
     var Observable = require('./Observable.js');
 
+    var SHEET_COLUMNS = 1;
     var SHEET_FACTIONS = 3;
     var SHEET_SYSTEMS = 2;
     var SHEET_NEBULAE = 4;
@@ -77,37 +78,67 @@ module.exports = (function () {
 		for(var rowIdx = headerRowIdx + 1, endIdx = factionsSheet.data.length; rowIdx < endIdx; rowIdx++) {
 			curRow = factionsSheet.data[rowIdx];
 
-			// skip factions without a short character sequence
-			if(!curRow[columnIdxMap['short']]) {
+			// skip factions without an id
+			if(!curRow[columnIdxMap['id']]) {
 				continue;
 			}
 
 			// read faction
-			curColor = '#';
+			/*curColor = '#';
 			curR = curRow[columnIdxMap['r']] || 0;
 			curG = curRow[columnIdxMap['g']] || 0;
 			curB = curRow[columnIdxMap['b']] || 0;
 			curColor += ('0' + curR.toString(16)).slice(-2);
 			curColor += ('0' + curG.toString(16)).slice(-2);
-			curColor += ('0' + curB.toString(16)).slice(-2);
+			curColor += ('0' + curB.toString(16)).slice(-2);*/
 			curFaction = {
-				shortName: curRow[columnIdxMap['short']],
-				longName: curRow[columnIdxMap['long']],
-				category: curRow[columnIdxMap['#class']],
-				color: curColor,
-				founding: curRow[columnIdxMap['founding']] || '',
-				dissolution: curRow[columnIdxMap['dissolution']] || ''
+				shortName: curRow[columnIdxMap['id']],
+				longName: curRow[columnIdxMap['factionname']],
+				category: 'ok',//curRow[columnIdxMap['#class']],
+				color: curRow[columnIdxMap['color']],
+				founding: curRow[columnIdxMap['foundingyear']] || '',
+				dissolution: curRow[columnIdxMap['dissolutionyear']] || ''
 			};
+            // TODO temp fixes - remove
+            while(curFaction.color.length < 7) {
+                curFaction.color += '0';
+            }
+            if(curFaction.shortName === 'TC') {
+                curFaction.color = '#B73C26';
+            }
 			this.factions[curFaction.shortName] = curFaction;
 		}
 	};
+
+    /**
+     * Reads the eras and populates this object's era array
+     */
+    SystemsReader.prototype.readEras = function () {
+        this.readWorkbook();
+        this.logger.log('Reading eras');
+
+        this.eras = [];
+
+        var erasSheet = this.workbook[SHEET_COLUMNS];
+        var i = 0;
+        while(erasSheet.data[i][1] !== undefined) {
+            if(!isNaN(parseInt(erasSheet.data[i][1]+''))) {
+                this.eras.push({
+                    idx: i,
+                    name: erasSheet.data[i][2]+'',
+                    year: erasSheet.data[i][1]
+                });
+            }
+            i++;
+        }
+    };
 
     /**
      * Reads the planetary systems from the SUCK master list excel file.
 	 *
 	 * @returns {Array} The systems list
      */
-    SystemsReader.prototype.readSystemsAndEras = function () {
+    SystemsReader.prototype.readSystems = function () {
 		this.readWorkbook();
 
         this.logger.log('Systems reader started');
@@ -123,7 +154,6 @@ module.exports = (function () {
         var curEra;
 
         this.systems = [];
-        this.eras = [];
 
 		curRow = systemsSheet.data[headerRowIdx];
 
@@ -132,12 +162,12 @@ module.exports = (function () {
             if(i < 8) { // TODO magic number
                 columnIdxMap[(curRow[i]+'').toLowerCase()] = i;
             } else {
-                columnIdxMap['era_'+this.eras.length] = i;
-                this.eras.push({
+                columnIdxMap['era_'+(i-8)] = i;
+                /*this.eras.push({
                     idx: i,
                     name: systemsSheet.data[1][i]+'',//systemsSheet.data[0][i], // TODO magic number
                     year: curRow[i]
-                });
+                });*/
             }
 		}
 
@@ -153,13 +183,13 @@ module.exports = (function () {
 			// read system
 			curSystem = {};
 			// name and status
-			curSystem.name_full = curRow[columnIdxMap['system']];
+			curSystem.name_full = curRow[columnIdxMap['systemname']];
             curSystem.name = curSystem.name_full;
 
             // find alternate names
 			curAltNames = [];
-			if(!!curRow[columnIdxMap['alternate names']]) {
-				curAltNames = curRow[columnIdxMap['alternate names']].split(',');
+			if(!!curRow[columnIdxMap['alternatename']]) {
+				curAltNames = curRow[columnIdxMap['alternatename']].split(',');
 				// disregard any alternative names that do no contain a year in parentheses
 				for(var ni = 0; ni < curAltNames.length; ni++) {
 					curAltNames[ni] = curAltNames[ni].trim();
@@ -178,7 +208,7 @@ module.exports = (function () {
             // sort alternate names by year
             curAltNames.sort(function (a,b) { return a.year - b.year; });
 
-			curSystem.status = curRow[columnIdxMap['status']];
+			curSystem.status = 'ok';//curRow[columnIdxMap['status']];
 			// coordinates
 			curSystem.x = curRow[columnIdxMap['x']];
 			curSystem.y = curRow[columnIdxMap['y']];
