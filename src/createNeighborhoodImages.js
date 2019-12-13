@@ -155,7 +155,7 @@ var main = function () {
                 }
     			reader.systems[i].col = curAff;
                 reader.systems[i].capitalLvl = curSys.capitalLvls[eraI];
-    			if(curAff === '' || curAff === 'U' || curAff === 'A') {
+    			if(curAff === '' || curAff === 'U' || curAff === 'A' || reader.systems[i].hidden) {
     		          continue;
     			}
     			if(curSys.status.toLowerCase() === 'apocryphal') {

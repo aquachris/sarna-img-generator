@@ -141,23 +141,24 @@ var main = function () {
 	//focusedSystems.push('Sol');
 	//focusedSystems.push('Cassias');
     //focusedSystems.push('Desolate Plains');
-    focusedSystems.push('Strana Mechty');
+    //focusedSystems.push('Strana Mechty');
     //focusedSystems.push('Versailles');
     //focusedSystems.push('El Dorado');
     //focusedSystems.push('Bremen');
     //focusedSystems.push('St. Ives');
     //focusedSystems.push('Kiesen');
 	//focusedSystems.push('Zurich');
+	focusedSystems.push('Jardine');
 
     // dynamic names
     //focusedSystems.push('Badlands Cluster');
-    focusedSystems.push('Desolate Plains')
+    //focusedSystems.push('Desolate Plains')
 
     // nebula fine tuning
-    focusedSystems.push('Badlands Cluster');
+    //focusedSystems.push('Badlands Cluster');
     //focusedSystems.push('Desolate Plains')
     //focusedSystems.push('Heathville');
-    focusedSystems.push('Trell');
+    //focusedSystems.push('Trell');
     //focusedSystems.push('Tortuga Prime');
     //focusedSystems.push('New Roland');
 
@@ -177,11 +178,11 @@ var main = function () {
     //focusedSystems.push('Acoma');
     //focusedSystems.push('Aconcagua');
     //focusedSystems.push('Alexandria (CC)');
-    focusedSystems.push('Sol');
-    focusedSystems.push('New Avalon');
-    focusedSystems.push('Luthien');
+    //focusedSystems.push('Sol');
+    //focusedSystems.push('New Avalon');
+    //focusedSystems.push('Luthien');
 	//focusedSystems.push('Radstadt');
-    focusedSystems.push('Sian');
+    //focusedSystems.push('Sian');
     //focusedSystems.push('Rasalhague');
     //focusedSystems.push('Romita');
     //focusedSystems.push('Fylovar');
@@ -190,11 +191,11 @@ var main = function () {
     //focusedSystems.push('Pobeda');
     //focusedSystems.push('Luthien');
     //focusedSystems.push('Zurich');
-    focusedSystems.push('St. Andre');
+    //focusedSystems.push('St. Andre');
     //focusedSystems.push('Sol');
 
     // system suffixes
-    focusedSystems.push('Coromodir');
+    //focusedSystems.push('Coromodir');
     //focusedSystems.push('Sol');
 
     // generate points randomly scattered in 2D space
