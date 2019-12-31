@@ -67,7 +67,7 @@ module.exports = (function () {
 			renderMinimap : true,
 			renderScaleHelp : true,
 			renderLogo : true
-		}, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, scaleHelpSettings, minimapSettings, jumpRings);
+		}, name, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, scaleHelpSettings, minimapSettings, jumpRings);
 	};
 
 	/**
@@ -91,13 +91,14 @@ module.exports = (function () {
 			renderMinimap : true,
 			renderScaleHelp : true,
 			renderLogo : true
-		}, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, scaleHelpSettings, minimapSettings, jumpRings);
+		}, name, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, scaleHelpSettings, minimapSettings, jumpRings);
 	};
 
 	/**
 	 * Create an SVG file.
 	 *
 	 * @param settings {Object} The export settings
+	 * @param name {String} The focused system's name
 	 * @param dir {String} The directory to put the file in (will be created if it doesn't exist)
 	 * @param filename {String} The file name
 	 * @param dimensions {Object} The image dimensions in pixels {w:<width>, h:<height>}
@@ -110,7 +111,7 @@ module.exports = (function () {
 	 * @param minimapSettings {Object} Settings for an optional minimap (dimensions, viewRect and borders)
 	 * @param jumpRings {Array} List of jump ring radii
 	 */
-	SvgWriter.prototype.writeSvg = function (settings, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, scaleHelpSettings, minimapSettings, jumpRings) {
+	SvgWriter.prototype.writeSvg = function (settings, name, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, scaleHelpSettings, minimapSettings, jumpRings) {
 		var tpl = fs.readFileSync(path.join(this.baseDir, '/../data/map_base.svg'), { encoding: 'utf-8' });
 		var viewBox;
 		var elementsStr;
@@ -153,7 +154,7 @@ module.exports = (function () {
 		this.renderMinimap(settings, minimapSettings, viewRect, pxPerLy, factions, nebulae);
 
 		// render logo
-		this.renderLogo(viewRect, pxPerLy);
+		this.renderLogo(name, era, viewRect, pxPerLy);
 
 		// render scale help
 		scaleHelpSettings = scaleHelpSettings || {};
@@ -226,27 +227,85 @@ module.exports = (function () {
 	/**
 	 * @private
 	 */
-	SvgWriter.prototype.renderLogo = function (viewRect, pxPerLy) {
+	SvgWriter.prototype.renderLogo = function (name, era, viewRect, pxPerLy) {
 		var sizeInLy = {
 			w: 30,
 			h: 48
 		};
-		var ratio = sizeInLy.w / sizeInLy.h;
-		var targetWidthInLy = 20;
-		var targetHeightInLy = targetWidthInLy / ratio;
+		//var ratio = sizeInLy.w / sizeInLy.h;
 		//var targetHeightInLy = 20;
 		//var targetWidthInLy = targetHeightInLy * ratio;
-		var scale = targetHeightInLy / sizeInLy.h;
-		var padding = { x: .25, y: 1 };
+		//var scale = argetHeightInLy / sizeInLy.h;
+		var scale = 0.5;
+		var padding = { x: 1.5, y: 1.5 };
 		var origin = {
-			x: (viewRect.x + viewRect.w - targetWidthInLy - padding.x) / scale,
+			x: (viewRect.x + padding.x) / scale,
 			y: -(viewRect.y + viewRect.h - padding.y) / scale
+			//x: (viewRect.x + viewRect.w - targetWidthInLy - padding.x) / scale,
+			//y: -(viewRect.y + viewRect.h - padding.y) / scale
 		};
 		var logoPaths = '';
 		this.markup.css += 'g.logo .ribbon { fill:#ffc103; stroke:#000; stroke-width: 0.5px; stroke-linecap: butt; stroke-linejoin:miter; }\n';
 		this.markup.css += 'g.logo .atlas-silhouette { fill: #000; fill-rule:evenodd; stroke: none; }\n';
 		this.markup.css += 'g.logo .text { fill: #000; stroke: none; }\n';
 		this.markup.css += 'g.logo .atlas-highlights { fill: #ddd; stroke: none; }\n';
+		// full-width "ribbon" at the top
+		/*logoPaths += `<path class="ribbon"
+			d="M0.2,-1.75 h279.5 v20 h-279.5z" />`;
+		logoPaths += `<path class="atlas-silhouette" transform="scale(0.6)"
+			d="m 18.8957034,3.8675228 c 0.485987,-0.2159542 2.927018,0.093248 2.100977,2.574835 3.059783,-0.6662384 2.098207,3.2355276
+			1.392796,2.9308326 -0.42082,0.59414 -0.37125,1.114098 -0.37125,1.114098 2.896862,-0.02462 4.481695,0.891209 4.481695,0.891209
+			0.247501,0.693278 4.877556,2.277765 4.877556,2.277765 l -0.02462,0.495347 c -4.184623,-1.683279 -5.051222,-1.732849 -5.051222,-1.732849
+			-0.03917,1.485695 -0.432603,2.29163 -1.241314,2.063543 -0.596564,-0.168468 -1.240966,-0.550118 -1.358478,-0.776125 -0.596564,-0.08008
+			-1.213236,-0.04958 -1.213236,-0.04958 l -0.1487,-0.396202 h -0.272459 c -0.169493,0.878331 -0.787911,0.725169 -0.787911,0.725169 l
+			0.134151,1.331787 -0.140045,0.927952 0.05269,2.258353 -0.12271,0.647867 0.155294,0.758099 0.561556,0.414927 c 0.07557,-0.693624
+			0.416314,-0.413886 0.674213,-0.439537 0.460682,0.37125 0.921365,0.791376 1.382049,0.845798 0.238834,0.152521 0.509906,0.298803
+			0.659307,0.553582 l 1.573049,0.270033 2.085379,-0.03951 1.660547,0.06245 1.092762,0.121556 0.327958,0.341152 -25.7183745,-0.0246
+			0.9436757,-0.714462 2.6095628,-0.381286 1.243741,0.04957 0.690505,-0.336934 0.587206,0.322375 1.470788,-0.28459 c 0.915821,-0.316483
+			1.018772,-0.557743 1.190705,-1.711011 0.263099,-0.795537 0.174013,-1.708238 0.175053,-2.591126 0.220811,0.125484 0.234328,-0.720662
+			0.233635,-1.059329 -0.0014,-0.574727 0.29187,-1.394527 0.414234,-1.978615 l -0.752901,-0.744233 0.350106,-1.050316 -0.03501,-1.995948
+			c 0.517539,-0.396907 0.3307,-0.7938065 -0.07001,-1.1907076 l -0.739943,0.2006187 0.046,3.6805699 0.26318,0.390386 -0.700605,0.518891
+			c -0.544521,-0.260944 -1.101653,0.719239 -2.030994,0.533908 -0.405221,-0.327574 -0.232619,-0.654801 -0.339037,-0.982375 0,0
+			-0.175054,-0.03501 -0.63019,-0.175052 l 0.315094,-1.015306 0.630191,-2.4510846 c 0.412847,0.2069416 0.274885,-1.0697283 1.470788,-2.1709986
+			-0.227742,-2.3349609 0.723089,-2.9765894 1.680853,-3.1863061 0.455136,-0.035693 0.910273,-0.1379625 1.365757,0 0.477667,0.3743699
+			0.898834,0.8052419 1.190703,1.3657564 0.240223,-0.068985 0.22185,-0.2235815 0.294298,-0.3036538 0,0 -0.699864,-0.7175431 -0.774738,-0.8184151
+			-0.06794,-0.091859 0.03778,-0.04437 0.03778,-0.04437 0.250968,0.2322488 0.830547,0.7684986 0.847533,0.7293292 0.131375,-0.3022685
+			0.248193,-1.0454626 0.295682,-1.3834362 l 0.560169,0.07002 0.210062,0.2800851 m -0.907749,11.0569247 c 0.274985,-0.05946 0.530417,-0.09281
+			1.265986,-0.08172 l 0.004,2.060614 c -0.398389,0.02317 -0.115148,1.641459 -0.285161,3.08865 l -0.24221,0.921115 c -0.366527,0.09474
+			-1.028328,0.160488 -1.593107,-0.212739 l -0.02074,-1.932357 c 0.438843,0.120578 0.182048,-1.894578 0.323336,-2.8259 z"/>`;
+		logoPaths += `<path class="atlas-highlights" transform="scale(0.6)"
+			d="m 21.0180224,5.3210017 c -0.598366,-0.4533081 -1.04047,-0.2322769 -1.146888,-0.5598528 0,0 -0.06585,-0.7714678 -0.520986,-0.9115164
+			l 0.877441,0.1770123 0.539325,0.4263589 z m -0.681749,1.333594 -0.04848,-0.1859189 -0.209115,-0.3840296 0.213879,-0.5660784 0.47089,0.0068
+			c 0.105759,0.084859 0.182682,0.1996015 0.250479,0.3057807 l 0.01034,0.1584267 h -0.227167 l -0.03786,-0.2271663 -0.249883,-0.01514
+			0.01645,0.5166823 c 0,0 0.493074,0.061496 0.500647,-0.021795 0.0076,-0.083291 -0.01916,0.4518536 -0.01916,0.4518536 z m 1.797976,-0.1830865
+			c 0.741886,-0.046038 0.887726,0.8019909 0.995432,1.7072218 -0.168275,0.1840667 -0.357616,0.2522661 -0.60623,-0.00553 0.08099,0.1783359
+			0.330662,0.8288908 -0.106012,0.6814988 -0.664335,-0.7061542 -0.366922,-0.2863048 -0.454333,0.03029 -0.257931,0.072747 -0.484237,0.2641596
+			-0.48462,0.6966436 l -0.514912,0.01514 c 0.259539,-0.471002 0.534998,-1.0693682 0.757222,-1.2418456 l -0.43919,-0.6814997 -0.07572,1.1812655
+			-0.484621,0.03029 c -0.479576,-0.3085817 -0.95915,-0.6785291 -1.438723,-0.5603354 l 0.121158,-0.5906332 c 0.16569,0.2865614 0.466702,0.2988807
+			1.075254,0.2633622 0.600804,-0.1551066 0.566025,-0.6930566 0.527567,-1.179108 0.290411,-0.1094495 0.493649,0.086201 0.733207,0.154734
+			0.24099,0.1458382 0.232149,0.6058579 0.35968,0.893521 0.502794,-0.4515493 0.246887,-0.9238855 0.03484,-1.3950196 z m -3.578186,0.6774001
+			-0.428142,-0.9884872 -1.033748,-0.7889836 c 0,0 -1.067682,-1.2872771 -1.097971,-1.3024212 -0.03029,-0.01514 -0.499767,-0.1438718
+			-0.499767,-0.1438718 l 0.310461,0.4543326 0.196879,0.1741609 -0.446761,0.3786111 0.764793,0.06058 0.310461,0.07572 0.31046,0.4846217
+			0.03787,0.6966439 -0.454333,0.8253715 0.371038,0.3861822 0.295317,-0.340749 0.10601,-0.8253717 0.772366,0.4846219 0.09844,0.3937552 z
+			m -0.520086,-2.8619605 0.595182,0.029329 c -0.0074,-0.080671 0.0077,-0.3759901 0.0077,-0.3759901 l 0.189351,-0.2120203 c -0.211299,-0.1669741
+			-0.420436,-0.3577164 -0.651211,-0.3104606 0.123879,0.3384915 0.146806,0.5698616 -0.141022,0.869142 z m 7.804841,7.2990236 5.52687,2.271301
+			-0.0069,0.126668 -5.466015,-2.007803 c -0.139101,-0.210794 -0.09114,-0.296883 -0.05398,-0.390166 z"/>`;
+		logoPaths += `<text x="22.5" y="6.5" style="font-size: 1.3mm">` +
+			`<tspan style="font-weight: bold">${name}</tspan><tspan> system &amp; interstellar neighborhood</tspan>` +
+			`</text>`;
+		logoPaths += `<text x="22.5" y="12.5" style="font-size: 1.3mm">` +
+			`<tspan style="font-weight: bold">Year ${era.year}</tspan><tspan> (${era.name})</tspan>` +
+			`</text>`;*/
+		// right-side shield ribbon
+		//var targetWidthInLy = 20;
+		scale = 0.45;
+		var targetHeightInLy = sizeInLy.h * scale;
+		var origin = {
+			//x: (viewRect.x + viewRect.w - targetWidthInLy - padding.x) / scale,
+			//y: -(viewRect.y + viewRect.h - padding.y) / scale
+			x: viewRect.x / scale + padding.x,
+			y: -(viewRect.y + targetHeightInLy) / scale - padding.y
+		};
 		logoPaths += `<path class="ribbon"
 			d="m 0.5,0 h 28 v 30 l -14,7 -14,-7 z m 0,32.5 14,7 14,-7 v 7 l -14,7 -14,-7 z" />`;
 		logoPaths += `<path class="atlas-silhouette"
@@ -1033,10 +1092,13 @@ ${origin.x} ${origin.y} @private
 	 * @private
 	 */
 	SvgWriter.prototype.renderScaleHelp = function (settings, scaleHelpSettings, viewRect, pxPerLy) {
-		var scaleMargin = 10 / pxPerLy;
+		var scaleMargin = {
+			x: 10 / pxPerLy + 20,
+			y: 10 / pxPerLy
+		};
 		var tplObj = {
-			tX  : viewRect.x + scaleMargin,
-			tY  : -viewRect.y - 1.5 - scaleMargin,
+			tX  : viewRect.x + scaleMargin.x,
+			tY  : -viewRect.y - 1.5 - scaleMargin.y,
 			t10 : 10 - 1.365,
 			t20 : 20 - 1.365,
 			t30 : 30 - 1.365,
@@ -1077,7 +1139,7 @@ ${origin.x} ${origin.y} @private
 		}
 		tplObj = {
 			cx: (viewRect.x + viewRect.w * .5).toFixed(3),
-			cy: (-viewRect.y - viewRect.h * .5).toFixed(3) - 10
+			cy: (-viewRect.y - viewRect.h * .5).toFixed(3) - 15
 		};
 		for(var i = 0; i < jumpRingDistances.length; i++) {
 			tplObj.r = jumpRingDistances[i];

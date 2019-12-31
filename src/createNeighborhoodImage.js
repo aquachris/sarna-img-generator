@@ -141,7 +141,7 @@ var main = function () {
 	//focusedSystems.push('Sol');
 	//focusedSystems.push('Cassias');
     //focusedSystems.push('Desolate Plains');
-    focusedSystems.push('Strana Mechty');
+    //focusedSystems.push('Strana Mechty');
     //focusedSystems.push('Versailles');
     //focusedSystems.push('El Dorado');
     //focusedSystems.push('Bremen');
@@ -151,13 +151,13 @@ var main = function () {
 
     // dynamic names
     //focusedSystems.push('Badlands Cluster');
-    focusedSystems.push('Desolate Plains')
+    //focusedSystems.push('Desolate Plains')
 
     // nebula fine tuning
-    focusedSystems.push('Badlands Cluster');
+    //focusedSystems.push('Badlands Cluster');
     //focusedSystems.push('Desolate Plains')
     //focusedSystems.push('Heathville');
-    focusedSystems.push('Trell');
+    //focusedSystems.push('Trell');
     //focusedSystems.push('Tortuga Prime');
     //focusedSystems.push('New Roland');
 
@@ -177,11 +177,11 @@ var main = function () {
     //focusedSystems.push('Acoma');
     //focusedSystems.push('Aconcagua');
     //focusedSystems.push('Alexandria (CC)');
-    focusedSystems.push('Sol');
-    focusedSystems.push('New Avalon');
-    focusedSystems.push('Luthien');
+    //focusedSystems.push('Sol');
+    //focusedSystems.push('New Avalon');
+    //focusedSystems.push('Luthien');
 	//focusedSystems.push('Radstadt');
-    focusedSystems.push('Sian');
+    //focusedSystems.push('Sian');
     //focusedSystems.push('Rasalhague');
     //focusedSystems.push('Romita');
     //focusedSystems.push('Fylovar');
@@ -190,12 +190,17 @@ var main = function () {
     //focusedSystems.push('Pobeda');
     //focusedSystems.push('Luthien');
     //focusedSystems.push('Zurich');
-    focusedSystems.push('St. Andre');
+    //focusedSystems.push('St. Andre');
     //focusedSystems.push('Sol');
 
     // system suffixes
-    focusedSystems.push('Coromodir');
+    //focusedSystems.push('Coromodir');
     //focusedSystems.push('Sol');
+
+    // image labeling
+    //focusedSystems.push('Commonwealth Mining Outpost 26');
+    //focusedSystems.push('Atreus');
+    focusedSystems.push('Kentares');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -209,7 +214,7 @@ var main = function () {
         for(var i = 0, len = reader.systems.length; i < len; i++) {
             if(reader.systems[i].name === focusedSystemName) {
                 viewRect.x = reader.systems[i].x - viewRect.w * .5;
-                viewRect.y = reader.systems[i].y - viewRect.h * .5 - 10;
+                viewRect.y = reader.systems[i].y - viewRect.h * .5 - 15;
                 //viewRect.x = -viewRect.w * .5;
                 //viewRect.y = -viewRect.h * .5;
                 minimapViewRect.x = reader.systems[i].x - 600;
@@ -227,6 +232,7 @@ var main = function () {
     	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
 			if(!(false
 				//|| eraI === 4 // 2367
+                //|| eraI === 10 // 2783
                 //|| eraI === 12 // 2821
                 //|| eraI === 15 // 2864
 				|| eraI === 16 // 3025
@@ -258,7 +264,7 @@ var main = function () {
     			reader.systems[i].col = curAff;
                 reader.systems[i].capitalLvl = curSys.capitalLvls[eraI];
     			if(curAff === '' || curAff === 'U' || curAff === 'A' || reader.systems[i].hidden) {
-    		          continue;
+                    continue;
     			}
     			if(curSys.status.toLowerCase() === 'apocryphal') {
     				continue;
