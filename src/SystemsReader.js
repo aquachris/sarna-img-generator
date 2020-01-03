@@ -185,12 +185,13 @@ module.exports = (function () {
 			// name and status
 			curSystem.name_full = curRow[columnIdxMap['systemname']];
             curSystem.name = curSystem.name_full;
+            curSystem.sarnaLink = curRow[columnIdxMap['sarnalink']];
 
             // find alternate names
 			curAltNames = [];
 			if(!!curRow[columnIdxMap['alternatename']]) {
-				curAltNames = curRow[columnIdxMap['alternatename']].split(',');
-				// disregard any alternative names that do no contain a year in parentheses
+				curAltNames = curRow[columnIdxMap['alternatename']].split(/[,\/]/gi);
+				// disregard any alternative names that do not contain a year in parentheses
 				for(var ni = 0; ni < curAltNames.length; ni++) {
 					curAltNames[ni] = curAltNames[ni].trim();
 					if((altRegexResult = curAltNames[ni].match(/(.*)\s+\((\d+).*\)/i)) === null) {

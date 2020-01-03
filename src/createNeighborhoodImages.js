@@ -107,6 +107,7 @@ var main = function () {
 
     var focusedSystem;
     var focusedSystemName;
+    var focusedSystemArticleName;
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -117,10 +118,12 @@ var main = function () {
     for(var fsi = 0; fsi < reader.systems.length; fsi++) {// reader.systems.length; fsi++) {
         focusedSystem = reader.systems[fsi];
         focusedSystemName = focusedSystem.name;
+        focusedSystemArticleName = focusedSystem.sarnaLink.split('/').pop();
+        if(focusedSystemName !== 'Cameron') continue;
         logger.log('Starting on ' + focusedSystemName);
 
         viewRect.x = focusedSystem.x - viewRect.w * .5;
-        viewRect.y = focusedSystem.y - viewRect.h * .5 - 10; // TODO 10 LY off because map is not rectangular?
+        viewRect.y = focusedSystem.y - viewRect.h * .5 - 15; // TODO 10 LY off because map is not rectangular?
         minimapViewRect.x = focusedSystem.x - minimapViewRect.w * .5;
         minimapViewRect.y = focusedSystem.y - minimapViewRect.h * .5;
 
@@ -131,7 +134,8 @@ var main = function () {
         // for each era ...
     	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
 			if(
-                eraI !== 16 // 3025
+                //eraI !== 16 // 3025
+                eraI !== 42 // 3151
 			) {
 				continue;
 			}
@@ -222,6 +226,7 @@ var main = function () {
 
     		// create an svg with a universe picture
             writer.writeNeighborhoodSvg(
+                focusedSystemArticleName,
                 focusedSystemName,
     			dimensions,
     			viewRect,
