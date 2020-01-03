@@ -77,6 +77,7 @@ var main = function () {
 
     var focusedSystems = [];
     var focusedSystemName;
+    var focusedSystemArticleName;
     //focusedSystemName = 'Janina';
 	//focusedSystemName = 'Ferihegy';
 	//focusedSystemName = 'Apollo';
@@ -200,7 +201,8 @@ var main = function () {
     // image labeling
     //focusedSystems.push('Commonwealth Mining Outpost 26');
     //focusedSystems.push('Atreus');
-    focusedSystems.push('Kentares');
+    //focusedSystems.push('Kentares');
+    focusedSystems.push('Wheeler');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
@@ -213,6 +215,7 @@ var main = function () {
 
         for(var i = 0, len = reader.systems.length; i < len; i++) {
             if(reader.systems[i].name === focusedSystemName) {
+                focusedSystemArticleName = reader.systems[i].sarnaLink.split('/').pop();
                 viewRect.x = reader.systems[i].x - viewRect.w * .5;
                 viewRect.y = reader.systems[i].y - viewRect.h * .5 - 15;
                 //viewRect.x = -viewRect.w * .5;
@@ -235,11 +238,11 @@ var main = function () {
                 //|| eraI === 10 // 2783
                 //|| eraI === 12 // 2821
                 //|| eraI === 15 // 2864
-				|| eraI === 16 // 3025
+				//|| eraI === 16 // 3025
 				//|| eraI === 26 // 3058
                 //|| eraI === 36 // 3081
                 //|| eraI === 40 // 3135
-                //|| eraI === 42 // 3151
+                || eraI === 42 // 3151
 			)) {
 				continue;
 			}
@@ -331,6 +334,7 @@ var main = function () {
 
     		// create an svg with a universe picture
             writer.writeNeighborhoodSvg(
+                focusedSystemArticleName,
                 focusedSystemName,
     			dimensions,
     			viewRect,
