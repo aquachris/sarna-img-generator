@@ -203,8 +203,11 @@ var main = function () {
     //focusedSystems.push('Atreus');
     //focusedSystems.push('Kentares');
     //focusedSystems.push('Wheeler');
-	
+
+    // v1.1 fixes
 	focusedSystems.push('Abejorral');
+    focusedSystems.push('Outreach');
+    focusedSystems.push('Ulan Bator');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);

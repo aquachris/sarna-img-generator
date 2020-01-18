@@ -319,6 +319,7 @@ module.exports = (function () {
                     curC.br = { x: cPoint.x + curC.labelWidth * .5, y: cPoint.y };
                     curC.tr = { x: curC.br.x, y: curC.tl.y };
                     this.findCandidatePolylinesIntersection(curC, this.polylines[factionKey]);
+
 					curPolyline.candidates.push(curC);
                     //this.rateAndSortCandidates(curPolyline, [], curPolyline.candidates);
                 }
@@ -394,16 +395,28 @@ module.exports = (function () {
             for(var i = 0; i < this.polylines[factionKey].length; i++) {
                 curPolyline = this.polylines[factionKey][i];
                 while(curPolyline.candidates.length > 0) {
+                    this.rateAndSortCandidates(curPolyline, factionLabels, curPolyline.candidates);
                     curCandidate = curPolyline.candidates[0];
                     if(!curCandidate.taboo && curCandidate.rating >= this.settings.candidateQualityThreshold) {
                         //console.log('new ' + curPolyline.candidates[0].id +', ' + curPolyline.candidates[0].rating);
                         factionLabels.push(curCandidate);
                         curPolyline.labels.push(Utils.deepCopy(curCandidate));
                         curCandidate.taboo = true;
+                        let candidateRectBounds = {
+                            minX: Math.min(curCandidate.bl.x, curCandidate.tl.x, curCandidate.br.x, curCandidate.tr.x),
+                            maxX: Math.max(curCandidate.bl.x, curCandidate.tl.x, curCandidate.br.x, curCandidate.tr.x),
+                            minY: Math.min(curCandidate.bl.y, curCandidate.tl.y, curCandidate.br.y, curCandidate.tr.y),
+                            maxY: Math.max(curCandidate.bl.y, curCandidate.tl.y, curCandidate.br.y, curCandidate.tr.y)
+                        };
+                        this.labelGrid.placeObject({
+                            x: candidateRectBounds.minX,
+                            y: candidateRectBounds.minY,
+                            w: candidateRectBounds.maxX - candidateRectBounds.minX,
+                            h: candidateRectBounds.maxY - candidateRectBounds.minY
+                        });
                     } else {
                         break;
                     }
-					this.rateAndSortCandidates(curPolyline, factionLabels, curPolyline.candidates);
                 }
             }
         }
@@ -709,7 +722,7 @@ module.exports = (function () {
                 continue;
             }
 
-			// candidate is ready to go
+            // candidate is ready to go
             candidates.push(newCandidate);
 
             // prepare start position for next iteration

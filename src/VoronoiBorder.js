@@ -602,7 +602,7 @@ module.exports = (function () {
 	 * displayed, and also adds connecting "off-screen" lines to maintain shape closure.
 	 *
 	 * @param rect {Object} The bounding box (x, y, w, h in map space)
-     * @param tolerance {Number} Bounding box tolerance, default is 10
+     * @param tolerance {Number} Bounding box tolerance, default is 15
 	 * @returns {Object} Map of bounded borders for each faction
 	 */
 	VoronoiBorder.prototype.generateBoundedBorderLoops = function (rect, tolerance) {
@@ -617,7 +617,7 @@ module.exports = (function () {
         var outsideEdgeIsFirst;
 		var boundedBorderEdgeLoops = {}; // return map
 
-        tolerance === undefined ? tolerance = 10 : false;
+        tolerance === undefined ? tolerance = 15 : false;
         tRect = {
             x: rect.x - tolerance,
             y: rect.y - tolerance,

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<svg xmlns:svg="http://www.w3.org/2000/svg"
+	xmlns="http://www.w3.org/2000/svg"
+	xmlns:xlink="http://www.w3.org/1999/xlink"
+	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+	xmlns:info="https://www.gruese.de/sarna/info-ns"
+	version="1.1"
+	width="800px"
+	height="400px">
+
+    <defs>
+		<filter id="sLblShd">
+			<feFlood flood-color="white" result="flood"/>
+			<feOffset dx="-1.14384" dy="-1.14384" in="SourceAlpha" result="offset1"/>
+			<feComposite operator="in" in="flood" in2="offset1" result="shadow1"/>
+			<feOffset dx="-1.14384" dy="1.14384" in="SourceAlpha" result="offset2"/>
+			<feComposite operator="in" in="flood" in2="offset2" result="shadow2"/>
+			<feOffset dx="1.14384" dy="-1.14384" in="SourceAlpha" result="offset3"/>
+			<feComposite operator="in" in="flood" in2="offset3" result="shadow3"/>
+			<feOffset dx="1.14384" dy="1.14384" in="SourceAlpha" result="offset4"/>
+			<feComposite operator="in" in="flood" in2="offset4" result="shadow4"/>
+			<feMerge>
+				<feMergeNode in="shadow1"/>
+				<feMergeNode in="shadow2"/>
+				<feMergeNode in="shadow3"/>
+				<feMergeNode in="shadow4"/>
+				<feMergeNode in="SourceGraphic"/>
+			</feMerge>
+		</filter>
+	</defs>
+
+    <style>
+        /* 7.149 = 1LY */
+        text {
+            fill: #000;
+            font-family: Tahoma, Arial, sans-serif;
+            text-rendering: optimizeLegibility;
+        }
+        .system circle {
+            fill: transparent;
+            stroke: #000;
+            stroke-width: 1.78725;
+        }
+        .system text {
+            font-size: 17.8725px;
+        }
+    </style>
+
+
+    <g id="background">
+        <rect x="0" y="0" width="800" height="400" style="stroke: #000; stroke-width: 2; fill: #fff"></rect>
+    </g>
+
+    <!-- faction capital -->
+    <g class="system faction-capital" transform="translate(50, 50)">
+        <!-- system circle -->
+        <circle r="7.149" cx="0" cy="0" style="fill: #ec2027"></circle>
+        <!-- small dot in the middle -->
+        <circle r="1.07235"></circle>
+        <!-- first outer ring -->
+        <circle r="10.7235"></circle>
+        <!-- second outer ring -->
+        <circle r="14.29"></circle>
+        <!-- system name -->
+        <text x="14.29" y="5.36175" filter="url(#sLblShd)">Luthien</text>
+        <!-- explanation text -->
+        <text x="150" y="5.36175">faction capital</text>
+    </g>
+
+    <!-- major capital -->
+    <g class="system major-capital" transform="translate(50, 100)">
+        <!-- system circle -->
+        <circle r="7.149" cx="0" cy="0" style="fill: #a55ea6"></circle>
+        <!-- small dot in the middle -->
+        <circle r="1.07235"></circle>
+        <!-- first outer ring -->
+        <circle r="10.7235"></circle>
+        <!-- system name -->
+        <text x="14.29" y="5.36175" filter="url(#sLblShd)">Regulus</text>
+        <!-- explanation text -->
+        <text x="150" y="5.36175">major capital</text>
+    </g>
+
+    <!-- minor capital -->
+    <g class="system minor-capital" transform="translate(50, 150)">
+        <!-- system circle -->
+        <circle r="7.149" cx="0" cy="0" style="fill: #1861a3"></circle>
+        <!-- small dot in the middle -->
+        <circle r="1.07235"></circle>
+        <!-- system name -->
+        <text x="14.29" y="5.36175" filter="url(#sLblShd)">Coventry</text>
+        <!-- explanation text -->
+        <text x="150" y="5.36175">minor capital</text>
+    </g>
+
+    <!-- regular system -->
+    <g class="system regular" transform="translate(50, 200)">
+        <!-- system circle -->
+        <circle r="7.149" cx="0" cy="0" style="fill: #fed600"></circle>
+        <!-- system name -->
+        <text x="14.29" y="5.36175" filter="url(#sLblShd)">Kentares</text>
+        <!-- explanation text -->
+        <text x="150" y="5.36175">regular system (affiliated w/ single faction)</text>
+    </g>
+
+    <!-- independent system -->
+    <g class="system independent" transform="translate(50, 250)">
+        <!-- system circle -->
+        <circle r="7.149" cx="0" cy="0" style="fill: #ffffff"></circle>
+        <!-- system name -->
+        <text x="14.29" y="5.36175" filter="url(#sLblShd)">Herotitus</text>
+        <!-- explanation text -->
+        <text x="150" y="5.36175">independent system</text>
+    </g>
+
+    <!-- abandoned system -->
+    <g class="system abandoned" transform="translate(50, 300)">
+        <!-- system circle -->
+        <circle r="7.149" cx="0" cy="0" style="fill: #000000"></circle>
+        <!-- system name -->
+        <text x="14.29" y="5.36175" filter="url(#sLblShd)" style="font-style: italic">Rosetta</text>
+        <!-- explanation text -->
+        <text x="150" y="5.36175">abandoned system</text>
+    </g>
+
+    <!-- disputed systems -->
+    <!-- clusters -->
+    <!-- nebulae -->
+    <!-- faction borders -->
+</svg>
