@@ -202,7 +202,9 @@ var main = function () {
     //focusedSystems.push('Commonwealth Mining Outpost 26');
     //focusedSystems.push('Atreus');
     //focusedSystems.push('Kentares');
-    focusedSystems.push('Wheeler');
+    //focusedSystems.push('Wheeler');
+	
+	focusedSystems.push('Abejorral');
 
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
