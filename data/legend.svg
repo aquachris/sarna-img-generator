@@ -6,19 +6,19 @@
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 	xmlns:info="https://www.gruese.de/sarna/info-ns"
 	version="1.1"
-	width="800px"
-	height="400px">
+	width="900px"
+	height="550px">
 
     <defs>
 		<filter id="sLblShd">
 			<feFlood flood-color="white" result="flood"/>
-			<feOffset dx="-1.14384" dy="-1.14384" in="SourceAlpha" result="offset1"/>
+			<feOffset dx="-0.16" dy="-0.16" in="SourceAlpha" result="offset1"/>
 			<feComposite operator="in" in="flood" in2="offset1" result="shadow1"/>
-			<feOffset dx="-1.14384" dy="1.14384" in="SourceAlpha" result="offset2"/>
+			<feOffset dx="-0.16" dy="0.16" in="SourceAlpha" result="offset2"/>
 			<feComposite operator="in" in="flood" in2="offset2" result="shadow2"/>
-			<feOffset dx="1.14384" dy="-1.14384" in="SourceAlpha" result="offset3"/>
+			<feOffset dx="0.16" dy="-0.16" in="SourceAlpha" result="offset3"/>
 			<feComposite operator="in" in="flood" in2="offset3" result="shadow3"/>
-			<feOffset dx="1.14384" dy="1.14384" in="SourceAlpha" result="offset4"/>
+			<feOffset dx="0.16" dy="0.16" in="SourceAlpha" result="offset4"/>
 			<feComposite operator="in" in="flood" in2="offset4" result="shadow4"/>
 			<feMerge>
 				<feMergeNode in="shadow1"/>
@@ -28,6 +28,34 @@
 				<feMergeNode in="SourceGraphic"/>
 			</feMerge>
 		</filter>
+		<pattern id="disputed-LC-DC-fill" width="1" height="1" viewBox="-1 -1 2 2">
+			<g style="transform:rotate(-90deg)">
+				<path d="M1,0 A1,1,0,0,1,-1,1.2246467991473532e-16 L0,0" style="fill:#1861A3; stroke-width: 0;"/>
+				<path d="M-1,1.2246467991473532e-16 A1,1,0,0,1,1,-2.4492935982947064e-16 L0,0" style="fill:#EC2027; stroke-width: 0;"/>
+			</g>
+		</pattern>
+		<pattern id="disputed-CC-FS-fill" width="1" height="1" viewBox="-1 -1 2 2">
+			<g style="transform:rotate(-90deg)">
+				<path d="M1,0 A1,1,0,0,1,-1,1.2246467991473532e-16 L0,0" style="fill:#1D8542; stroke-width: 0;"/>
+				<path d="M-1,1.2246467991473532e-16 A1,1,0,0,1,1,-2.4492935982947064e-16 L0,0" style="fill:#FED600; stroke-width: 0;"/>
+			</g>
+		</pattern>
+		<pattern id="disputed-FS-CC-FWL-fill" width="1" height="1" viewBox="-1 -1 2 2">
+			<g style="transform:rotate(-90deg)">
+				<path d="M1,0 A1,1,0,0,1,-0.4999999999999998,0.8660254037844387 L0,0" style="fill:#FED600; stroke-width: 0;"/>
+				<path d="M-0.4999999999999998,0.8660254037844387 A1,1,0,0,1,-0.5000000000000004,-0.8660254037844385 L0,0" style="fill:#1D8542; stroke-width: 0;"/>
+				<path d="M-0.5000000000000004,-0.8660254037844385 A1,1,0,0,1,1,-2.4492935982947064e-16 L0,0" style="fill:#A55EA6; stroke-width: 0;"/>
+			</g>
+		</pattern>
+		<pattern id="nebula-fill" width="2" height="2" patternUnits="userSpaceOnUse">
+			<path d="M-.5,.5 l1,-1 M0,2 l2,-2 M1.5,2.5 l1,-1" style="stroke:rgb(0, 0, 0); stroke-opacity: .075; stroke-width:.6"/>
+		</pattern>
+
+		<clipPath id="borderClip">
+			<rect x="530" y="340" width="140" height="120"/>
+		</clipPath>
+		<path id="label-path-CWF_0_84" d="M36.61,-367.74 L41.13,-370.03"/>
+		<path id="label-path-CGB_0_84" d="M37.53,-358.82 L46.74,-365.48"/>
 	</defs>
 
     <style>
@@ -35,97 +63,225 @@
         text {
             fill: #000;
             font-family: Tahoma, Arial, sans-serif;
+			font-size: 2.5px;
             text-rendering: optimizeLegibility;
         }
-        .system circle {
+        .system circle, circle.system, .cluster ellipse {
             fill: transparent;
             stroke: #000;
-            stroke-width: 1.78725;
+            stroke-width: 0.25; /* 1.78725;*/
         }
-        .system text {
-            font-size: 17.8725px;
+        .system text, .bracket.disputed {
+            font-size: 2.5px; /*17.8725px;*/
         }
+		.system.undiscovered circle {
+			stroke: #777;
+			fill: #aaaaaa;
+		}
+		path.label-connector {
+			fill: none;
+			stroke: #000;
+			stroke-width: .25;
+		}
+		path.nebula {
+			fill: url(#nebula-fill);
+			stroke: #000;
+			stroke-opacity: 0.5;
+			stroke-width: 0.25;
+		}
+		text.nebulae-label {
+			fill: #999;
+		}
+		text.border-label {
+			alignment-baseline: middle;
+			font-size: 2px;
+			font-style: italic;
+			font-weight: bold;
+			text-rendering: geometricPrecision;
+		}
     </style>
 
 
     <g id="background">
-        <rect x="0" y="0" width="800" height="400" style="stroke: #000; stroke-width: 2; fill: #fff"></rect>
+        <rect x="0" y="0" width="900" height="550" style="stroke: #000; stroke-width: 2; fill: #fff"></rect>
     </g>
 
     <!-- faction capital -->
-    <g class="system faction-capital" transform="translate(50, 50)">
+    <g class="system faction-capital" transform="translate(50, 50) scale(7.149)">
         <!-- system circle -->
-        <circle r="7.149" cx="0" cy="0" style="fill: #ec2027"></circle>
+        <circle r="1" cx="0" cy="0" style="fill: #ec2027"></circle>
         <!-- small dot in the middle -->
-        <circle r="1.07235"></circle>
+        <circle r="0.15"></circle>
         <!-- first outer ring -->
-        <circle r="10.7235"></circle>
+        <circle r="1.5"></circle>
         <!-- second outer ring -->
-        <circle r="14.29"></circle>
+        <circle r="2"></circle>
         <!-- system name -->
-        <text x="14.29" y="5.36175" filter="url(#sLblShd)">Luthien</text>
+        <text x="2" y="0.75" filter="url(#sLblShd)">Luthien</text>
         <!-- explanation text -->
-        <text x="150" y="5.36175">faction capital</text>
+        <text x="20" y="0.75">faction capital</text>
     </g>
 
     <!-- major capital -->
-    <g class="system major-capital" transform="translate(50, 100)">
+    <g class="system major-capital" transform="translate(50, 100) scale(7.149)">
         <!-- system circle -->
-        <circle r="7.149" cx="0" cy="0" style="fill: #a55ea6"></circle>
+        <circle r="1" cx="0" cy="0" style="fill: #a55ea6"></circle>
         <!-- small dot in the middle -->
-        <circle r="1.07235"></circle>
+        <circle r="0.15"></circle>
         <!-- first outer ring -->
-        <circle r="10.7235"></circle>
+        <circle r="1.5"></circle>
         <!-- system name -->
-        <text x="14.29" y="5.36175" filter="url(#sLblShd)">Regulus</text>
+        <text x="2" y="0.75" filter="url(#sLblShd)">Regulus</text>
         <!-- explanation text -->
-        <text x="150" y="5.36175">major capital</text>
+        <text x="20" y="0.75">major capital</text>
     </g>
 
     <!-- minor capital -->
-    <g class="system minor-capital" transform="translate(50, 150)">
+    <g class="system minor-capital" transform="translate(50, 150) scale(7.149)">
         <!-- system circle -->
-        <circle r="7.149" cx="0" cy="0" style="fill: #1861a3"></circle>
+        <circle r="1" cx="0" cy="0" style="fill: #1861a3"></circle>
         <!-- small dot in the middle -->
-        <circle r="1.07235"></circle>
+        <circle r="0.15"></circle>
         <!-- system name -->
-        <text x="14.29" y="5.36175" filter="url(#sLblShd)">Coventry</text>
+        <text x="2" y="0.75" filter="url(#sLblShd)">Coventry</text>
         <!-- explanation text -->
-        <text x="150" y="5.36175">minor capital</text>
+        <text x="20" y="0.75">minor capital</text>
     </g>
 
     <!-- regular system -->
-    <g class="system regular" transform="translate(50, 200)">
+    <g class="system regular" transform="translate(50, 200) scale(7.149)">
         <!-- system circle -->
-        <circle r="7.149" cx="0" cy="0" style="fill: #fed600"></circle>
+        <circle r="1" cx="0" cy="0" style="fill: #fed600"></circle>
         <!-- system name -->
-        <text x="14.29" y="5.36175" filter="url(#sLblShd)">Kentares</text>
+        <text x="2" y="0.75" filter="url(#sLblShd)">Kentares</text>
         <!-- explanation text -->
-        <text x="150" y="5.36175">regular system (affiliated w/ single faction)</text>
+        <text x="20" y="0.75">faction-affiliated system</text>
     </g>
 
-    <!-- independent system -->
-    <g class="system independent" transform="translate(50, 250)">
+	<!-- disputed system 1 -->
+    <g class="system disputed" transform="translate(50, 250) scale(7.149)">
         <!-- system circle -->
-        <circle r="7.149" cx="0" cy="0" style="fill: #ffffff"></circle>
+        <circle r="1" cx="0" cy="0" style="fill: url('#disputed-LC-DC-fill')"></circle>
         <!-- system name -->
-        <text x="14.29" y="5.36175" filter="url(#sLblShd)">Herotitus</text>
+        <text x="2" y="0.75" filter="url(#sLblShd)">Marfik</text>
+    </g>
+
+	<!-- disputed system 2 -->
+	<g class="system disputed" transform="translate(50, 300) scale(7.149)">
+        <!-- system circle -->
+        <circle r="1" cx="0" cy="0" style="fill: url('#disputed-CC-FS-fill')"></circle>
+        <!-- system name -->
+        <text x="2" y="0.75" filter="url(#sLblShd)">Spica</text>
+    </g>
+
+	<!-- disputed system 3 -->
+	<g class="system disputed" transform="translate(50, 350) scale(7.149)">
+        <!-- system circle -->
+        <circle r="1" cx="0" cy="0" style="fill: url('#disputed-FS-CC-FWL-fill')"></circle>
+        <!-- system name -->
+        <text x="2" y="0.75" filter="url(#sLblShd)">Liberty</text>
+    </g>
+
+	<g class="disputed bracket" transform="translate(50, 250)">
+		<path d="M150,-5 c30,10 10,55 30,55 -25,0 -5,-40 -30,-55z M150,105 c30,-10, 10,-55 30,-55 -25,0 -5,40, -30,55z" style="fill: #000;"></path>
+		<g transform="translate(190,55) scale(7.149)">
+			<text x="0" y="0">disputed systems</text>
+		</g>
+	</g>
+
+    <!-- independent system -->
+    <g class="system independent" transform="translate(50, 400) scale(7.149)">
+        <!-- system circle -->
+        <circle r="1" cx="0" cy="0" style="fill: #ffffff"></circle>
+        <!-- system name -->
+        <text x="2" y="0.75" filter="url(#sLblShd)">Herotitus</text>
         <!-- explanation text -->
-        <text x="150" y="5.36175">independent system</text>
+        <text x="20" y="0.75">independent system</text>
     </g>
 
     <!-- abandoned system -->
-    <g class="system abandoned" transform="translate(50, 300)">
+    <g class="system abandoned" transform="translate(50, 450) scale(7.149)">
         <!-- system circle -->
-        <circle r="7.149" cx="0" cy="0" style="fill: #000000"></circle>
+        <circle r="1" cx="0" cy="0" style="fill: #000000"></circle>
         <!-- system name -->
-        <text x="14.29" y="5.36175" filter="url(#sLblShd)" style="font-style: italic">Rosetta</text>
+        <text x="2" y="0.75" filter="url(#sLblShd)" style="font-style: italic">Rosetta</text>
         <!-- explanation text -->
-        <text x="150" y="5.36175">abandoned system</text>
+        <text x="20" y="0.75">abandoned system</text>
     </g>
 
-    <!-- disputed systems -->
-    <!-- clusters -->
-    <!-- nebulae -->
-    <!-- faction borders -->
+	<!-- undiscovered system -->
+	<g class="system undiscovered" transform="translate(50, 500) scale(7.149)">
+        <!-- system circle -->
+        <circle r="1" cx="0" cy="0"></circle>
+        <!-- system name -->
+        <text x="2" y="0.75" filter="url(#sLblShd)" style="font-style: italic; fill: #555">Tanis</text>
+        <!-- explanation text -->
+        <text x="20" y="0.75">undiscovered system</text>
+    </g>
+
+    <!-- cluster -->
+	<!-- 216.353, 319.595 -->
+	<g class="cluster" transform="translate(600, 100) scale(7.149)">
+		<ellipse cx="0" cy="0" rx="7.077" ry="7.109" style="fill: rgba(254, 214, 0, 0.27)"></ellipse>
+		<circle class="system" data-name="Electra" cx="-1.03" cy="2.776" r="1" style="fill: #FED600"/>
+		<circle class="system" data-name="Maia" cx="-1.814" cy="3.569" r="1" style="fill: #FED600"/>
+		<circle class="system" data-name="Merope" cx="-3.102" cy="3.866" r="1" style="fill: #FED600"/>
+		<path d="M3.807,-9.995 L1.997,-9.995 L1.37,-6.695" class="label-connector"/>
+		<text x="0.47" y="3.526" class="system-label" filter="url(#sLblShd)"> Electra</text>
+		<text x="-0.314" y="6.068" class="system-label" filter="url(#sLblShd)"> Maia</text>
+		<text x="-9.012" y="7.116" class="system-label" filter="url(#sLblShd)"> Merope</text>
+		<text x="4.31" y="-8.75" class="system-label" filter="url(#sLblShd)"> Pleiades Cluster</text>
+		<text x="20" y="0">star cluster</text>
+	</g>
+
+	<g class="nebula" transform="translate(600, 250) scale(7.149)">
+		<g transform="translate(137.433,418.340)">
+			<path fill-rule="evenodd" class="nebula" data-name="Dark Nebula"
+				d="M-128.78,-423.74 C-129.99,-424.72 -130.80,-426.12 -132.17,-426.60 C-133.56,-427.09 -135.09,-426.50
+				-136.66,-426.51 C-137.82,-426.52 -138.84,-426.84 -139.96,-426.67 C-141.32,-426.47 -142.56,-426.12
+				-143.76,-425.43 C-145.52,-424.43 -147.33,-423.48 -148.41,-421.84 C-149.64,-419.98 -150.91,-417.10
+				-150.35,-415.43 C-149.92,-414.14 -147.16,-414.25 -145.57,-413.39 C-144.21,-412.65 -143.26,-411.64
+				-141.93,-410.84 C-141.00,-410.29 -140.15,-409.53 -139.12,-409.53 C-137.41,-409.53 -135.84,-410.33
+				-134.09,-410.84 C-132.77,-411.24 -131.44,-411.38 -130.34,-412.12 C-129.50,-412.69 -129.11,-413.67
+				-128.54,-414.56 C-127.21,-416.68 -124.88,-418.83 -124.93,-420.75 C-124.97,-422.05 -127.45,-422.67
+				-128.78,-423.74"/>
+			<text x="-144.223" y="-417.090" class="nebulae-label"> Dark Nebula</text>
+		</g>
+		<text x="20" y="0.75">nebula</text>
+	</g>
+
+	<g clip-path="url(#borderClip)">
+		<g class="border" transform="translate(600, 400) scale(7.149)">
+			<g transform="translate(-40,367)">
+				<path fill-rule="evenodd" class="border CWF"
+					style="stroke: #d9743d; stroke-width: 1px; fill: rgb(217,116,61); fill-opacity: 0.3;"
+					d=" M-41.27,-242.92 L-38.63,-396.63 L56.55,-405.39 C58.44,-402.94 56.55,-398.98 56.55,-395.60
+					C56.55,-395.58 56.58,-395.69 56.56,-395.67 C51.81,-388.93 46.78,-383.33 42.93,-376.28
+					C42.10,-374.76 43.29,-372.93 43.19,-371.19 C43.17,-370.68 42.98,-370.16 42.58,-369.84
+					C39.65,-367.48 34.67,-366.79 33.67,-363.54 C31.84,-357.57 34.74,-350.30 34.50,-343.51" />
+				<path fill-rule="evenodd" class="border CGB"
+					style="stroke: #bae6fb; stroke-width: 1px; fill: rgb(186,230,251); fill-opacity: 0.3;"
+					d=" M33.78,-341.58 C33.96,-342.33 35.39,-342.36 35.42,-343.12 C35.67,-349.89 32.76,-357.15 34.57,-363.10
+					C35.53,-366.28 40.51,-366.87 43.35,-369.20 C43.87,-369.63 44.12,-370.33 44.18,-371.00
+					C44.31,-372.71 43.08,-374.51 43.89,-376.00 C47.65,-382.89 52.55,-388.32 57.24,-394.93
+					C57.29,-395.00 57.42,-395.01 57.42,-395.10 C57.49,-398.84 59.45,-403.12 57.44,-405.85
+					C53.59,-411.07 45.90,-413.14 40.68,-417.81 h50 v80"/>
+				<text text-anchor="left" style="fill: #d9743d;" class="border-label">
+					<textPath xlink:href="#label-path-CWF_0_84">
+						<tspan x="0.12" dy="-2.00">Clan</tspan>
+						<tspan x="0.00" dy="2.00">Wolf</tspan>
+					</textPath>
+				</text>
+				<text text-anchor="left" style="fill: #4a5c64;" class="border-label">
+					<textPath xlink:href="#label-path-CGB_0_84">
+						<tspan x="0.00" dy="-2.00">Clan Ghost</tspan>
+						<tspan x="3.12" dy="2.00">Bear</tspan>
+					</textPath>
+				</text>
+			</g>
+		</g>
+	</g>
+	<g transform="translate(600, 400) scale(7.149)">
+		<text x="20" y="0.75">faction border</text>
+	</g>
 </svg>
