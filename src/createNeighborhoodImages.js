@@ -119,7 +119,6 @@ var main = function () {
         focusedSystem = reader.systems[fsi];
         focusedSystemName = focusedSystem.name;
         focusedSystemArticleName = focusedSystem.sarnaLink.split('/').pop();
-        if(focusedSystemName !== 'Cameron') continue;
         logger.log('Starting on ' + focusedSystemName);
 
         viewRect.x = focusedSystem.x - viewRect.w * .5;

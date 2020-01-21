@@ -41,8 +41,11 @@ var main = function () {
     // read nebulae from the xlsx
     reader.readNebulae();
 
+    // read eras
+    reader.readEras();
+
     // read planetary systems from the xlsx
-    reader.readSystemsAndEras();
+    reader.readSystems();
 
 	// read label settings from the config file
 	reader.readLabelConfig();
@@ -74,7 +77,7 @@ var main = function () {
 		h: 600
 	};*/
 
-/*    // ENTIRE KNOWN SPACE
+    // ENTIRE KNOWN SPACE
     regionName = 'Known space';
     // image dimensions in pixels
     var dimensions = {
@@ -99,14 +102,15 @@ var main = function () {
 		y: -2000,
 		w: 4000,
 		h: 4000
-	};*/
+	};
 
  // CLAN INVASION CORRIDOR
+ /*
     regionName = 'Clan Invasion Corridor';
     // image dimensions in pixels
     var dimensions = {
-        w: 1100,
-        h: 840
+        w: 2200,
+        h: 1680
     };
 
     // the visible rectangle, in map space:
@@ -126,7 +130,7 @@ var main = function () {
 		y: -600,
 		w: 1200,
 		h: 1200
-	};
+	};*/
 
     // size factor
     var sizeFactor = 1;
@@ -153,13 +157,13 @@ var main = function () {
             //|| eraI === 15 // 2864
             //|| eraI === 16 // 3025
             || eraI === 18 // 3040
-            //|| eraI === 19 // 3050
+            || eraI === 19 // 3050
             //|| eraI === 20 // 3050
             //|| eraI === 21 // 3050
 			//|| eraI === 22 // 3050
             //|| eraI === 23 // 3051
-            || eraI === 24 // 3052
-            || eraI === 26 // 3058
+            //|| eraI === 24 // 3052
+            //|| eraI === 26 // 3058
 		)) {
 			continue;
 		}

@@ -216,7 +216,7 @@
         <!-- system name -->
         <text x="2" y="0.75" filter="url(#sLblShd)" style="font-style: italic; fill: #555">Tanis</text>
         <!-- explanation text -->
-        <text x="20" y="0.75">undiscovered system</text>
+        <text x="20" y="0.75">no record</text>
     </g>
 
     <!-- cluster -->
