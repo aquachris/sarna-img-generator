@@ -210,6 +210,9 @@ var main = function () {
     focusedSystems.push('Ulan Bator');
     focusedSystems.push('Carver');
 
+    // v1.1.1 fixes
+    focusedSystems.push('Trell');
+
     // generate points randomly scattered in 2D space
     pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
 

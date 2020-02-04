@@ -200,7 +200,7 @@ module.exports = (function () {
 		tpl = tpl.replace('{ELEMENTS}', elementsStr);
 
 		tpl = tpl.replace('{META_TITLE}', `${name} system and interstellar neighborhood, Year ${era.year} (${era.name})`);
-		tpl = tpl.replace('{META_VERSION}', '1.1');
+		tpl = tpl.replace('{META_VERSION}', '1.1.1');
 		tpl = tpl.replace('{META_CREATED}', new Date().toISOString());
 		// write file
 		if(!fs.existsSync(dir)) {
