@@ -6,9 +6,9 @@ module.exports = (function () {
     var Observable = require('./Observable.js');
 
     var SHEET_COLUMNS = 1;
-    var SHEET_FACTIONS = 4;
+    var SHEET_FACTIONS = 3;
     var SHEET_SYSTEMS = 2;
-    var SHEET_NEBULAE = 5;
+    var SHEET_NEBULAE = 4;
 
     /**
      * An instance of this class reads the planetary systems list from the
