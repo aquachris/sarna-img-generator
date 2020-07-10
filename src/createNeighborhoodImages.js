@@ -133,8 +133,9 @@ var main = function () {
         // for each era ...
     	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
 			if(
-                //eraI !== 16 // 3025
-                eraI !== 42 // 3151
+                eraI > 0
+                // eraI !== 16 // 3025
+                // eraI !== 42 // 3151
 			) {
 				continue;
 			}
