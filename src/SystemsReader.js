@@ -121,7 +121,7 @@ module.exports = (function () {
 
         var erasSheet = this.workbook[SHEET_COLUMNS];
         var i = 0;
-        while(erasSheet.data[i][1] !== undefined) {
+        while(i < erasSheet.data.length && erasSheet.data[i][1] !== undefined) {
             if(!isNaN(parseInt(erasSheet.data[i][1]+''))) {
                 this.eras.push({
                     idx: i,

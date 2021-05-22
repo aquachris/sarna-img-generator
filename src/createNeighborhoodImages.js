@@ -119,7 +119,6 @@ var main = function () {
         focusedSystem = reader.systems[fsi];
         focusedSystemName = focusedSystem.name;
         focusedSystemArticleName = focusedSystem.sarnaLink.split('/').pop();
-        if(focusedSystemName !== 'Cameron') continue;
         logger.log('Starting on ' + focusedSystemName);
 
         viewRect.x = focusedSystem.x - viewRect.w * .5;
@@ -133,9 +132,11 @@ var main = function () {
 
         // for each era ...
     	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
+            var erasToGenerate = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 24, 25, 26, 30, 31, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42];
 			if(
                 //eraI !== 16 // 3025
-                eraI !== 42 // 3151
+                //eraI !== 42 // 3151
+                !erasToGenerate.includes(eraI)
 			) {
 				continue;
 			}
