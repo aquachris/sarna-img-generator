@@ -78,31 +78,31 @@ var main = function () {
 	};*/
 
     // ENTIRE KNOWN SPACE
-    regionName = 'Known space';
-    // image dimensions in pixels
-    var dimensions = {
-        w: 2000,
-        h: 2000
-    };
+    // regionName = 'Known space';
+    // // image dimensions in pixels
+    // var dimensions = {
+    //     w: 2000,
+    //     h: 2000
+    // };
 
-    // the visible rectangle, in map space:
-	var viewRect = {
-        x: -2000,
-        y: -2000,
-        w: 4000,
-        h: 4000
-    };
+    // // the visible rectangle, in map space:
+	// var viewRect = {
+    //     x: -2000,
+    //     y: -2000,
+    //     w: 4000,
+    //     h: 4000
+    // };
 
-	var minimapDimensions = {
-		w: 300,
-		h: 300
-	};
-	var minimapViewRect = {
-		x: -2000,
-		y: -2000,
-		w: 4000,
-		h: 4000
-	};
+	// var minimapDimensions = {
+	// 	w: 300,
+	// 	h: 300
+	// };
+	// var minimapViewRect = {
+	// 	x: -2000,
+	// 	y: -2000,
+	// 	w: 4000,
+	// 	h: 4000
+	// };
 
  // CLAN INVASION CORRIDOR
  /*
@@ -132,6 +132,62 @@ var main = function () {
 		h: 1200
 	};*/
 
+	// // Operation Lancaster - FedSuns space
+	// regionName = 'Operation Lancaster - FedSuns Space';
+
+	// // image dimensions in pixels
+    // var dimensions = {
+    //     w: 650,
+    //     h: 500
+    // };
+
+    // // the visible rectangle, in map space:
+	// var viewRect = {
+    //     x: 50,
+    //     y: -150,
+    //     w: 195,
+    //     h: 150
+    // };
+
+	// var minimapDimensions = {
+	// 	w: 200,
+	// 	h: 200
+	// };
+	// var minimapViewRect = {
+	// 	x: -600,
+	// 	y: -650,
+	// 	w: 1300,
+	// 	h: 1300
+	// };
+
+	// Operation Lancaster - Clan space
+	regionName = 'Operation Lancaster - Clan Space';
+
+	// image dimensions in pixels
+	var dimensions = {
+		w: 650,
+		h: 500
+	};
+
+	// the visible rectangle, in map space:
+	var viewRect = {
+		x: -150,
+		y: 1650,
+		w: 390,
+		h: 300
+	};
+
+	var minimapDimensions = {
+		w: 130,
+		h: 100
+	};
+	var minimapViewRect = {
+		x: -150,
+		y: 1650,
+		w: 390,
+		h: 300
+	};
+
     // size factor
     var sizeFactor = 1;
     dimensions.w *= sizeFactor;
@@ -156,14 +212,15 @@ var main = function () {
 			//|| eraI === 4 // 2367
             //|| eraI === 15 // 2864
             //|| eraI === 16 // 3025
-            || eraI === 18 // 3040
-            || eraI === 19 // 3050
+            // || eraI === 18 // 3040
+            // || eraI === 19 // 3050
             //|| eraI === 20 // 3050
             //|| eraI === 21 // 3050
 			//|| eraI === 22 // 3050
             //|| eraI === 23 // 3051
             //|| eraI === 24 // 3052
             //|| eraI === 26 // 3058
+			|| eraI === 34 // 3075
 		)) {
 			continue;
 		}
@@ -266,14 +323,14 @@ var main = function () {
             borderLabeler.polylines,
             labelMgr.ellipticalObjects,
             {
-                max: 100,
+                max: 50,
                 step: 10
             },
             {
                 dimensions : minimapDimensions,
                 viewRect : minimapViewRect,
                 borders: minimapBorders,
-                nebulae: minimapNebulae,
+                nebulae: [], //minimapNebulae,
 				cutoutRect : true
             },
 			null

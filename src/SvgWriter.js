@@ -88,12 +88,12 @@ module.exports = (function () {
 			renderSystemLabels : true,
 			renderClusters : true,
 			renderClusterLabels : true,
-			renderNebulae : true,
-			renderNebulaeLabels : true,
+			renderNebulae : false,
+			renderNebulaeLabels : false,
 			renderJumpRings : false,
 			renderMinimap : true,
 			renderScaleHelp : true,
-			renderLogo : true
+			renderLogo : false
 		}, name, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, scaleHelpSettings, minimapSettings, jumpRings);
 	};
 
@@ -157,7 +157,9 @@ module.exports = (function () {
 		this.renderMinimap(settings, minimapSettings, viewRect, pxPerLy, factions, nebulae);
 
 		// render logo
-		this.renderLogo(name, era, viewRect, pxPerLy);
+		if (settings.renderLogo) {
+			this.renderLogo(name, era, viewRect, pxPerLy);
+		}
 
 		// render scale help
 		scaleHelpSettings = scaleHelpSettings || {};
@@ -180,8 +182,8 @@ module.exports = (function () {
 		elementsStr += this.markup.overlays ? `<g class="overlays">${this.markup.overlays}</g>\n` : '';
 
 		// insert markup into base map template
-		tpl = tpl.replace('{WIDTH}', dimensions.w);
-		tpl = tpl.replace('{HEIGHT}', dimensions.h);
+		tpl = tpl.replace('{WIDTH}', dimensions.w * 2);
+		tpl = tpl.replace('{HEIGHT}', dimensions.h * 2);
 		// svg viewBox's y is top left, not bottom left
 		// viewRect is in map space, viewBox is in svg space
 		viewBox = {
@@ -1135,7 +1137,7 @@ ${origin.x} ${origin.y} @private
 	 */
 	SvgWriter.prototype.renderScaleHelp = function (settings, scaleHelpSettings, viewRect, pxPerLy) {
 		var scaleMargin = {
-			x: 10 / pxPerLy + 20,
+			x: 10 / pxPerLy + 3,
 			y: 10 / pxPerLy
 		};
 		var tplObj = {

@@ -256,6 +256,31 @@ module.exports = (function () {
 
 			this.systems.push(curSystem);
 		}
+		// Add Pantheress systems for Operation Lancaster
+		var affiliations = [];
+		var capitalLvls = [];
+		var names = [];
+		for (var eraIdx = 0; eraIdx < this.eras.length; eraIdx++) {
+			affiliations.push('A');
+			capitalLvls.push(0);
+			names.push('Pantheress');
+		}
+		this.systems.push({
+			name: 'Pantheress',
+			name_full: 'Pantheress',
+			sarnaLink: '',
+			status: 'ok',
+			x: 41.195,
+			y: 1759.910,
+			radiusX: 1,
+			radiusY: 1,
+			rotation: 0,
+			isCluster: false,
+			affiliations,
+			capitalLvls,
+			names,
+
+		});
 		this.systems.sort(function (a, b) {
 			return (b.radiusX + b.radiusY) - (a.radiusX + a.radiusY);
 		});
