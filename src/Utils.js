@@ -1400,5 +1400,9 @@ module.exports = (function () {
 		return [result_values_x, result_values_y];
 	};
 
+    Utils.htmlEncode = function(str) {
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    };
+
     return Utils;
 })();

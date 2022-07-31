@@ -11,9 +11,9 @@ var LabelManager = require('./LabelManager.js');
 var Utils = require('./Utils.js');
 var SvgWriter = require('./SvgWriter.js');
 
-var createUniverseImage = function (year, logLevel = Logger.MESSAGE) {
+var createInnerSphereImage = function (year, logLevel = Logger.MESSAGE) {
     console.log(`----------`);
-    console.log(`Generating known universe map(s), selected year: `, year || 'none');
+    console.log(`Generating Inner Sphere map(s), selected year: `, year || 'none');
     console.log(`----------`);
 
     // initialize objects
@@ -61,27 +61,11 @@ var createUniverseImage = function (year, logLevel = Logger.MESSAGE) {
 
     // the visible rectangle, in map space:
     var viewRect = {
-        x: -2000,
-        y: -2000,
-        w: 4000,
-        h: 4000,
-    };
-	// var viewRect = {
-	// 	x: -580,
-	// 	y: -600,
-	// 	w: 1400,
-	// 	h: 1200
-	// };
-    // var dimensions = {
-    //     w: 1390,
-    //     h: 1200
-    // };
-    //var viewRect = {
-	//	x: -650,
-	//	y: -570,
-	//	w: 1450,
-	//	h: 1200
-	//};
+		x: -650,
+		y: -570,
+		w: 1450,
+		h: 1200
+	};
     var dimensions = {
         w: viewRect.w,
         h: viewRect.h
@@ -92,25 +76,12 @@ var createUniverseImage = function (year, logLevel = Logger.MESSAGE) {
         w: 200,
         h: 200
     };
-    // viewRect = {
-    //     x: -100,
-    //     y: -100,
-    //     w: 200,
-    //     h: 200
-    // };
-    // var viewRect2 = {
-    //     x: -50,
-    //     y: -50,
-    //     w: 100,
-    //     h: 100
-    // };
 
     // generate additional points randomly
     var pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
 
     // randomize nebulae
     var nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
-
 
      // for each era ...
      for(var eraI = 0; eraI < reader.eras.length; eraI++) {
@@ -119,8 +90,8 @@ var createUniverseImage = function (year, logLevel = Logger.MESSAGE) {
             continue;
         }
 
-        // var erasToGenerate = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 24, 25, 26, 30, 31, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42];
-        // var erasToGenerate = [43];
+        // var erasToGenerate = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 24, 25, 26, 30, 31, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42, 43];
+        // //var erasToGenerate = [42];
         // if(
         //     //eraI !== 16 // 3025
         //     //eraI !== 42 // 3151
@@ -128,7 +99,7 @@ var createUniverseImage = function (year, logLevel = Logger.MESSAGE) {
         // ) {
         //     continue;
         // }
-                
+        
         reservedPoints = [];
         voronoiSystems = [];
 
@@ -173,6 +144,36 @@ var createUniverseImage = function (year, logLevel = Logger.MESSAGE) {
                 col: curBorderAff,
                 name : curSys.names[eraI]
             });
+
+            // curSys = reader.systems[i];
+            // curAff = '';
+            // const borderAffiliation = curSys.affiliations[eraI].match(/^[AIU]\s*\(([^)]+)\)/);
+            // if(curSys.affiliations[eraI].search(/^D\s*\(/g) >= 0) {
+            //     curAff = curSys.affiliations[eraI];
+            // } else {
+            //     curAff = curSys.affiliations[eraI].split(',')[0].trim();
+            // }
+            // if((tmpIdx = curAff.search(/\(\s*H\s*\)/g)) >= 0) {
+            //     reader.systems[i].hidden = true;
+            //     curAff = curAff.substr(0,tmpIdx).trim();
+            // } else {
+            //     reader.systems[i].hidden = false;
+            // }
+            // reader.systems[i].col = curAff;
+            // reader.systems[i].capitalLvl = curSys.capitalLvls[eraI];
+            // if(curAff === '' || curAff === 'U' || curAff === 'A' || reader.systems[i].hidden) {
+            //       continue;
+            // }
+            // if(curSys.status.toLowerCase() === 'apocryphal') {
+            //     continue;
+            // }
+            // reservedPoints.push({x: curSys.x, y: curSys.y, col: curAff});
+            // voronoiSystems.push({
+            //     x: curSys.x,
+            //     y: curSys.y,
+            //     col : curAff,
+            //     name : curSys.names[eraI]
+            // });
         }
         pDisc.replaceReservedPoints(reservedPoints);
 
@@ -227,12 +228,12 @@ var createUniverseImage = function (year, logLevel = Logger.MESSAGE) {
 
         // create an svg with a universe picture
         var safeEraName = (curEra.year + '').replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
-		var filename = ('Sarna_BT_Known_Universe_' + safeEraName + '.svg').replace(/[\+\s\(\)]/g, '_');
-        var dir = path.join(__dirname, '..', 'output', 'universe');
+		var filename = ('Sarna_BT_Inner_Sphere_' + safeEraName + '.svg').replace(/[\+\s\(\)]/g, '_');
+		var dir = path.join(__dirname, '..', 'output', 'innersphere');
         const minimapSettings = {};
         const jumpRings = [];
-        const docTitle = `BattleTech: Known Universe, Year ${curEra.year} (${Utils.htmlEncode(curEra.name)})`;
-        writer.writeSvg({
+        const docTitle = `BattleTech: The Inner Sphere, Year ${curEra.year} (${Utils.htmlEncode(curEra.name)})`;
+		writer.writeSvg({
 			renderFactions : true,
 			renderBorderLabels : true,
 			renderSystems : true,
@@ -249,18 +250,18 @@ var createUniverseImage = function (year, logLevel = Logger.MESSAGE) {
             custom: {
                 docTitle,
                 logoOrigin: {
-                    x: -4434,
-                    y: -4434.94,
+                    x: -1434,
+                    y: -1390.5,
                 },
                 titlePosition: {
-                    x: -1971,
-                    y: -1992,
+                    x: -621,
+                    y: -622,
                 },
                 noShadows: true,
             }
 		}, 'BT', dir, filename, dimensions, viewRect, curEra, labelMgr.objects, labelMgr.factions, clampedBorders, borderLabeler.polylines, labelMgr.ellipticalObjects, {
-            tX: -1970,
-            tY: -1982,
+            tX: -620,
+            tY: -612,
             max: 100,
         }, minimapSettings, jumpRings);
 
@@ -287,80 +288,6 @@ var createUniverseImage = function (year, logLevel = Logger.MESSAGE) {
         clampedNebulae.shift();
     }
     clampedNebulae = null;
-    // while(minimapNebulae && minimapNebulae.length > 0) {
-    //     minimapNebulae[0].points = null;
-    //     minimapNebulae[0].allPoints = null;
-    //     minimapNebulae[0] = null;
-    //     minimapNebulae.shift();
-    // }
-    // minimapNebulae = null;
-
-
-	// for(var yi = 0; yi < years.length; yi++) {
-	// 	curYear = years[yi];
-	// 	reservedPoints = [];
-	// 	voronoiSystems = [];
-
-	// 	for(var i = 0; i < reader.systems.length; i++) {
-	// 		curSys = reader.systems[i];
-	// 		curAff = curSys[curYear].split(',')[0].trim();
-	// 		if(curAff === '' || curAff === 'U' || curAff === 'A') {
-	// 			continue;
-	// 		}
-	// 		reservedPoints.push({x: curSys.x, y: curSys.y, col: curAff});
-	// 		voronoiSystems.push({
-	// 			x: curSys.x,
-	// 			y: curSys.y,
-	// 			col : curAff,
-	// 			name : curSys.name
-	// 		});
-	// 	}
-
-    //     pDisc.replaceReservedPoints(reservedPoints);
-
-	// 	for(var i = 0; i < pDisc.aggregatedPoints.length; i++) {
-	// 		curP = pDisc.aggregatedPoints[i];
-
-    //         if(curP.col) {
-    //             //voronoiSystems.push(curP);
-    //         } else {
-    //             voronoiSystems.push({
-    // 				x: curP.x,
-    // 				y: curP.y,
-    // 				col: 'DUMMY',
-    // 				name: 'Dummy'
-    // 			});
-    //         }
-	// 	}
-
-	// 	// generate the voronoi diagram to find borders
-	// 	vBorder = new VoronoiBorder(this.logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
-    //     vBorder.generateBoundedBorders(viewRect);
-    //     //vBorder.generateBoundedBorders(viewRect2);
-    //     filteredSystems = vBorder.generateBoundedObjects(viewRect);
-
-    //     var systemSize = 1;
-    //     var systemBorder = .25;
-    //     var glyphWidths = {};
-    //     var glyphHeight = 3;
-    //     var nodeToTextDistance = 2;
-    //     LabelManager = new LabelManager().init(
-    //         viewRect,
-    //         filteredSystems,
-    //         systemSize + systemBorder,
-    //         nodeToTextDistance,
-    //         glyphWidths,
-    //         glyphHeight,
-    //         pxPerUnit
-    //     );
-
-	// 	// create an svg with a universe picture
-	// 	//writer.writeUniverseImage(curYear, vBorder, reader.systems, reader.factions, viewRect);
-    //     writer.writeUniverseImage(curYear, vBorder, filteredSystems, reader.factions, viewRect);
-	// }
-
-    // // finish by rendering out the logs
-    // logRenderer.render();
 };
 
-module.exports = { createUniverseImage };
+module.exports = { createInnerSphereImage };

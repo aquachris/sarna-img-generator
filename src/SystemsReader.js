@@ -8,7 +8,7 @@ module.exports = (function () {
     var SHEET_COLUMNS = 1;
     var SHEET_FACTIONS = 3;
     var SHEET_SYSTEMS = 2;
-    var SHEET_NEBULAE = 4;
+    var SHEET_NEBULAE = 5;
 
     /**
      * An instance of this class reads the planetary systems list from the
@@ -180,6 +180,12 @@ module.exports = (function () {
 				continue;
 			}
 
+			// Filter out the Matteo system
+			// TODO remove this once Matteo appears in canon sources
+			if ((curRow[columnIdxMap['systemname']] || '').toLowerCase() === 'matteo') {
+				continue;
+			}
+
 			// read system
 			curSystem = {};
 			// name and status
@@ -311,13 +317,19 @@ module.exports = (function () {
 
 			// read nebula
             curNeb = {
-                name: curRow[columnIdxMap['nebula']],
+                name: curRow[columnIdxMap['system']],
     			centerX: curRow[columnIdxMap['x']],
                 centerY: curRow[columnIdxMap['y']],
                 w: curRow[columnIdxMap['width']],
                 h: curRow[columnIdxMap['height']],
                 type: 'nebula'
             };
+			if (!curNeb.name) {
+				continue;
+			}
+			if (curNeb.name.toLowerCase().startsWith('badland')) {
+				console.log('BADLANDS CLUSTER', curNeb);
+			}
             curNeb.x = curNeb.centerX - curNeb.w * .5;
             curNeb.y = curNeb.centerY - curNeb.h * .5;
             curNeb.radiusX = curNeb.w * .5;
