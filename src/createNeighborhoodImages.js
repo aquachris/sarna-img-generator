@@ -161,7 +161,7 @@ var createNeighborhoodImage = function (year, systemNameSubstring) {
         logger.log('Starting on ' + focusedSystemName);
 
         viewRect.x = focusedSystem.x - viewRect.w * .5;
-        viewRect.y = focusedSystem.y - viewRect.h * .5 - 15; // TODO 10 LY off because map is not rectangular?
+        viewRect.y = focusedSystem.y - viewRect.h * .5 - 15; // TODO 10 LY off because map is not a square?
         minimapViewRect.x = focusedSystem.x - minimapViewRect.w * .5;
         minimapViewRect.y = focusedSystem.y - minimapViewRect.h * .5;
 
