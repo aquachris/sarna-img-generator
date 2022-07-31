@@ -1,4 +1,5 @@
 node_modules
+**/output
 **/output/*
 **/.~lock*
 **/script_log.html

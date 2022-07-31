@@ -354,7 +354,7 @@ module.exports = (function () {
 			}
 
 			if(numCurFactionCandidates === 0) {
-				this.logger.log('no faction candidates found for ' + faction.longName);
+				this.logger.info('no faction candidates found for ' + faction.longName);
 			}
 
             // possible fourth pass: if no valid candidates have been found for the faction,

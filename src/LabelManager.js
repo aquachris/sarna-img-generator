@@ -700,7 +700,7 @@ module.exports = (function () {
         label.x = minOverlapX;
         label.y = minOverlapY;
 
-		this.logger.log('overlapping label: "'+obj.name+'" for ' + minOverlap + ' units.');
+		this.logger.info('overlapping label: "'+obj.name+'" for ' + minOverlap + ' units.');
         return minOverlap;
     };
 
@@ -794,7 +794,7 @@ module.exports = (function () {
         label.x = minOverlapX;
         label.y = minOverlapY;
 
-		this.logger.log('overlapping label: "'+obj.name+'" for ' + minOverlap + ' units.');
+		this.logger.info('overlapping label: "'+obj.name+'" for ' + minOverlap + ' units.');
         return minOverlap;
     };
 

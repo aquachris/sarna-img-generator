@@ -35,6 +35,7 @@ module.exports = (function () {
 			systems : '',
 			systemLabels : '',
 			minimap : '',
+			title : '',
 			scaleHelp : '',
 			overlays : ''
 		};
@@ -52,7 +53,7 @@ module.exports = (function () {
 	SvgWriter.prototype.writeNeighborhoodSvg = function (articleName, name, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings) {
 		//var safeEraName = era.year + '_' + era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
 		var safeEraName = (era.year + '').replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
-		var dir = path.join(this.baseDir, '/output/'+safeEraName).replace(/[\+\s\(\)]/g, '_');
+		var dir = path.join(this.baseDir, '..', 'output', 'neighborhood', safeEraName).replace(/[\+\s\(\)]/g, '_');
 		//var filename = (articleName.replace(/\s/g, '_')+'_' + safeEraName + '.svg').replace(/[\+\s\(\)]/g, '_');
 		var filename = (articleName.replace(/\s/g, '_')+'_' + safeEraName + '.svg').replace(/\s+/g, '_');
 		var scaleHelpSettings;
@@ -134,6 +135,7 @@ module.exports = (function () {
 		settings.renderMinimap = settings.renderMinimap === undefined ? true : settings.renderMinimap;
 		settings.renderScaleHelp = settings.renderScaleHelp === undefined ? true : settings.renderScaleHelp;
 		settings.renderLogo = settings.renderLogo === undefined ? true : settings.renderLogo;
+		settings.custom = settings.custom || {};
 
 		// reset markup
 		this.initMarkup();
@@ -157,7 +159,10 @@ module.exports = (function () {
 		this.renderMinimap(settings, minimapSettings, viewRect, pxPerLy, factions, nebulae);
 
 		// render logo
-		this.renderLogo(name, era, viewRect, pxPerLy);
+		this.renderLogo(settings, name, era, viewRect, pxPerLy);
+
+		// render title
+		this.renderTitle(settings);
 
 		// render scale help
 		scaleHelpSettings = scaleHelpSettings || {};
@@ -167,17 +172,18 @@ module.exports = (function () {
 
 		// concatenate markup
 		elementsStr = '';
-		elementsStr += this.markup.borders ? `<g class="borders">${this.markup.borders}</g>\n` : '';
-		elementsStr += this.markup.borderLabels ? `<g class="border-labels">${this.markup.borderLabels}</g>\n` : '';
-		elementsStr += this.markup.clusters ? `<g class="clusters">${this.markup.clusters}</g>\n` : '';
-		elementsStr += this.markup.nebulae ? `<g class="nebulae">${this.markup.nebulae}</g>\n` : '';
-		elementsStr += this.markup.nebulaeLabels ? `<g class="nebulae-labels">${this.markup.nebulaeLabels}</g>\n` : '';
-		elementsStr += this.markup.jumpRings ? `<g class="jump-radius-rings">${this.markup.jumpRings}</g>\n` : '';
-		elementsStr += this.markup.systems ? `<g class="systems">${this.markup.systems}</g>\n` : '';
-		elementsStr += this.markup.systemLabels ? `<g class="system-labels">${this.markup.systemLabels}</g>\n` : '';
-		elementsStr += this.markup.minimap ? `<g class="minimap">${this.markup.minimap}</g>\n` : '';
-		elementsStr += this.markup.scaleHelp ? `<g class="scale">${this.markup.scaleHelp}</g>\n` : '';
-		elementsStr += this.markup.overlays ? `<g class="overlays">${this.markup.overlays}</g>\n` : '';
+		elementsStr += this.markup.borders ? `<g class="borders">${this.markup.borders}\n\t</g>\n` : '';
+		elementsStr += this.markup.borderLabels ? `\t<g class="border-labels">${this.markup.borderLabels}\n\t</g>\n` : '';
+		elementsStr += this.markup.clusters ? `\t<g class="clusters">${this.markup.clusters}\n\t</g>\n` : '';
+		elementsStr += this.markup.nebulae ? `\t<g class="nebulae">${this.markup.nebulae}\n\t</g>\n` : '';
+		elementsStr += this.markup.nebulaeLabels ? `\t<g class="nebulae-labels">${this.markup.nebulaeLabels}\n\t</g>\n` : '';
+		elementsStr += this.markup.jumpRings ? `\t<g class="jump-radius-rings">${this.markup.jumpRings}\n\t</g>\n` : '';
+		elementsStr += this.markup.systems ? `\t<g class="systems">${this.markup.systems}\n\t</g>\n` : '';
+		elementsStr += this.markup.systemLabels ? `\t<g class="system-labels">${this.markup.systemLabels}\n\t</g>\n` : '';
+		elementsStr += this.markup.minimap ? `\t<g class="minimap">${this.markup.minimap}\n\t</g>\n` : '';
+		elementsStr += this.markup.title ? `\t<g class="title">${this.markup.title}\n\t</g>` : '';
+		elementsStr += this.markup.scaleHelp ? `\t<g class="scale">${this.markup.scaleHelp}\n\t</g>\n` : '';
+		elementsStr += this.markup.overlays ? `\t<g class="overlays">${this.markup.overlays}\n\t</g>\n` : '';
 
 		// insert markup into base map template
 		tpl = tpl.replace('{WIDTH}', dimensions.w);
@@ -191,7 +197,7 @@ module.exports = (function () {
 			h: viewRect.h
 		};
 		// remove unnecessary newlines and spaces
-		elementsStr = elementsStr.replace(/\n\s+/gi, ' ');
+		//elementsStr = elementsStr.replace(/\n\s+/gi, ' ');
 		//this.markup.defs = this.markup.defs.replace(/\n\s+/gi, ' ');
 
 		tpl = tpl.replace('{VIEWBOX}', viewBox.x + ' ' + viewBox.y + ' ' + viewBox.w + ' ' + viewBox.h);
@@ -199,8 +205,12 @@ module.exports = (function () {
 		tpl = tpl.replace('{CSS}', this.markup.css);
 		tpl = tpl.replace('{ELEMENTS}', elementsStr);
 
-		tpl = tpl.replace('{META_TITLE}', `${name} system and interstellar neighborhood, Year ${era.year} (${era.name})`);
-		tpl = tpl.replace('{META_VERSION}', '1.1.1');
+		if (settings.custom.docTitle) {
+			tpl = tpl.replace('{META_TITLE}', `${settings.custom.docTitle}`);
+		} else {
+			tpl = tpl.replace('{META_TITLE}', `${name} system and interstellar neighborhood, Year ${era.year} (${Utils.htmlEncode(era.name)})`);
+		}
+		tpl = tpl.replace('{META_VERSION}', '1.4');
 		tpl = tpl.replace('{META_CREATED}', new Date().toISOString());
 		// write file
 		if(!fs.existsSync(dir)) {
@@ -234,7 +244,7 @@ module.exports = (function () {
 	/**
 	 * @private
 	 */
-	SvgWriter.prototype.renderLogo = function (name, era, viewRect, pxPerLy) {
+	SvgWriter.prototype.renderLogo = function (settings, name, era, viewRect, pxPerLy) {
 		var sizeInLy = {
 			w: 30,
 			h: 48
@@ -252,10 +262,10 @@ module.exports = (function () {
 			//y: -(viewRect.y + viewRect.h - padding.y) / scale
 		};
 		var logoPaths = '';
-		this.markup.css += 'g.logo .ribbon { fill:#ffc103; stroke:#000; stroke-width: 0.5px; stroke-linecap: butt; stroke-linejoin:miter; }\n';
-		this.markup.css += 'g.logo .atlas-silhouette { fill: #000; fill-rule:evenodd; stroke: none; }\n';
-		this.markup.css += 'g.logo .text { fill: #000; stroke: none; }\n';
-		this.markup.css += 'g.logo .atlas-highlights { fill: #ddd; stroke: none; }\n';
+		this.markup.css += '\t\tg.logo .ribbon { fill:#ffc103; stroke:#000; stroke-width: 0.5px; stroke-linecap: butt; stroke-linejoin:miter; }\n';
+		this.markup.css += '\t\tg.logo .atlas-silhouette { fill: #000; fill-rule:evenodd; stroke: none; }\n';
+		this.markup.css += '\t\tg.logo .text { fill: #000; stroke: none; }\n';
+		this.markup.css += '\t\tg.logo .atlas-highlights { fill: #ddd; stroke: none; }\n';
 		// full-width "ribbon" at the top
 		/*logoPaths += `<path class="ribbon"
 			d="M0.2,-1.75 h279.5 v20 h-279.5z" />`;
@@ -307,7 +317,7 @@ module.exports = (function () {
 		//var targetWidthInLy = 20;
 		scale = 0.45;
 		var targetHeightInLy = sizeInLy.h * scale;
-		var origin = {
+		var origin = settings.custom.logoOrigin || {
 			//x: (viewRect.x + viewRect.w - targetWidthInLy - padding.x) / scale,
 			//y: -(viewRect.y + viewRect.h - padding.y) / scale
 			x: viewRect.x / scale + padding.x,
@@ -506,10 +516,10 @@ ${origin.x} ${origin.y} @private
 				d : curD
 			};
 			if(settings.renderFactions) {
-				this.markup.borders += `<path fill-rule="evenodd" class="border ${tplObj.faction}"
-						style="stroke: ${tplObj.stroke}; stroke-width: 1px; fill: ${tplObj.fill};
-						fill-opacity: ${factionFillOpacity};"
-						d="${tplObj.d}" />\n`;
+				this.markup.borders += `\n\t\t<path fill-rule="evenodd" class="border ${tplObj.faction}" ` +
+						`style="stroke: ${tplObj.stroke}; stroke-width: 1px; fill: ${tplObj.fill}; ` +
+						`fill-opacity: ${factionFillOpacity};" ` +
+						`d="${tplObj.d}" />`;
 			}
 		}
 
@@ -552,12 +562,12 @@ ${origin.x} ${origin.y} @private
 							midPos: curPolyline.labels[li].midPos.toFixed(3)
 						};
 						// add label baseline path to defs
-						this.markup.defs += `<path id="label-path-${tplObj.lId}"
-							d="M${tplObj.x1},${tplObj.y1} L${tplObj.x2},${tplObj.y2}" />`;
+						this.markup.defs += `\n\t\t<path id="label-path-${tplObj.lId}" ` +
+							`d="M${tplObj.x1},${tplObj.y1} L${tplObj.x2},${tplObj.y2}" />`;
 						// add label text element to borderLabels group
-						this.markup.borderLabels += `<text text-anchor="left"
-							data-candidate-rating="${tplObj.rating}" style="fill: ${tplObj.fill};">
-		    				<textPath xlink:href="#label-path-${tplObj.lId}">`;
+						this.markup.borderLabels += `\n\t\t<text text-anchor="left" ` +
+							`data-candidate-rating="${tplObj.rating}" style="fill: ${tplObj.fill};">` +
+							`<textPath xlink:href="#label-path-${tplObj.lId}">`;
 						for(var ltpi = 0; ltpi < curPolyline.labels[li].labelParts.length; ltpi++) {
 							tplObj.text = curPolyline.labels[li].labelParts[ltpi];
 							tplObj.dx = (curPolyline.labels[li].dxValues[ltpi]).toFixed(2);
@@ -696,6 +706,7 @@ ${origin.x} ${origin.y} @private
 		var dispRegEx = /D\s*\(([^\)]+)\)/g; // regex for disputed system notation: "D(CC,FS)"
 		var dispReResult, dispColArr, dispCls;
 		var defsMap = {};
+		const filter = settings.custom.noShadows ? '' : 'filter="url(#sLblShd)"';
 
 		for(var i = 0, len = systems.length; i < len; i++) {
 			if(systems[i].col === 'DUMMY') {
@@ -754,11 +765,11 @@ ${origin.x} ${origin.y} @private
 					tplObj.additionalClasses += 'apocryphal';
 				}
 				if(settings.renderClusters) {
-					this.markup.clusters += `<ellipse class="cluster ${tplObj.faction} ${tplObj.additionalClasses}"
-								data-name="${tplObj.name}"
-								cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.radiusX}" ry="${tplObj.radiusY}"
-								transform="rotate(${tplObj.angle}, ${tplObj.x}, ${tplObj.y})"
-								style="fill: ${tplObj.fill};"  />\n`;
+					this.markup.clusters += `\n\t\t<ellipse class="cluster ${tplObj.faction} ${tplObj.additionalClasses}" ` +
+								`data-name="${tplObj.name}" ` +
+								`cx="${tplObj.x}" cy="${tplObj.y}" rx="${tplObj.radiusX}" ry="${tplObj.radiusY}" ` +
+								`transform="rotate(${tplObj.angle}, ${tplObj.x}, ${tplObj.y})" ` +
+								`style="fill: ${tplObj.fill};"  />`;
 				}
 
 				if(settings.renderClusterLabels) {
@@ -770,7 +781,7 @@ ${origin.x} ${origin.y} @private
 						curD += ',' + (-systems[i].label.connector.p2.y).toFixed(2);
 						curD += ' L' + systems[i].label.connector.p3.x.toFixed(2);
 						curD += ',' + (-systems[i].label.connector.p3.y).toFixed(2);
-						this.markup.clusters += `<path d="${curD}" class="label-connector" />\n`;
+						this.markup.clusters += `\n\t\t<path d="${curD}" class="label-connector" />`;
 					}
 
 					tplObj = {
@@ -784,11 +795,10 @@ ${origin.x} ${origin.y} @private
 						tplObj.labelClass += ' apocryphal';
 						tplObj.sup = '<tspan class="sup" dx="0.5" dy="1">(apocryphal)</tspan>';
 					}
-					this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
-											filter="url(#sLblShd)"
-											class="system-label ${tplObj.labelClass}" >
-								${tplObj.name}${tplObj.sup}
-								</text>\n`;
+					this.markup.systemLabels += `\n\t\t<text x="${tplObj.x}" y="${tplObj.y}" ` +
+											`${filter} ` +
+											`class="system-label ${tplObj.labelClass}">` +
+											`${tplObj.name}${tplObj.sup}</text>`;
 				}
 
 			} else {
@@ -819,23 +829,23 @@ ${origin.x} ${origin.y} @private
 				tplObj.additionalClasses = tplObj.additionalClasses.trim();
 				if(settings.renderSystems) {
 					if(systems[i].capitalLvl > 0 && systems[i].capitalLvl <= 2) {
-						this.markup.systems += `<circle class="system-decoration ${(tplObj.faction + ' ' + tplObj.additionalClasses).trim()}"
-									data-name="${tplObj.name}"
-									cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r * 1.5}" />\n`;
+						this.markup.systems += `\n\t\t<circle class="system-decoration ${(tplObj.faction + ' ' + tplObj.additionalClasses).trim()}" ` +
+									`data-name="${tplObj.name}" ` +
+									`cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r * 1.5}" />`;
 						if(systems[i].capitalLvl === 1) {
-							this.markup.systems += `<circle class="system-decoration ${(tplObj.faction + ' ' + tplObj.additionalClasses).trim()}"
-										data-name="${tplObj.name}"
-										cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r * 2}" />\n`;
+							this.markup.systems += `\n\t\t<circle class="system-decoration ${(tplObj.faction + ' ' + tplObj.additionalClasses).trim()}" ` +
+										`data-name="${tplObj.name}" ` +
+										`cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r * 2}" />`;
 						}
 					}
-					this.markup.systems += `<circle class="system ${tplObj.faction} ${tplObj.additionalClasses.trim()}"
-								data-name="${tplObj.name}"
-								cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r}"
-								style="fill: ${tplObj.fill}" />\n`;
+					this.markup.systems += `\n\t\t<circle class="system ${tplObj.faction} ${tplObj.additionalClasses.trim()}" ` +
+								`data-name="${tplObj.name}" ` +
+								`cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r}" ` +
+								`style="fill: ${tplObj.fill}" />`;
 					if(systems[i].capitalLvl > 0) {
-						this.markup.systems += `<circle class="system-decoration ${(tplObj.faction + ' ' + tplObj.additionalClasses).trim()}"
-									data-name="${tplObj.name}"
-									cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r * .15}" />\n`;
+						this.markup.systems += `\n\t\t<circle class="system-decoration ${(tplObj.faction + ' ' + tplObj.additionalClasses).trim()}" ` +
+									`data-name="${tplObj.name}" ` +
+									`cx="${tplObj.x}" cy="${tplObj.y}" r="${tplObj.r * .15}" />`;
 					}
 				}
 
@@ -857,10 +867,10 @@ ${origin.x} ${origin.y} @private
 						tplObj.labelClass += ' apocryphal';
 						tplObj.sup = '<tspan class="sup" dx="0.5" dy="-1">(apocryphal)</tspan>';
 					}*/
-					this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
-											class="system-label ${tplObj.labelClass}"
-											filter="url(#sLblShd)">
-								${tplObj.name}</text>\n`;
+					this.markup.systemLabels += `\n\t\t<text x="${tplObj.x}" y="${tplObj.y}" ` +
+											`class="system-label ${tplObj.labelClass}" ` +
+											`${filter}>` +
+											`${tplObj.name}</text>`;
 					/*this.markup.systemLabels += `<rect x="${tplObj.x}" y="${-systems[i].label.y - systems[i].label.h}"
 					 					width="${systems[i].label.w}" height="${systems[i].label.h}"
 										style="fill: none; stroke: #f00; stroke-width: .25" />`*/
@@ -868,9 +878,9 @@ ${origin.x} ${origin.y} @private
 					if(systems[i].label.additions && systems[i].label.additions.length > 0) {
 						tplObj.x = (systems[i].label.x + minorLabelDelta.x).toFixed(3);
 						tplObj.y = (-systems[i].label.y + minorLabelDelta.y).toFixed(3); // TODO
-						this.markup.systemLabels += `<text x="${tplObj.x}" y="${tplObj.y}"
-							filter="url(#sLblShd)"
-							class="system-label additions ${tplObj.labelClass}">`;
+						this.markup.systemLabels += `\n\t\t<text x="${tplObj.x}" y="${tplObj.y}" `+
+							`${filter} ` +
+							`class="system-label additions ${tplObj.labelClass}">`;
 						for(var lai = 0; lai < systems[i].label.additions.length; lai++) {
 							tplObj.y = (-baseline + (lai+1)*(1.5) + minorLabelDelta.y).toFixed(3); // TODO
 							tplObj.aTxt = systems[i].label.additions[lai].text;
@@ -1130,6 +1140,23 @@ ${origin.x} ${origin.y} @private
 	};
 
 	/**
+	 * Renders the title
+	 * @private
+	 */
+	SvgWriter.prototype.renderTitle = function (settings) {
+		if (!settings.displayTitle) { return; }
+		let x = 0;
+		let y = 0;
+		if (settings.custom && settings.custom.titlePosition) {
+			x = settings.custom.titlePosition.x === undefined ? 0: settings.custom.titlePosition.x;
+			y = settings.custom.titlePosition.y === undefined ? 0: settings.custom.titlePosition.y;
+		}
+		this.markup.title += `\n\t\t<g transform="translate(${x}, ${y})">` +
+			`\n\t\t\t<text x="0" y="0" style="font-weight: bold">${settings.displayTitle}</text>` +
+			`\n\t\t</g>`;
+	}
+
+	/**
 	 * Renders the scale help.
 	 * @private
 	 */
@@ -1139,8 +1166,8 @@ ${origin.x} ${origin.y} @private
 			y: 10 / pxPerLy
 		};
 		var tplObj = {
-			tX  : viewRect.x + scaleMargin.x,
-			tY  : -viewRect.y - 1.5 - scaleMargin.y,
+			tX  : scaleHelpSettings.tX !== undefined ? scaleHelpSettings.tX : viewRect.x + scaleMargin.x,
+			tY  : scaleHelpSettings.tY !== undefined ? scaleHelpSettings.tY : -viewRect.y - 1.5 - scaleMargin.y,
 			t10 : 10 - 1.365,
 			t20 : 20 - 1.365,
 			t30 : 30 - 1.365,
@@ -1157,16 +1184,16 @@ ${origin.x} ${origin.y} @private
 		}
 		scaleHelpSettings.max = scaleHelpSettings.max || 50;
 		scaleHelpSettings.step = scaleHelpSettings.step || 10;
-		this.markup.scaleHelp = `<g transform="translate(${tplObj.tX}, ${tplObj.tY})">`;
+		this.markup.scaleHelp = `\n\t\t<g transform="translate(${tplObj.tX}, ${tplObj.tY})">`;
 		for(var i = 0, ly = 0; ly <= scaleHelpSettings.max; i++, ly += scaleHelpSettings.step) {
 			if(ly < scaleHelpSettings.max) {
-				this.markup.scaleHelp += `<rect x="${ly}" y="0" width="${scaleHelpSettings.step}" height="1.5" class="${cssClasses[i%2]}" />`;
+				this.markup.scaleHelp += `\n\t\t\t<rect x="${ly}" y="0" width="${scaleHelpSettings.step}" height="1.5" class="${cssClasses[i%2]}" />`;
 			}
-			this.markup.scaleHelp += `<text x="${ly}" y="-1" text-anchor="middle">${ly}</text>`;
+			this.markup.scaleHelp += `\n\t\t\t<text x="${ly}" y="-1" text-anchor="middle">${ly}</text>`;
 		}
-		this.markup.scaleHelp += `<rect x="0" y="0" width="${scaleHelpSettings.max}" height="1.5" class="frame" />`;
-		this.markup.scaleHelp += `<text x="${scaleHelpSettings.max + 1}" y="1.85">LY</text>`
-		this.markup.scaleHelp += `</g>\n`;
+		this.markup.scaleHelp += `\n\t\t\t<rect x="0" y="0" width="${scaleHelpSettings.max}" height="1.5" class="frame" />`;
+		this.markup.scaleHelp += `\n\t\t\t<text x="${scaleHelpSettings.max + 1}" y="1.85">LY</text>`
+		this.markup.scaleHelp += `\n\t\t</g>`;
 	};
 
 	/**

@@ -1,5 +1,6 @@
 'use strict';
 var fs = require('fs');
+var path = require('path');
 var Logger = require('./Logger.js');
 var StupidLogger = require('./StupidLogger.js');
 var LogRenderer = require('./LogRenderer.js');
@@ -12,7 +13,13 @@ var NebulaRandomizer = require('./NebulaRandomizer.js');
 var LabelManager = require('./LabelManager.js');
 var SvgWriter = require('./SvgWriter.js');
 
-var main = function () {
+var createNeighborhoodImage = function (year, systemNameSubstring) {
+    console.log(`----------`);
+    console.log(
+        `Generating interstellar neighborhood map(s), selected year: ${year || 'none'}` +
+        (systemNameSubstring ? `, selected (partial) system name: "${systemNameSubstring}"` : '')
+    );
+    console.log(`----------`);
     // initialize objects
     // the logger and log renderer just hog memory
     // TODO make the logger smarter (flush at regular intervals to keep memory usage in check)
@@ -33,7 +40,7 @@ var main = function () {
     var clampedSystems;
 	var clampedBorders, minimapBorders;
     var clampedNebulae, minimapNebulae;
-    var curSys, curAff, curP;
+    var curSys, curAff, curBorderAff, curP;
     var systemRadius = 1;
     var labelDist = 0.5;
     var tmpIdx;
@@ -52,6 +59,24 @@ var main = function () {
 
 	// read label settings from the config file
 	reader.readLabelConfig();
+
+    // throw error if requested year doesn't exist
+    if (year !== undefined && !reader.eras.map((era) => era.year).includes(year)) {
+        throw new Error(`Year "${year}" could not be found in the data set. Aborting.`);
+    }
+
+    var systemImagesToGenerate;
+    if (!!systemNameSubstring) {
+        systemImagesToGenerate = [];
+        reader.systems.forEach((system) => {
+            if (system.name.toLowerCase().includes(systemNameSubstring)) {
+                systemImagesToGenerate.push(system.name);
+            }
+        });
+        if (systemImagesToGenerate.length === 0) {
+            throw new Error(`No systems could be found for search string "${systemNameSubstring}". Aborting.`);
+        }
+    }
 
     /*
     // image dimensions in pixels
@@ -115,14 +140,28 @@ var main = function () {
     // randomize nebulae
     nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
 
-    for(var fsi = 0; fsi < reader.systems.length; fsi++) {// reader.systems.length; fsi++) {
+    // var systemImagesToGenerate = ['Ilion'];
+    // var erasToGenerate;
+    var erasToGenerate = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 24, 25, 26, 30, 31, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42, 43];
+    // var erasToGenerate = [reader.eras.length - 2];
+    var startSystemIndex = 0;
+
+    for(var fsi = startSystemIndex; fsi < reader.systems.length; fsi++) {// reader.systems.length; fsi++) {
         focusedSystem = reader.systems[fsi];
         focusedSystemName = focusedSystem.name;
-        focusedSystemArticleName = focusedSystem.sarnaLink.split('/').pop();
+        focusedSystemArticleName = focusedSystem.sarnaLink?.split('/').pop() || reader.systems[fsi].name;
+        if (!focusedSystem.sarnaLink) {
+            console.warn(`The "${focusedSystemName}" system does not have a Sarna article yet`);
+        }
+
+        if (!!systemImagesToGenerate && systemImagesToGenerate.length > 0 && !systemImagesToGenerate.includes(focusedSystemName)) {
+            continue;
+        }
+
         logger.log('Starting on ' + focusedSystemName);
 
         viewRect.x = focusedSystem.x - viewRect.w * .5;
-        viewRect.y = focusedSystem.y - viewRect.h * .5 - 15; // TODO 10 LY off because map is not rectangular?
+        viewRect.y = focusedSystem.y - viewRect.h * .5 - 15; // TODO 10 LY off because map is not a square?
         minimapViewRect.x = focusedSystem.x - minimapViewRect.w * .5;
         minimapViewRect.y = focusedSystem.y - minimapViewRect.h * .5;
 
@@ -132,23 +171,29 @@ var main = function () {
 
         // for each era ...
     	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
-            var erasToGenerate = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 24, 25, 26, 30, 31, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42];
-			if(
-                //eraI !== 16 // 3025
-                //eraI !== 42 // 3151
-                !erasToGenerate.includes(eraI)
-			) {
-				continue;
-			}
+			// if(
+            //     //eraI !== 16 // 3025
+            //     //eraI !== 42 // 3151
+            //     !!erasToGenerate && erasToGenerate.length > 0 && !erasToGenerate.includes(eraI)
+			// ) {
+			// 	continue;
+			// }
     		curEra = reader.eras[eraI];
+            if (year !== undefined && curEra.year !== year) {
+                continue;
+            }
+
     		reservedPoints = [];
     		voronoiSystems = [];
 
     		for(var i = 0; i < reader.systems.length; i++) {
     			curSys = reader.systems[i];
                 curAff = '';
+                const borderAffiliation = curSys.affiliations[eraI].match(/^[AIU]\s*\(([^)]+)\)/);
                 if(curSys.affiliations[eraI].search(/^D\s*\(/g) >= 0) {
                     curAff = curSys.affiliations[eraI];
+                } else if (curSys.affiliations[eraI].match(/^\w+\s*\([^)]+\)/)) {
+                    curAff = curSys.affiliations[eraI].split('(')[0].trim();
                 } else {
                     curAff = curSys.affiliations[eraI].split(',')[0].trim();
                 }
@@ -158,9 +203,14 @@ var main = function () {
                 } else {
                     reader.systems[i].hidden = false;
                 }
+                if (borderAffiliation && borderAffiliation[1] !== 'H') {
+                    curBorderAff = borderAffiliation[1];
+                } else {
+                    curBorderAff = curAff;
+                }
     			reader.systems[i].col = curAff;
                 reader.systems[i].capitalLvl = curSys.capitalLvls[eraI];
-    			if(curAff === '' || curAff === 'U' || curAff === 'A' || reader.systems[i].hidden) {
+    			if(curBorderAff === '' || curBorderAff === 'U' || curBorderAff === 'A' || reader.systems[i].hidden) {
     		          continue;
     			}
     			if(curSys.status.toLowerCase() === 'apocryphal') {
@@ -170,7 +220,7 @@ var main = function () {
     			voronoiSystems.push({
     				x: curSys.x,
     				y: curSys.y,
-    				col : curAff,
+                    col: curBorderAff,
     				name : curSys.names[eraI]
     			});
     		}
@@ -285,4 +335,4 @@ var main = function () {
     //logRenderer.render();
 };
 
-main();
+module.exports = { createNeighborhoodImage };

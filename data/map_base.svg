@@ -82,6 +82,7 @@
 		text.system-label.additions { fill: #666; font-size: 1.5px; }
 		text.system-label.additions tspan.apocryphal { fill: #c00; }
 		text.system-label.apocryphal tspan.sup { fill: #c00 }
+		.title text { font-size: 4px; }
 		g.border-labels text { alignment-baseline: middle; font-size: 2px; font-style: italic; font-weight: bold; text-rendering: geometricPrecision; }
 		path.label-connector { fill: none; stroke: #000; stroke-width: 0.25; }
 		.minimap-outer text { font-size: 60px; }

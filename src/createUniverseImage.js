@@ -1,4 +1,5 @@
 var fs = require('fs');
+var path = require('path');
 var Logger = require('./Logger.js');
 var LogRenderer = require('./LogRenderer.js');
 var SystemsReader = require('./SystemsReader.js');
@@ -10,10 +11,18 @@ var LabelManager = require('./LabelManager.js');
 var Utils = require('./Utils.js');
 var SvgWriter = require('./SvgWriter.js');
 
-var main = function () {
+var createUniverseImage = function (year, logLevel = Logger.MESSAGE) {
+    console.log(`----------`);
+    console.log(`Generating known universe map(s), selected year: `, year || 'none');
+    console.log(`----------`);
+
     // initialize objects
-    var logger = new Logger();
-    var logRenderer = new LogRenderer(logger, '../data/script_log.html', '../data/log.tpl.html');
+    var logger = new Logger(logLevel);
+    var logRenderer = new LogRenderer(
+        logger,
+        path.join(__dirname, '..', 'data', 'script_log.html'),
+        path.join(__dirname, '..', 'data', 'log.tpl.html')
+    );
     var reader = new SystemsReader(logger);
 	var writer = new SvgWriter(logger);
 
@@ -32,6 +41,11 @@ var main = function () {
     // read label settings from the config file
     reader.readLabelConfig();
 
+    // throw error if requested year doesn't exist
+    if (year !== undefined && !reader.eras.map((era) => era.year).includes(year)) {
+        throw new Error(`Year "${year}" could not be found in the data set. Aborting.`);
+    }
+
 	var years = ['3025', '3030', '3052'];
     var reservedPoints;
     var voronoiSystems;
@@ -40,21 +54,37 @@ var main = function () {
     var clampedNebulae;
     var clampedBorders;
 	var curYear;
-    var curSys, curAff, curP;
+    var curSys, curAff, curBorderAff, curP;
     var systemRadius = 1;
     var labelDist = 0.5;
 
 
     // the visible rectangle, in map space:
-	var viewRect = {
-		x: -2000,
-		y: -2000,
-		w: 4000,
-		h: 4000
-	};
-    var dimensions = {
+    var viewRect = {
+        x: -2000,
+        y: -2000,
         w: 4000,
-        h: 4000
+        h: 4000,
+    };
+	// var viewRect = {
+	// 	x: -580,
+	// 	y: -600,
+	// 	w: 1400,
+	// 	h: 1200
+	// };
+    // var dimensions = {
+    //     w: 1390,
+    //     h: 1200
+    // };
+    //var viewRect = {
+	//	x: -650,
+	//	y: -570,
+	//	w: 1450,
+	//	h: 1200
+	//};
+    var dimensions = {
+        w: viewRect.w,
+        h: viewRect.h
     };
     var minimapViewRect = {
         x: -100,
@@ -84,25 +114,36 @@ var main = function () {
 
      // for each era ...
      for(var eraI = 0; eraI < reader.eras.length; eraI++) {
-        var erasToGenerate = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 24, 25, 26, 30, 31, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42];
-        if(
-            //eraI !== 16 // 3025
-            //eraI !== 42 // 3151
-            !erasToGenerate.includes(eraI)
-        ) {
+        curEra = reader.eras[eraI];
+        if (year !== undefined && curEra.year !== year) {
             continue;
         }
-        curEra = reader.eras[eraI];
+
+        // var erasToGenerate = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 24, 25, 26, 30, 31, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42];
+        // var erasToGenerate = [43];
+        // if(
+        //     //eraI !== 16 // 3025
+        //     //eraI !== 42 // 3151
+        //     !erasToGenerate.includes(eraI)
+        // ) {
+        //     continue;
+        // }
+                
         reservedPoints = [];
         voronoiSystems = [];
 
         console.log('starting on ', curEra);
 
+        // reader.systems = reader.systems.filter((system) => system.affiliations[eraI] && system.affiliations[eraI] !== 'U' && system.affiliations[eraI] !== 'A' && !system.hidden);
+
         for(var i = 0; i < reader.systems.length; i++) {
             curSys = reader.systems[i];
             curAff = '';
+            const borderAffiliation = curSys.affiliations[eraI].match(/^[AIU]\s*\(([^)]+)\)/);
             if(curSys.affiliations[eraI].search(/^D\s*\(/g) >= 0) {
                 curAff = curSys.affiliations[eraI];
+            } else if (curSys.affiliations[eraI].match(/^\w+\s*\([^)]+\)/)) {
+                curAff = curSys.affiliations[eraI].split('(')[0].trim();
             } else {
                 curAff = curSys.affiliations[eraI].split(',')[0].trim();
             }
@@ -112,9 +153,14 @@ var main = function () {
             } else {
                 reader.systems[i].hidden = false;
             }
+            if (borderAffiliation && borderAffiliation[1] !== 'H') {
+                curBorderAff = borderAffiliation[1];
+            } else {
+                curBorderAff = curAff;
+            }
             reader.systems[i].col = curAff;
             reader.systems[i].capitalLvl = curSys.capitalLvls[eraI];
-            if(curAff === '' || curAff === 'U' || curAff === 'A' || reader.systems[i].hidden) {
+            if(curBorderAff === '' || curBorderAff === 'U' || curBorderAff === 'A' || reader.systems[i].hidden) {
                   continue;
             }
             if(curSys.status.toLowerCase() === 'apocryphal') {
@@ -124,7 +170,7 @@ var main = function () {
             voronoiSystems.push({
                 x: curSys.x,
                 y: curSys.y,
-                col : curAff,
+                col: curBorderAff,
                 name : curSys.names[eraI]
             });
         }
@@ -181,11 +227,12 @@ var main = function () {
 
         // create an svg with a universe picture
         var safeEraName = (curEra.year + '').replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
-		var filename = ('BT_universe_' + safeEraName + '.svg').replace(/[\+\s\(\)]/g, '_');
-		var dir = __dirname + '/output/universe';
+		var filename = ('Sarna_BT_Known_Universe_' + safeEraName + '.svg').replace(/[\+\s\(\)]/g, '_');
+        var dir = path.join(__dirname, '..', 'output', 'universe');
         const minimapSettings = {};
         const jumpRings = [];
-		writer.writeSvg({
+        const docTitle = `BattleTech: Known Universe, Year ${curEra.year} (${Utils.htmlEncode(curEra.name)})`;
+        writer.writeSvg({
 			renderFactions : true,
 			renderBorderLabels : true,
 			renderSystems : true,
@@ -196,9 +243,26 @@ var main = function () {
 			renderNebulaeLabels : true,
 			renderJumpRings : false,
 			renderMinimap : false,
-			renderScaleHelp : true,
-			renderLogo : true
-		}, 'BT', dir, filename, dimensions, viewRect, curEra, labelMgr.objects, labelMgr.factions, clampedBorders, borderLabeler.polylines, labelMgr.ellipticalObjects, {}, minimapSettings, jumpRings);
+			renderHelp : true,
+			renderLogo : true,
+            displayTitle: docTitle,
+            custom: {
+                docTitle,
+                logoOrigin: {
+                    x: -4434,
+                    y: -4434.94,
+                },
+                titlePosition: {
+                    x: -1971,
+                    y: -1992,
+                },
+                noShadows: true,
+            }
+		}, 'BT', dir, filename, dimensions, viewRect, curEra, labelMgr.objects, labelMgr.factions, clampedBorders, borderLabeler.polylines, labelMgr.ellipticalObjects, {
+            tX: -1970,
+            tY: -1982,
+            max: 100,
+        }, minimapSettings, jumpRings);
 
         // remove object references
         while(reservedPoints.length > 0) {
@@ -216,20 +280,20 @@ var main = function () {
     }
 
     // remove object references
-    while(clampedNebulae.length > 0) {
+    while(clampedNebulae && clampedNebulae.length > 0) {
         clampedNebulae[0].points = null;
         clampedNebulae[0].allPoints = null;
         clampedNebulae[0] = null;
         clampedNebulae.shift();
     }
     clampedNebulae = null;
-    while(minimapNebulae.length > 0) {
-        minimapNebulae[0].points = null;
-        minimapNebulae[0].allPoints = null;
-        minimapNebulae[0] = null;
-        minimapNebulae.shift();
-    }
-    minimapNebulae = null;
+    // while(minimapNebulae && minimapNebulae.length > 0) {
+    //     minimapNebulae[0].points = null;
+    //     minimapNebulae[0].allPoints = null;
+    //     minimapNebulae[0] = null;
+    //     minimapNebulae.shift();
+    // }
+    // minimapNebulae = null;
 
 
 	// for(var yi = 0; yi < years.length; yi++) {
@@ -299,4 +363,4 @@ var main = function () {
     // logRenderer.render();
 };
 
-main();
+module.exports = { createUniverseImage };
