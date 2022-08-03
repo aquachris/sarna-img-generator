@@ -89,23 +89,11 @@ var createInnerSphereImage = function (year, logLevel = Logger.MESSAGE) {
         if (year !== undefined && curEra.year !== year) {
             continue;
         }
-
-        // var erasToGenerate = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 24, 25, 26, 30, 31, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42, 43];
-        // //var erasToGenerate = [42];
-        // if(
-        //     //eraI !== 16 // 3025
-        //     //eraI !== 42 // 3151
-        //     !erasToGenerate.includes(eraI)
-        // ) {
-        //     continue;
-        // }
         
         reservedPoints = [];
         voronoiSystems = [];
 
         console.log('starting on ', curEra);
-
-        // reader.systems = reader.systems.filter((system) => system.affiliations[eraI] && system.affiliations[eraI] !== 'U' && system.affiliations[eraI] !== 'A' && !system.hidden);
 
         for(var i = 0; i < reader.systems.length; i++) {
             curSys = reader.systems[i];
@@ -118,9 +106,8 @@ var createInnerSphereImage = function (year, logLevel = Logger.MESSAGE) {
             } else {
                 curAff = curSys.affiliations[eraI].split(',')[0].trim();
             }
-            if((tmpIdx = curAff.search(/\(\s*H\s*\)/g)) >= 0) {
+            if(borderAffiliation && borderAffiliation[1] === 'H') {
                 reader.systems[i].hidden = true;
-                curAff = curAff.substr(0,tmpIdx).trim();
             } else {
                 reader.systems[i].hidden = false;
             }
@@ -144,36 +131,6 @@ var createInnerSphereImage = function (year, logLevel = Logger.MESSAGE) {
                 col: curBorderAff,
                 name : curSys.names[eraI]
             });
-
-            // curSys = reader.systems[i];
-            // curAff = '';
-            // const borderAffiliation = curSys.affiliations[eraI].match(/^[AIU]\s*\(([^)]+)\)/);
-            // if(curSys.affiliations[eraI].search(/^D\s*\(/g) >= 0) {
-            //     curAff = curSys.affiliations[eraI];
-            // } else {
-            //     curAff = curSys.affiliations[eraI].split(',')[0].trim();
-            // }
-            // if((tmpIdx = curAff.search(/\(\s*H\s*\)/g)) >= 0) {
-            //     reader.systems[i].hidden = true;
-            //     curAff = curAff.substr(0,tmpIdx).trim();
-            // } else {
-            //     reader.systems[i].hidden = false;
-            // }
-            // reader.systems[i].col = curAff;
-            // reader.systems[i].capitalLvl = curSys.capitalLvls[eraI];
-            // if(curAff === '' || curAff === 'U' || curAff === 'A' || reader.systems[i].hidden) {
-            //       continue;
-            // }
-            // if(curSys.status.toLowerCase() === 'apocryphal') {
-            //     continue;
-            // }
-            // reservedPoints.push({x: curSys.x, y: curSys.y, col: curAff});
-            // voronoiSystems.push({
-            //     x: curSys.x,
-            //     y: curSys.y,
-            //     col : curAff,
-            //     name : curSys.names[eraI]
-            // });
         }
         pDisc.replaceReservedPoints(reservedPoints);
 
