@@ -69,7 +69,7 @@ var createNeighborhoodImage = function (year, systemNameSubstring) {
     if (!!systemNameSubstring) {
         systemImagesToGenerate = [];
         reader.systems.forEach((system) => {
-            if (system.name.toLowerCase().includes(systemNameSubstring)) {
+            if (system.name.toLowerCase().includes(systemNameSubstring.toLowerCase())) {
                 systemImagesToGenerate.push(system.name);
             }
         });
@@ -77,33 +77,6 @@ var createNeighborhoodImage = function (year, systemNameSubstring) {
             throw new Error(`No systems could be found for search string "${systemNameSubstring}". Aborting.`);
         }
     }
-
-    /*
-    // image dimensions in pixels
-    var dimensions = {
-        w: 1000,
-        h: 1000
-    };
-
-    // the visible rectangle, in map space:
-	var viewRect = {
-        x: -70,
-        y: -70,
-        w: 140,
-        h: 140
-	};
-
-	var minimapDimensions = {
-		w: 400,
-		h: 200
-	};
-	var minimapViewRect = {
-		x: -600,
-		y: -300,
-		w: 1200,
-		h: 600
-	};
-    */
 
     // image dimensions in pixels
     var dimensions = {
@@ -140,10 +113,7 @@ var createNeighborhoodImage = function (year, systemNameSubstring) {
     // randomize nebulae
     nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
 
-    // var systemImagesToGenerate = ['Ilion'];
-    // var erasToGenerate;
     var erasToGenerate = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 24, 25, 26, 30, 31, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42, 43];
-    // var erasToGenerate = [reader.eras.length - 2];
     var startSystemIndex = 0;
 
     for(var fsi = startSystemIndex; fsi < reader.systems.length; fsi++) {// reader.systems.length; fsi++) {
@@ -161,7 +131,7 @@ var createNeighborhoodImage = function (year, systemNameSubstring) {
         logger.log('Starting on ' + focusedSystemName);
 
         viewRect.x = focusedSystem.x - viewRect.w * .5;
-        viewRect.y = focusedSystem.y - viewRect.h * .5 - 15; // TODO 10 LY off because map is not a square?
+        viewRect.y = focusedSystem.y - viewRect.h * .5 - 15; // TODO 15 LY off because map is not a square?
         minimapViewRect.x = focusedSystem.x - minimapViewRect.w * .5;
         minimapViewRect.y = focusedSystem.y - minimapViewRect.h * .5;
 
@@ -171,13 +141,6 @@ var createNeighborhoodImage = function (year, systemNameSubstring) {
 
         // for each era ...
     	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
-			// if(
-            //     //eraI !== 16 // 3025
-            //     //eraI !== 42 // 3151
-            //     !!erasToGenerate && erasToGenerate.length > 0 && !erasToGenerate.includes(eraI)
-			// ) {
-			// 	continue;
-			// }
     		curEra = reader.eras[eraI];
             if (year !== undefined && curEra.year !== year) {
                 continue;
@@ -197,9 +160,8 @@ var createNeighborhoodImage = function (year, systemNameSubstring) {
                 } else {
                     curAff = curSys.affiliations[eraI].split(',')[0].trim();
                 }
-                if((tmpIdx = curAff.search(/\(\s*H\s*\)/g)) >= 0) {
+                if(borderAffiliation && borderAffiliation[1] === 'H') {
                     reader.systems[i].hidden = true;
-                    curAff = curAff.substr(0,tmpIdx).trim();
                 } else {
                     reader.systems[i].hidden = false;
                 }
@@ -207,6 +169,9 @@ var createNeighborhoodImage = function (year, systemNameSubstring) {
                     curBorderAff = borderAffiliation[1];
                 } else {
                     curBorderAff = curAff;
+                }
+                if (curSys.name.toLowerCase().includes('regis')) {
+                    console.log(curSys.name.toLowerCase(), curSys.hidden, curSys.affiliations[eraI], curAff, curBorderAff);
                 }
     			reader.systems[i].col = curAff;
                 reader.systems[i].capitalLvl = curSys.capitalLvls[eraI];
