@@ -170,9 +170,6 @@ var createNeighborhoodImage = function (year, systemNameSubstring) {
                 } else {
                     curBorderAff = curAff;
                 }
-                if (curSys.name.toLowerCase().includes('regis')) {
-                    console.log(curSys.name.toLowerCase(), curSys.hidden, curSys.affiliations[eraI], curAff, curBorderAff);
-                }
     			reader.systems[i].col = curAff;
                 reader.systems[i].capitalLvl = curSys.capitalLvls[eraI];
     			if(curBorderAff === '' || curBorderAff === 'U' || curBorderAff === 'A' || reader.systems[i].hidden) {
