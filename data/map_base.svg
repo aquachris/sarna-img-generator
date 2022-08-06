@@ -4,21 +4,10 @@
 	xmlns="http://www.w3.org/2000/svg"
 	xmlns:xlink="http://www.w3.org/1999/xlink"
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-	xmlns:info="https://www.gruese.de/sarna/info-ns"
 	version="1.1"
 	viewBox="{VIEWBOX}"
 	width="{WIDTH}px"
 	height="{HEIGHT}px">
-
-	<metadata>
-		<rdf:RDF>
-			<rdf:description rdf:about="">
-				<info:title>{META_TITLE}</info:title>
-				<info:version>{META_VERSION}</info:version>
-				<info:created>{META_CREATED}</info:created>
-			</rdf:description>
-		</rdf:RDF>
-	</metadata>
 
 	<defs>
 		<filter id="sLblShd">
