@@ -50,10 +50,23 @@ module.exports = (function () {
 	/**
 	 * Create a system neighborhood SVG file.
 	 */
-	SvgWriter.prototype.writeNeighborhoodSvg = function (articleName, name, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, minimapSettings, jumpRings) {
+	SvgWriter.prototype.writeNeighborhoodSvg = function (
+		articleName,
+		name,
+		dimensions,
+		viewRect,
+		era,
+		systems,
+		factions,
+		borders,
+		borderLabelLines,
+		nebulae,
+		minimapSettings,
+		jumpRings
+	) {
 		//var safeEraName = era.year + '_' + era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
 		var safeEraName = (era.year + '').replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
-		var dir = path.join(this.baseDir, '..', 'output', 'neighborhood', safeEraName).replace(/[\+\s\(\)]/g, '_');
+		var dir = path.join(this.baseDir, '..', 'output', 'neighborhood', safeEraName); //.replace(/[\+\s\(\)]/g, '_');
 		//var filename = (articleName.replace(/\s/g, '_')+'_' + safeEraName + '.svg').replace(/[\+\s\(\)]/g, '_');
 		var filename = (articleName.replace(/\s/g, '_')+'_' + safeEraName + '.svg').replace(/\s+/g, '_');
 		var scaleHelpSettings;
@@ -81,7 +94,7 @@ module.exports = (function () {
 		var safeEraName = (era.year + '').replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
 		var filename = (name.replace(/\s/g, '_')+'_' + safeEraName + '.svg').replace(/[\+\s\(\)]/g, '_');
 		dir = dir || safeEraName;
-		dir = path.join(this.baseDir, '/output/', dir).replace(/[\+\s\(\)]/g, '_');
+		dir = path.join(this.baseDir, 'output', dir); //.replace(/[\+\s\(\)]/g, '_');
 		this.writeSvg({
 			renderFactions : true,
 			renderBorderLabels : true,
@@ -115,7 +128,23 @@ module.exports = (function () {
 	 * @param minimapSettings {Object} Settings for an optional minimap (dimensions, viewRect and borders)
 	 * @param jumpRings {Array} List of jump ring radii
 	 */
-	SvgWriter.prototype.writeSvg = function (settings, name, dir, filename, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, scaleHelpSettings, minimapSettings, jumpRings) {
+	SvgWriter.prototype.writeSvg = function (
+		settings,
+		name,
+		dir,
+		filename,
+		dimensions,
+		viewRect,
+		era,
+		systems,
+		factions,
+		borders,
+		borderLabelLines,
+		nebulae,
+		scaleHelpSettings,
+		minimapSettings,
+		jumpRings
+	) {
 		var tpl = fs.readFileSync(path.join(this.baseDir, '/../data/map_base.svg'), { encoding: 'utf-8' });
 		var viewBox;
 		var elementsStr;
@@ -216,8 +245,9 @@ module.exports = (function () {
 		if(!fs.existsSync(dir)) {
 			fs.mkdirSync(dir, { recursive: true });
 		}
-		fs.writeFileSync(dir + '/' + filename, tpl, { encoding: 'utf8'});
-		this.logger.log('file "' + dir + '/' + filename + '" written');
+		const filePath = path.join(dir, filename);
+		fs.writeFileSync(filePath, tpl, { encoding: 'utf8'});
+		this.logger.log('file "' + filePath + '" written');
 	};
 
 	/**
