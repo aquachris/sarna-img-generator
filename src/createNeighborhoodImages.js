@@ -144,6 +144,8 @@ var createNeighborhoodImage = function (year, systemNameSubstring) {
     		curEra = reader.eras[eraI];
             if (year !== undefined && curEra.year !== year) {
                 continue;
+            } else if (year === undefined && !erasToGenerate.includes(eraI)) {
+                continue;
             }
 
     		reservedPoints = [];

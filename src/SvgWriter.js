@@ -65,7 +65,7 @@ module.exports = (function () {
 		jumpRings
 	) {
 		//var safeEraName = era.year + '_' + era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
-		var safeEraName = (era.year + '').replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
+		var safeEraName = (era.year + '').replace(/[\\\/]/g, '_').replace(/[\:]/g, '').replace(/[a-z]+$/, '');
 		var dir = path.join(this.baseDir, '..', 'output', 'neighborhood', safeEraName); //.replace(/[\+\s\(\)]/g, '_');
 		//var filename = (articleName.replace(/\s/g, '_')+'_' + safeEraName + '.svg').replace(/[\+\s\(\)]/g, '_');
 		var filename = (articleName.replace(/\s/g, '_')+'_' + safeEraName + '.svg').replace(/\s+/g, '_');
@@ -91,7 +91,7 @@ module.exports = (function () {
 	 */
 	SvgWriter.prototype.writeRegionSvg = function (dir, name, dimensions, viewRect, era, systems, factions, borders, borderLabelLines, nebulae, scaleHelpSettings, minimapSettings, jumpRings) {
 		//var safeEraName = era.year + '_' + era.name.replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
-		var safeEraName = (era.year + '').replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
+		var safeEraName = (era.year + '').replace(/[\\\/]/g, '_').replace(/[\:]/g, '').replace(/[a-z]+$/, '');
 		var filename = (name.replace(/\s/g, '_')+'_' + safeEraName + '.svg').replace(/[\+\s\(\)]/g, '_');
 		dir = dir || safeEraName;
 		dir = path.join(this.baseDir, 'output', dir); //.replace(/[\+\s\(\)]/g, '_');
