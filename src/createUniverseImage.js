@@ -83,11 +83,14 @@ var createUniverseImage = function (year, logLevel = Logger.MESSAGE) {
     // randomize nebulae
     var nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
 
+    var erasToGenerate = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 24, 25, 26, 30, 31, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42, 43];
 
      // for each era ...
      for(var eraI = 0; eraI < reader.eras.length; eraI++) {
         curEra = reader.eras[eraI];
         if (year !== undefined && curEra.year !== year) {
+            continue;
+        } else if (year === undefined && !erasToGenerate.includes(eraI)) {
             continue;
         }
 
@@ -185,12 +188,12 @@ var createUniverseImage = function (year, logLevel = Logger.MESSAGE) {
         borderLabeler.generateLabels(clampedBorders);
 
         // create an svg with a universe picture
-        var safeEraName = (curEra.year + '').replace(/[\\\/]/g, '_').replace(/[\:]/g, '');
+        var safeEraName = (curEra.year + '').replace(/[\\\/]/g, '_').replace(/[\:]/g, '').replace(/[a-z]+$/, '');
 		var filename = ('Sarna_BT_Known_Universe_' + safeEraName + '.svg').replace(/[\+\s\(\)]/g, '_');
         var dir = path.join(__dirname, '..', 'output', 'universe');
         const minimapSettings = {};
         const jumpRings = [];
-        const docTitle = `BattleTech: Known Universe, Year ${curEra.year} (${Utils.htmlEncode(curEra.name)})`;
+        const docTitle = `BattleTech: Known Universe, Year ${curEra.year.replace(/[a-z]+$/, '')} (${Utils.htmlEncode(curEra.name)})`;
         writer.writeSvg({
 			renderFactions : true,
 			renderBorderLabels : true,
