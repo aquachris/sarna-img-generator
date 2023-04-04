@@ -64,6 +64,7 @@
 		g.nebulae path { fill: url(#nebula-fill); stroke: rgb(0, 0, 0); stroke-opacity: .5; stroke-width: .25 }
 		text.nebulae-label { font-size: 2.5px; fill: #999; }
 		text.nebulae-label.large { font-size: 4px; fill: #999; }
+		g.system-connections { stroke-width: 0.1; stroke: #44444466; }
 		text.system-label { font-size: 2.5px }
 		text.system-label.abandoned { fill: #555; font-style: italic; }
 		text.system-label.undiscovered { fill: #555; font-style: italic; }

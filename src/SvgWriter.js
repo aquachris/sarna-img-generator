@@ -32,6 +32,7 @@ module.exports = (function () {
 			nebulae : '',
 			nebulaeLabels : '',
 			clusters : '',
+			systemConnections: '',
 			systems : '',
 			systemLabels : '',
 			minimap : '',
@@ -178,6 +179,9 @@ module.exports = (function () {
 		// render nebulae
 		this.renderNebulae(settings, nebulae);
 
+		// render system connections
+		this.renderSystemConnections(settings, systems);
+
 		// render systems and clusters
 		this.renderSystemsAndClusters(settings, factions, systems);
 
@@ -202,6 +206,7 @@ module.exports = (function () {
 		// concatenate markup
 		elementsStr = '';
 		elementsStr += this.markup.borders ? `<g class="borders">${this.markup.borders}\n\t</g>\n` : '';
+		elementsStr += this.markup.systemConnections ? `\t<g class="system-connections">${this.markup.systemConnections}\n\t</g>\n` : '';
 		elementsStr += this.markup.borderLabels ? `\t<g class="border-labels">${this.markup.borderLabels}\n\t</g>\n` : '';
 		elementsStr += this.markup.clusters ? `\t<g class="clusters">${this.markup.clusters}\n\t</g>\n` : '';
 		elementsStr += this.markup.nebulae ? `\t<g class="nebulae">${this.markup.nebulae}\n\t</g>\n` : '';
@@ -723,6 +728,26 @@ ${origin.x} ${origin.y} @private
 			}
 		}
 	};
+
+	/**
+	 * Renders connection lines between systems
+	 * @private
+	 */
+	SvgWriter.prototype.renderSystemConnections = function (settings, systems) {
+		systems.forEach((system, systemIndex) => {
+			for (let i = systemIndex + 1; i < systems.length; i++) {
+				const neighbor = systems[i];
+				if (system.centerX - neighbor.centerX <= 30 
+					&& system.centerY - neighbor.centerY <= 30
+					&& Utils.distance(system.centerX, system.centerY, neighbor.centerX, neighbor.centerY) <= 30
+					&& system.col !== 'A' && system.col !== 'U' && neighbor.col !== 'A' && neighbor.col !== 'U') {
+						this.markup.systemConnections += 
+						`\n\t\t<path d="M${system.centerX.toFixed(3)},${-system.centerY.toFixed(3)} `
+							+ `L${neighbor.centerX.toFixed(3)},${-neighbor.centerY.toFixed(3)}" />`;
+				}
+			}
+		});
+	}
 
 	/**
 	 * Renders systems and cluster objects.
