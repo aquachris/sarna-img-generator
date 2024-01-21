@@ -191,8 +191,8 @@ var createInnerSphereImage = function (year, logLevel = Logger.MESSAGE) {
         const jumpRings = [];
         const docTitle = `BattleTech: The Inner Sphere, Year ${curEra.year} (${Utils.htmlEncode(curEra.name)})`;
 		writer.writeSvg({
-			renderFactions : true,
-			renderBorderLabels : true,
+			renderFactions : false,
+			renderBorderLabels : false,
 			renderSystems : true,
 			renderSystemLabels : true,
 			renderClusters : true,
@@ -202,7 +202,7 @@ var createInnerSphereImage = function (year, logLevel = Logger.MESSAGE) {
 			renderJumpRings : false,
 			renderMinimap : false,
 			renderHelp : true,
-			renderLogo : true,
+			renderLogo : false,
             displayTitle: docTitle,
             custom: {
                 docTitle,

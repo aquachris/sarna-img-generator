@@ -192,8 +192,8 @@ var createUniverseImage = function (year, logLevel = Logger.MESSAGE) {
         const jumpRings = [];
         const docTitle = `BattleTech: Known Universe, Year ${curEra.year} (${Utils.htmlEncode(curEra.name)})`;
         writer.writeSvg({
-			renderFactions : true,
-			renderBorderLabels : true,
+			renderFactions : false,
+			renderBorderLabels : false,
 			renderSystems : true,
 			renderSystemLabels : true,
 			renderClusters : true,

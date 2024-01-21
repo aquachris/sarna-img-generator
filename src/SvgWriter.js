@@ -739,9 +739,16 @@ ${origin.x} ${origin.y} @private
 		const filter = settings.custom.noShadows ? '' : 'filter="url(#sLblShd)"';
 
 		for(var i = 0, len = systems.length; i < len; i++) {
-			if(systems[i].col === 'DUMMY') {
+			if(systems[i].col === 'DUMMY' || systems[i].col === 'U' || systems[i].col === 'A') {
 				continue;
 			}
+			// if (systems[i].col === 'DUMMY') {
+			// 	continue;
+			// }
+			systems[i].col = 'I';
+			systems[i].capitalLvl = systems[i].label.name === 'Sol' ? 1 : 0;
+			systems[i].label.additions = [];
+
 			fill = '#aaaaaa';
 			if(factions.hasOwnProperty(systems[i].col)) {
 				fill = factions[systems[i].col].color;
@@ -845,17 +852,17 @@ ${origin.x} ${origin.y} @private
 				if(systems[i].status.toLowerCase() === 'apocryphal') {
 					tplObj.additionalClasses += 'apocryphal';
 				}
-				switch(systems[i].capitalLvl) {
-					case 1:
-						tplObj.additionalClasses += ' faction-capital';
-						break;
-					case 2:
-						tplObj.additionalClasses += ' major-capital';
-						break;
-					case 3:
-						tplObj.additionalClasses += ' minor-capital';
-						break;
-				}
+				// switch(systems[i].capitalLvl) {
+				// 	case 1:
+				// 		tplObj.additionalClasses += ' faction-capital';
+				// 		break;
+				// 	case 2:
+				// 		tplObj.additionalClasses += ' major-capital';
+				// 		break;
+				// 	case 3:
+				// 		tplObj.additionalClasses += ' minor-capital';
+				// 		break;
+				// }
 				tplObj.additionalClasses = tplObj.additionalClasses.trim();
 				if(settings.renderSystems) {
 					if(systems[i].capitalLvl > 0 && systems[i].capitalLvl <= 2) {
