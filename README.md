@@ -32,7 +32,7 @@ This repository comes "batteries included", i.e. it includes a recent version of
 Note that this is a fixed location that, as of now, cannot be changed.
 
 If you want to use a new version of the SUCKit, do the following: 
-- Open the SUCKit in your browser (https://docs.google.com/spreadsheets/d/1x9bvFqSb4_or8JbvGj2LnezGkChWxEzRPf5FXvjonHE/edit#gid=1860678114)
+- Open the SUCKit in your browser (https://docs.google.com/spreadsheets/d/1uO6aZ20rfEcAZJ-nDRhCnaNUiCPemuoOOd67Zqi1MVM)
 - In the top menu, click on ``File`` > ``Download`` > ``.xlsx``
 - Locate the downloaded file, rename it to ``Systems By Era.xlsx`` and move it to the ``<script directory>/data/`` folder, replacing the existing file.
 
