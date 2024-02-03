@@ -3,6 +3,7 @@ const { hideBin } = require('yargs/helpers');
 const { createInnerSphereImage } = require('./createInnerSphereImage');
 const { createUniverseImage } = require('./createUniverseImage');
 const { createNeighborhoodImage } = require('./createNeighborhoodImages');
+const { createRegionImage } = require('./createRegionImage');
 
 yargs(hideBin(process.argv))
   .command('generate [type] [year] [system]', 'generate one or more maps', (yargs) => {
@@ -34,6 +35,9 @@ yargs(hideBin(process.argv))
           break;
         case 'neighborhood':
           createNeighborhoodImage(argv.year, argv.system);
+          break;
+        case 'region':
+          createRegionImage();
           break;
         default:
           throw new Error(`Cannot generate map images: Map type "${argv.type}" is unknown.`);

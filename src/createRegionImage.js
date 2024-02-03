@@ -1,6 +1,7 @@
 'use strict';
 
 var fs = require('fs');
+var path = require('path');
 var Logger = require('./Logger.js');
 var LogRenderer = require('./LogRenderer.js');
 var Utils = require('./Utils.js');
@@ -15,7 +16,9 @@ var SvgWriter = require('./SvgWriter.js');
 var main = function () {
     // initialize objects
     var logger = new Logger(Logger.MESSAGE);
-    var logRenderer = new LogRenderer(logger, '../data/script_log.html', '../data/log.tpl.html');
+    var logRenderer = new LogRenderer(logger,
+			path.join(__dirname, '../data/script_log.html'),
+			path.join(__dirname, '../data/log.tpl.html'));
     var reader = new SystemsReader(logger);
 	var writer = new SvgWriter(logger);
 	var pDisc;
@@ -105,22 +108,47 @@ var main = function () {
 	// };
 
 	// FWL space
-	regionName = 'FWL space';
+	// regionName = 'FWL space';
+	// var dimensions = {
+	// 	w: 900,
+	// 	h: 900
+	// };
+	// // the visible rectangle, in map space:
+	// var viewRect = {
+  //       x: -420,
+  //       y: -420,
+  //       w: 450,
+  //       h: 450
+  //   };
+	//
+	// var minimapDimensions = {
+	// 	w: 300,
+	// 	h: 300
+	// };
+	// var minimapViewRect = {
+	// 	x: -450,
+	// 	y: -450,
+	// 	w: 900,
+	// 	h: 900
+	// };
+
+	// Region around Tukayyid
+	regionName = 'Region around Tukayyid';
 	var dimensions = {
-		w: 900,
-		h: 900
+		w: 200 * 4,
+		h: 100 * 4
 	};
 	// the visible rectangle, in map space:
 	var viewRect = {
-        x: -420,
-        y: -420,
-        w: 450,
-        h: 450
-    };
+	      x: -102,
+	      y: 155, // 210.420,
+	      w: 200,
+	      h: 100
+	  };
 
 	var minimapDimensions = {
-		w: 300,
-		h: 300
+		w: 0,
+		h: 0
 	};
 	var minimapViewRect = {
 		x: -450,
@@ -189,7 +217,7 @@ var main = function () {
             //|| eraI === 23 // 3051
             //|| eraI === 24 // 3052
             //|| eraI === 26 // 3058
-			|| eraI === 40
+			|| eraI === 24
 		)) {
 			continue;
 		}
@@ -295,7 +323,8 @@ var main = function () {
                 max: 100,
                 step: 10
             },
-            {
+            false,
+					{
                 dimensions : minimapDimensions,
                 viewRect : minimapViewRect,
                 borders: minimapBorders,
