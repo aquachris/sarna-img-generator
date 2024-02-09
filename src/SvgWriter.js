@@ -739,7 +739,7 @@ ${origin.x} ${origin.y} @private
 		const filter = settings.custom.noShadows ? '' : 'filter="url(#sLblShd)"';
 
 		for(var i = 0, len = systems.length; i < len; i++) {
-			if(systems[i].col === 'DUMMY') {
+			if (['DUMMY', 'U', 'A'].includes(systems[i].col || '')) {
 				continue;
 			}
 			fill = '#aaaaaa';
