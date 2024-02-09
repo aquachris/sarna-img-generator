@@ -905,16 +905,17 @@ ${origin.x} ${origin.y} @private
 					 					width="${systems[i].label.w}" height="${systems[i].label.h}"
 										style="fill: none; stroke: #f00; stroke-width: .25" />`*/
 					// label additions (capital, hidden, apocryphal)
-					if(systems[i].label.additions && systems[i].label.additions.length > 0) {
+					const additions = (systems[i].label.additions || []).filter(addition => !!addition.text);
+					if(additions.length > 0) {
 						tplObj.x = (systems[i].label.x + minorLabelDelta.x).toFixed(3);
 						tplObj.y = (-systems[i].label.y + minorLabelDelta.y).toFixed(3); // TODO
 						this.markup.systemLabels += `\n\t\t<text x="${tplObj.x}" y="${tplObj.y}" `+
 							`${filter} ` +
 							`class="system-label additions ${tplObj.labelClass}">`;
-						for(var lai = 0; lai < systems[i].label.additions.length; lai++) {
+						for(let lai = 0; lai < additions.length; lai++) {
 							tplObj.y = (-baseline + (lai+1)*(1.5) + minorLabelDelta.y).toFixed(3); // TODO
-							tplObj.aTxt = systems[i].label.additions[lai].text;
-							tplObj.aCls = systems[i].label.additions[lai].class;
+							tplObj.aTxt = additions[lai].text;
+							tplObj.aCls = additions[lai].class;
 							this.markup.systemLabels += `<tspan x="${tplObj.x}" y="${tplObj.y}" class="${tplObj.aCls}">${tplObj.aTxt}</tspan>`;
 						}
 						this.markup.systemLabels += `</text>`;
