@@ -12,363 +12,367 @@ var LabelManager = require('./LabelManager.js');
 var SvgWriter = require('./SvgWriter.js');
 
 var main = function () {
-    // initialize objects
-    var logger = new Logger(Logger.MESSAGE);
-    var logRenderer = new LogRenderer(logger,
-            path.join(__dirname, '../data/script_log.html'),
-            path.join(__dirname, '../data/log.tpl.html'));
-    var reader = new SystemsReader(logger);
-	var writer = new SvgWriter(logger);
-	var pDisc;
-	var nebulaeRandomizer;
-	var vBorder;
-	var borderLabeler;
-    var labelMgr;
-	var curEra;
-    var reservedPoints;
-    var voronoiSystems;
-    var clampedSystems;
-	var clampedBorders, minimapBorders;
-    var clampedNebulae, minimapNebulae;
-    var curSys, curAff, curP;
-    var systemRadius = 1;
-    var labelDist = 0.5;
-    var tmpIdx;
+  // initialize objects
+  var logger = new Logger(Logger.MESSAGE);
+  var logRenderer = new LogRenderer(logger,
+    path.join(__dirname, '../data/script_log.html'),
+    path.join(__dirname, '../data/log.tpl.html'));
+  var reader = new SystemsReader(logger);
+  var writer = new SvgWriter(logger);
+  var pDisc;
+  var nebulaeRandomizer;
+  var vBorder;
+  var borderLabeler;
+  var labelMgr;
+  var curEra;
+  var reservedPoints;
+  var voronoiSystems;
+  var clampedSystems;
+  var clampedBorders, minimapBorders;
+  var clampedNebulae, minimapNebulae;
+  var curSys, curAff, curP;
+  var systemRadius = 1;
+  var labelDist = 0.5;
+  var tmpIdx;
 
-    // read factions from the xlsx
-	reader.readFactions();
+  // read factions from the xlsx
+  reader.readFactions();
 
-    // read nebulae from the xlsx
-    reader.readNebulae();
+  // read nebulae from the xlsx
+  reader.readNebulae();
 
-    // read eras from the xlsx
-    reader.readEras();
+  // read eras from the xlsx
+  reader.readEras();
 
-    // read planetary systems from the xlsx
-    reader.readSystems();
+  // read planetary systems from the xlsx
+  reader.readSystems();
 
-	// read label settings from the config file
-	reader.readLabelConfig();
+	// read units from the xlsx
+	reader.readUnits();
 
-    // image dimensions in pixels
-    var dimensions = {
-        w: 1000,
-        h: 1143
-    };
+  // read label settings from the config file
+  reader.readLabelConfig();
 
-    // the visible rectangle, in map space:
-    var viewRect = {
-        x: -70,
-        y: -80,
-        w: 140,
-        h: 160
-    };
+  // image dimensions in pixels
+  var dimensions = {
+    w: 1000,
+    h: 1143
+  };
 
-	var minimapDimensions = {
-		w: 400,
-		h: 200
-	};
-	var minimapViewRect = {
-		x: -600,
-		y: -300,
-		w: 1200,
-		h: 600
-	};
+  // the visible rectangle, in map space:
+  var viewRect = {
+    x: -70,
+    y: -80,
+    w: 140,
+    h: 160
+  };
 
-    var focusedSystems = [];
-    var focusedSystemName;
-    var focusedSystemArticleName;
-    //focusedSystemName = 'Janina';
-	//focusedSystemName = 'Ferihegy';
-	//focusedSystemName = 'Apollo';
-	//focusedSystemName = 'Butler';
-	//focusedSystemName = 'Babaeski';
-	//focusedSystemName = 'Terra';
-	//focusedSystemName = 'Ridgebrook';
-	//focusedSystemName = 'New Vandenburg';
-	//focusedSystemName = 'Alloway';
-	//focusedSystemName = 'Naco';
-	//focusedSystemName = 'Rosetta';
-	//focusedSystemName = 'Thala';
-	//focusedSystemName = 'Spica';
-    //focusedSystemName = 'Sirius';
-    //focusedSystemName = 'Hall';
+  var minimapDimensions = {
+    w: 400,
+    h: 200
+  };
+  var minimapViewRect = {
+    x: -600,
+    y: -300,
+    w: 1200,
+    h: 600
+  };
 
-    //Clusters
-    //focusedSystems.push('Badlands Cluster');
-	//focusedSystems.push('Brocchi\'s Cluster');
-	//focusedSystems.push('Chaine Cluster');
-	//focusedSystems.push('Enders Cluster');
-	//focusedSystems.push('Hyades Cluster');
-    //focusedSystems.push('Pleiades Cluster');
+  var focusedSystems = [];
+  var focusedSystemName;
+  var focusedSystemArticleName;
+  //focusedSystemName = 'Janina';
+  //focusedSystemName = 'Ferihegy';
+  //focusedSystemName = 'Apollo';
+  //focusedSystemName = 'Butler';
+  //focusedSystemName = 'Babaeski';
+  //focusedSystemName = 'Terra';
+  //focusedSystemName = 'Ridgebrook';
+  //focusedSystemName = 'New Vandenburg';
+  //focusedSystemName = 'Alloway';
+  //focusedSystemName = 'Naco';
+  //focusedSystemName = 'Rosetta';
+  //focusedSystemName = 'Thala';
+  //focusedSystemName = 'Spica';
+  //focusedSystemName = 'Sirius';
+  //focusedSystemName = 'Hall';
 
-    // Nebula neighborhood
-    //focusedSystems.push('Able\'s Glory')
-	//focusedSystems.push('Albaracht');
-    //focusedSystems.push('Althea\'s Choice');
-    //focusedSystems.push('Angra');
-    //focusedSystems.push('Basantapur');
-	//focusedSystems.push('Beckars');
-    //focusedSystems.push('Belle Isle');
-    //focusedSystems.push('Carvajal');
-    //focusedSystems.push('Cohagen');
-    //focusedSystems.push('Cyrton');
-    //focusedSystems.push('Desolate Plains');
-    //focusedSystems.push('Fiery Plains');
-    //focusedSystems.push('Heathville');
-	//focusedSystems.push('Naka Pabni');
-	//focusedSystems.push('Porthos');
-    //focusedSystems.push('Sebha');
-    //focusedSystems.push('Serenity');
-	//focusedSystems.push('Sappir');
-    //focusedSystems.push('Simone');
-    //focusedSystems.push('Thala');
-    //focusedSystems.push('Timbuktu');
-	//focusedSystems.push('Trell');
-	//focusedSystems.push('Verdigreis');
+  //Clusters
+  //focusedSystems.push('Badlands Cluster');
+  //focusedSystems.push('Brocchi\'s Cluster');
+  //focusedSystems.push('Chaine Cluster');
+  //focusedSystems.push('Enders Cluster');
+  //focusedSystems.push('Hyades Cluster');
+  //focusedSystems.push('Pleiades Cluster');
 
-	// minimap Terra reference
-	//focusedSystems.push('Caripare');
-	//focusedSystems.push('Luthien');
-	//focusedSystems.push('Bannerhoft');
-	//focusedSystems.push('New Avalon');
-	//focusedSystems.push('Agliana');
-	//focusedSystems.push('Jardangal');
-	//focusedSystems.push('Nito');
-	//focusedSystems.push('Bergen');
-    //focusedSystems.push('Greifswald');
+  // Nebula neighborhood
+  //focusedSystems.push('Able\'s Glory')
+  //focusedSystems.push('Albaracht');
+  //focusedSystems.push('Althea\'s Choice');
+  //focusedSystems.push('Angra');
+  //focusedSystems.push('Basantapur');
+  //focusedSystems.push('Beckars');
+  //focusedSystems.push('Belle Isle');
+  //focusedSystems.push('Carvajal');
+  //focusedSystems.push('Cohagen');
+  //focusedSystems.push('Cyrton');
+  //focusedSystems.push('Desolate Plains');
+  //focusedSystems.push('Fiery Plains');
+  //focusedSystems.push('Heathville');
+  //focusedSystems.push('Naka Pabni');
+  //focusedSystems.push('Porthos');
+  //focusedSystems.push('Sebha');
+  //focusedSystems.push('Serenity');
+  //focusedSystems.push('Sappir');
+  //focusedSystems.push('Simone');
+  //focusedSystems.push('Thala');
+  //focusedSystems.push('Timbuktu');
+  //focusedSystems.push('Trell');
+  //focusedSystems.push('Verdigreis');
 
-	// border labelling
-	//focusedSystems.push('Sol');
-	//focusedSystems.push('Cassias');
-    //focusedSystems.push('Desolate Plains');
-    //focusedSystems.push('Strana Mechty');
-    //focusedSystems.push('Versailles');
-    //focusedSystems.push('El Dorado');
-    //focusedSystems.push('Bremen');
-    //focusedSystems.push('St. Ives');
-    //focusedSystems.push('Kiesen');
-	//focusedSystems.push('Zurich');
-	focusedSystems.push('Jardine');
+  // minimap Terra reference
+  //focusedSystems.push('Caripare');
+  //focusedSystems.push('Luthien');
+  //focusedSystems.push('Bannerhoft');
+  //focusedSystems.push('New Avalon');
+  //focusedSystems.push('Agliana');
+  //focusedSystems.push('Jardangal');
+  //focusedSystems.push('Nito');
+  //focusedSystems.push('Bergen');
+  //focusedSystems.push('Greifswald');
 
-    // dynamic names
-    //focusedSystems.push('Badlands Cluster');
-    //focusedSystems.push('Desolate Plains')
+  // border labelling
+  //focusedSystems.push('Sol');
+  //focusedSystems.push('Cassias');
+  //focusedSystems.push('Desolate Plains');
+  //focusedSystems.push('Strana Mechty');
+  //focusedSystems.push('Versailles');
+  //focusedSystems.push('El Dorado');
+  //focusedSystems.push('Bremen');
+  //focusedSystems.push('St. Ives');
+  //focusedSystems.push('Kiesen');
+  //focusedSystems.push('Zurich');
+  focusedSystems.push('Jardine');
 
-    // nebula fine tuning
-    //focusedSystems.push('Badlands Cluster');
-    //focusedSystems.push('Desolate Plains')
-    //focusedSystems.push('Heathville');
-    //focusedSystems.push('Trell');
-    //focusedSystems.push('Tortuga Prime');
-    //focusedSystems.push('New Roland');
+  // dynamic names
+  //focusedSystems.push('Badlands Cluster');
+  //focusedSystems.push('Desolate Plains')
 
-    // loop fixing
-    //focusedSystems.push('Versailles');
+  // nebula fine tuning
+  //focusedSystems.push('Badlands Cluster');
+  //focusedSystems.push('Desolate Plains')
+  //focusedSystems.push('Heathville');
+  //focusedSystems.push('Trell');
+  //focusedSystems.push('Tortuga Prime');
+  //focusedSystems.push('New Roland');
 
-    // hidden systems
-    //focusedSystems.push('Colleen');
-    //focusedSystems.push('Fasa');
-    //focusedSystems.push('Rim Worlds Republic Outpost #27');
-    //focusedSystems.push('Alfirk');
-    //focusedSystems.push('Farhome');
-    //focusedSystems.push('Sharpe');
-    //focusedSystems.push('Versailles');
+  // loop fixing
+  //focusedSystems.push('Versailles');
 
-    // debugging / tests
-    //focusedSystems.push('Acoma');
-    //focusedSystems.push('Aconcagua');
-    //focusedSystems.push('Alexandria (CC)');
-    //focusedSystems.push('Sol');
-    //focusedSystems.push('New Avalon');
-    //focusedSystems.push('Luthien');
-	//focusedSystems.push('Radstadt');
-    //focusedSystems.push('Sian');
-    //focusedSystems.push('Rasalhague');
-    //focusedSystems.push('Romita');
-    //focusedSystems.push('Fylovar');
+  // hidden systems
+  //focusedSystems.push('Colleen');
+  //focusedSystems.push('Fasa');
+  //focusedSystems.push('Rim Worlds Republic Outpost #27');
+  //focusedSystems.push('Alfirk');
+  //focusedSystems.push('Farhome');
+  //focusedSystems.push('Sharpe');
+  //focusedSystems.push('Versailles');
 
-    // capitals
-    //focusedSystems.push('Pobeda');
-    //focusedSystems.push('Luthien');
-    //focusedSystems.push('Zurich');
-    //focusedSystems.push('St. Andre');
-    //focusedSystems.push('Sol');
+  // debugging / tests
+  //focusedSystems.push('Acoma');
+  //focusedSystems.push('Aconcagua');
+  //focusedSystems.push('Alexandria (CC)');
+  //focusedSystems.push('Sol');
+  //focusedSystems.push('New Avalon');
+  //focusedSystems.push('Luthien');
+  //focusedSystems.push('Radstadt');
+  //focusedSystems.push('Sian');
+  //focusedSystems.push('Rasalhague');
+  //focusedSystems.push('Romita');
+  //focusedSystems.push('Fylovar');
 
-    // system suffixes
-    //focusedSystems.push('Coromodir');
-    //focusedSystems.push('Sol');
+  // capitals
+  //focusedSystems.push('Pobeda');
+  //focusedSystems.push('Luthien');
+  //focusedSystems.push('Zurich');
+  //focusedSystems.push('St. Andre');
+  //focusedSystems.push('Sol');
 
-    // image labeling
-    //focusedSystems.push('Commonwealth Mining Outpost 26');
-    //focusedSystems.push('Atreus');
-    //focusedSystems.push('Kentares');
-    //focusedSystems.push('Wheeler');
+  // system suffixes
+  //focusedSystems.push('Coromodir');
+  //focusedSystems.push('Sol');
 
-    // v1.1 fixes
-	focusedSystems.push('Abejorral');
-    focusedSystems.push('Outreach');
-    focusedSystems.push('Ulan Bator');
-    focusedSystems.push('Carver');
+  // image labeling
+  //focusedSystems.push('Commonwealth Mining Outpost 26');
+  //focusedSystems.push('Atreus');
+  //focusedSystems.push('Kentares');
+  //focusedSystems.push('Wheeler');
 
-    // v1.1.1 fixes
-    focusedSystems.push('Trell');
+  // v1.1 fixes
+  focusedSystems.push('Abejorral');
+  focusedSystems.push('Outreach');
+  focusedSystems.push('Ulan Bator');
+  focusedSystems.push('Carver');
 
-    // generate points randomly scattered in 2D space
-    pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
+  // v1.1.1 fixes
+  focusedSystems.push('Trell');
 
-    // randomize nebulae
-    nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
+  // generate points randomly scattered in 2D space
+  pDisc = new PoissonDisc().init(-2000, -2000, 4000, 4000, 35, 30);
 
-    for(var fsi = 0; fsi < focusedSystems.length; fsi++) {
-        focusedSystemName = focusedSystems[fsi];
+  // randomize nebulae
+  nebulaeRandomizer = new NebulaRandomizer(logger).init(reader.nebulae);
 
-        for(var i = 0, len = reader.systems.length; i < len; i++) {
-            if(reader.systems[i].name === focusedSystemName) {
-                focusedSystemArticleName = reader.systems[i].sarnaLink.split('/').pop();
-                viewRect.x = reader.systems[i].x - viewRect.w * .5;
-                viewRect.y = reader.systems[i].y - viewRect.h * .5 - 15;
-                //viewRect.x = -viewRect.w * .5;
-                //viewRect.y = -viewRect.h * .5;
-                minimapViewRect.x = reader.systems[i].x - 600;
-                minimapViewRect.y = reader.systems[i].y - 300;
-                break;
-            }
-			//if(reader.systems[i].name.startsWith('Sol')) console.log(reader.systems[i].name);
-        }
+  for (var fsi = 0; fsi < focusedSystems.length; fsi++) {
+    focusedSystemName = focusedSystems[fsi];
 
-        // clamp nebulae to view box
-    	clampedNebulae = nebulaeRandomizer.generateBoundedNebulae(viewRect);
-    	minimapNebulae = nebulaeRandomizer.generateBoundedNebulae(minimapViewRect);
-
-        // for each era ...
-    	for(var eraI = 0; eraI < reader.eras.length; eraI++) {
-			if(!(false
-				//|| eraI === 4 // 2367
-                //|| eraI === 10 // 2783
-                //|| eraI === 12 // 2821
-                //|| eraI === 15 // 2864
-				//|| eraI === 16 // 3025
-				//|| eraI === 26 // 3058
-                //|| eraI === 36 // 3081
-                //|| eraI === 40 // 3135
-                || eraI === 42 // 3151
-			)) {
-				continue;
-			}
-    		curEra = reader.eras[eraI];
-    		reservedPoints = [];
-    		voronoiSystems = [];
-
-    		for(var i = 0; i < reader.systems.length; i++) {
-    			curSys = reader.systems[i];
-                curAff = '';
-                if(curSys.affiliations[eraI].search(/^D\s*\(/g) >= 0) {
-                    curAff = curSys.affiliations[eraI];
-                } else {
-                    curAff = curSys.affiliations[eraI].split(',')[0].trim();
-                }
-                if((tmpIdx = curAff.search(/\(\s*H\s*\)/g)) >= 0) {
-                    reader.systems[i].hidden = true;
-                    curAff = curAff.substr(0,tmpIdx).trim();
-                } else {
-                    reader.systems[i].hidden = false;
-                }
-    			reader.systems[i].col = curAff;
-                reader.systems[i].capitalLvl = curSys.capitalLvls[eraI];
-    			if(curAff === '' || curAff === 'U' || curAff === 'A' || reader.systems[i].hidden) {
-                    continue;
-    			}
-    			if(curSys.status.toLowerCase() === 'apocryphal') {
-    				continue;
-    			}
-    			reservedPoints.push({x: curSys.x, y: curSys.y, col: curAff});
-    			voronoiSystems.push({
-    				x: curSys.x,
-    				y: curSys.y,
-    				col : curAff,
-    				name : curSys.names[eraI]
-    			});
-    		}
-
-            pDisc.replaceReservedPoints(reservedPoints);
-
-    		for(var i = 0; i < pDisc.aggregatedPoints.length; i++) {
-    			curP = pDisc.aggregatedPoints[i];
-    			if(!curP.col) {
-                    voronoiSystems.push({
-        				x: curP.x,
-        				y: curP.y,
-        				col: 'DUMMY',
-        				name: 'Dummy'
-        			});
-                }
-    		}
-
-    		// generate the voronoi diagram to find borders
-    		vBorder = new VoronoiBorder(logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
-
-    		// clamp the systems and borders to the image's viewBox
-    		clampedSystems = Utils.clampObjects(reader.systems, viewRect, 0);
-            // for each of the clamped systems, replace its name with the current era's name
-            for(var i = 0; i < clampedSystems.length; i++) {
-                clampedSystems[i].name = clampedSystems[i].names[eraI];
-            }
-
-            //clampedBorders = vBorder.borderEdgeLoops;
-    		clampedBorders = vBorder.generateBoundedBorderLoops(viewRect);
-
-    		// initiate and execute the label manager
-            labelMgr = new LabelManager(logger).init(
-                viewRect,
-                clampedSystems,
-                systemRadius,
-                clampedNebulae,
-                labelDist,
-                reader.factions,
-    			reader.labelConfig
-            );
-
-    		// minimap borders
-    		minimapBorders = vBorder.generateBoundedBorderLoops(minimapViewRect);
-
-			// add border labels
-			borderLabeler = new BorderLabeler(logger).init(
-				labelMgr.factions,
-                labelMgr.grid,
-				viewRect,
-				reader.labelConfig._borderGlyphSettings || {},
-				1
-			);
-            borderLabeler.generateLabels(clampedBorders);
-
-    		// create an svg with a universe picture
-            writer.writeNeighborhoodSvg(
-                focusedSystemArticleName,
-                focusedSystemName,
-    			dimensions,
-    			viewRect,
-    			curEra,
-    			labelMgr.objects,
-    			labelMgr.factions,
-    			clampedBorders,
-                borderLabeler.polylines,
-                labelMgr.ellipticalObjects,
-    			{
-    				dimensions : minimapDimensions,
-    				viewRect : minimapViewRect,
-    				borders: minimapBorders,
-    				nebulae: minimapNebulae,
-                    centerDot : true,
-                    rings: [30,60]
-    			},
-    			[30, 60]
-    		);
-    	}
+    for (var i = 0, len = reader.systems.length; i < len; i++) {
+      if (reader.systems[i].name === focusedSystemName) {
+        focusedSystemArticleName = reader.systems[i].sarnaLink.split('/').pop();
+        viewRect.x = reader.systems[i].x - viewRect.w * .5;
+        viewRect.y = reader.systems[i].y - viewRect.h * .5 - 15;
+        //viewRect.x = -viewRect.w * .5;
+        //viewRect.y = -viewRect.h * .5;
+        minimapViewRect.x = reader.systems[i].x - 600;
+        minimapViewRect.y = reader.systems[i].y - 300;
+        break;
+      }
+      //if(reader.systems[i].name.startsWith('Sol')) console.log(reader.systems[i].name);
     }
 
-    // finish by rendering out the logs
-    logRenderer.render();
+    // clamp nebulae to view box
+    clampedNebulae = nebulaeRandomizer.generateBoundedNebulae(viewRect);
+    minimapNebulae = nebulaeRandomizer.generateBoundedNebulae(minimapViewRect);
+
+    // for each era ...
+    for (var eraI = 0; eraI < reader.eras.length; eraI++) {
+      if (!(false
+        //|| eraI === 4 // 2367
+        //|| eraI === 10 // 2783
+        //|| eraI === 12 // 2821
+        //|| eraI === 15 // 2864
+        //|| eraI === 16 // 3025
+        //|| eraI === 26 // 3058
+        //|| eraI === 36 // 3081
+        //|| eraI === 40 // 3135
+        || eraI === 42 // 3151
+      )) {
+        continue;
+      }
+      curEra = reader.eras[eraI];
+      reservedPoints = [];
+      voronoiSystems = [];
+
+      for (var i = 0; i < reader.systems.length; i++) {
+        curSys = reader.systems[i];
+        curAff = '';
+        if (curSys.affiliations[eraI].search(/^D\s*\(/g) >= 0) {
+          curAff = curSys.affiliations[eraI];
+        } else {
+          curAff = curSys.affiliations[eraI].split(',')[0].trim();
+        }
+        if ((tmpIdx = curAff.search(/\(\s*H\s*\)/g)) >= 0) {
+          reader.systems[i].hidden = true;
+          curAff = curAff.substr(0, tmpIdx).trim();
+        } else {
+          reader.systems[i].hidden = false;
+        }
+        reader.systems[i].col = curAff;
+        reader.systems[i].capitalLvl = curSys.capitalLvls[eraI];
+        reader.systems[i].unit = curSys.units[eraI];
+        if (curAff === '' || curAff === 'U' || curAff === 'A' || reader.systems[i].hidden) {
+          continue;
+        }
+        if (curSys.status.toLowerCase() === 'apocryphal') {
+          continue;
+        }
+        reservedPoints.push({x: curSys.x, y: curSys.y, col: curAff});
+        voronoiSystems.push({
+          x: curSys.x,
+          y: curSys.y,
+          col: curAff,
+          name: curSys.names[eraI]
+        });
+      }
+
+      pDisc.replaceReservedPoints(reservedPoints);
+
+      for (var i = 0; i < pDisc.aggregatedPoints.length; i++) {
+        curP = pDisc.aggregatedPoints[i];
+        if (!curP.col) {
+          voronoiSystems.push({
+            x: curP.x,
+            y: curP.y,
+            col: 'DUMMY',
+            name: 'Dummy'
+          });
+        }
+      }
+
+      // generate the voronoi diagram to find borders
+      vBorder = new VoronoiBorder(logger).init(voronoiSystems, VoronoiBorder.CELL_MODES.CIRCUMCENTERS, .5);
+
+      // clamp the systems and borders to the image's viewBox
+      clampedSystems = Utils.clampObjects(reader.systems, viewRect, 0);
+      // for each of the clamped systems, replace its name with the current era's name
+      for (var i = 0; i < clampedSystems.length; i++) {
+        clampedSystems[i].name = clampedSystems[i].names[eraI];
+      }
+
+      //clampedBorders = vBorder.borderEdgeLoops;
+      clampedBorders = vBorder.generateBoundedBorderLoops(viewRect);
+
+      // initiate and execute the label manager
+      labelMgr = new LabelManager(logger).init(
+        viewRect,
+        clampedSystems,
+        systemRadius,
+        clampedNebulae,
+        labelDist,
+        reader.factions,
+        reader.labelConfig
+      );
+
+      // minimap borders
+      minimapBorders = vBorder.generateBoundedBorderLoops(minimapViewRect);
+
+      // add border labels
+      borderLabeler = new BorderLabeler(logger).init(
+        labelMgr.factions,
+        labelMgr.grid,
+        viewRect,
+        reader.labelConfig._borderGlyphSettings || {},
+        1
+      );
+      borderLabeler.generateLabels(clampedBorders);
+
+      // create an svg with a universe picture
+      writer.writeNeighborhoodSvg(
+        focusedSystemArticleName,
+        focusedSystemName,
+        dimensions,
+        viewRect,
+        curEra,
+        labelMgr.objects,
+        labelMgr.factions,
+        clampedBorders,
+        borderLabeler.polylines,
+        labelMgr.ellipticalObjects,
+        {
+          dimensions: minimapDimensions,
+          viewRect: minimapViewRect,
+          borders: minimapBorders,
+          nebulae: minimapNebulae,
+          centerDot: true,
+          rings: [30, 60]
+        },
+        [30, 60]
+      );
+    }
+  }
+
+  // finish by rendering out the logs
+  logRenderer.render();
 };
 
 main();

@@ -94,7 +94,9 @@ module.exports = (function () {
       for (var i = 0; i < obj.name.length; i++) {
         labelWidth += this.glyphSettings.widths[obj.name[i]] || defaultWidth;
       }
-      labelAdditions.push({text: '11th Tau Ceti Rangers'});
+      if (obj.unit) {
+        labelAdditions.push({ text: obj.unit });
+      }
       if (obj.capitalLvl === 1) {
         labelAdditions.push({
           //text: 'faction capital',
