@@ -2,9 +2,9 @@ var fs = require('fs');
 var xlsx = require('node-xlsx');
 
 // Parse a buffer
-//var objFromBuffer = xlsx.parse(fs.readFileSync(__dirname + '/../data/Systems By Era.xlsx'));
+//var objFromBuffer = xlsx.parse(fs.readFileSync(__dirname + '/../data/Sarna Unified Cartography Kit (Official).xlsx'));
 // Parse a file
-var objFromFile = xlsx.parse(__dirname + '/../../data/Systems By Era.xlsx');
+var objFromFile = xlsx.parse(__dirname + '/../../data/Sarna Unified Cartography Kit (Official).xlsx');
 
 var nebulaeTab = objFromFile[3];
 var nebulae = [];
