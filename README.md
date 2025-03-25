@@ -11,7 +11,7 @@ Please contact me (gruese) if you get stuck on any of these steps:
 
   Run the installer, you can skip the option python + chocolatey install.
 
-- Download a zip archive with this script from here: https://github.com/aquachris/sarna-img-generator/releases/tag/v1.5
+- Download a zip archive with this script from here: https://github.com/aquachris/sarna-img-generator/releases/tag/v1.6
 
   Unzip the archive into any directory on your machine, e.g. "D:\scripts\sarna-img-generator".
 
@@ -28,13 +28,13 @@ It's important to note that this script does **NOT** directly pull its data from
 The advantage of this is that you can play around with your local version of the data without affecting the main data collection. The downside is, of course, the necessity for a manual download if you want to pull a new version of the SUCKit.
 
 This repository comes "batteries included", i.e. it includes a recent version of the SUCKit in XLSX format. This file is located in  
-``<script directory>/data/Systems By Era.xlsx``  
+``<script directory>/data/Sarna Unified Cartography Kit (Official).xlsx``  
 Note that this is a fixed location that, as of now, cannot be changed.
 
 If you want to use a new version of the SUCKit, do the following: 
 - Open the SUCKit in your browser (https://docs.google.com/spreadsheets/d/1uO6aZ20rfEcAZJ-nDRhCnaNUiCPemuoOOd67Zqi1MVM)
 - In the top menu, click on ``File`` > ``Download`` > ``.xlsx``
-- Locate the downloaded file, rename it to ``Systems By Era.xlsx`` and move it to the ``<script directory>/data/`` folder, replacing the existing file.
+- Locate the downloaded file, rename it to ``Sarna Unified Cartography Kit (Official).xlsx`` (if necessary) and move it to the ``<script directory>/data/`` folder, replacing the existing file.
 
 ## Generating maps
 

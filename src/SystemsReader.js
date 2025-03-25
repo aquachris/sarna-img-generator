@@ -49,7 +49,7 @@ module.exports = (function () {
 
 		// Read xlsx file
         // TODO make file name configurable
-		this.workbook = xlsx.parse(__dirname + '/../data/Systems By Era.xlsx');
+		this.workbook = xlsx.parse(__dirname + '/../data/Sarna Unified Cartography Kit (Official).xlsx');
 	};
 
 	/**
@@ -79,7 +79,7 @@ module.exports = (function () {
 			curRow = factionsSheet.data[rowIdx];
 
 			// skip factions without an id
-			if(!curRow[columnIdxMap['id']]) {
+			if(!curRow[columnIdxMap['factionid']]) {
 				continue;
 			}
 
@@ -92,20 +92,20 @@ module.exports = (function () {
 			curColor += ('0' + curG.toString(16)).slice(-2);
 			curColor += ('0' + curB.toString(16)).slice(-2);*/
 			curFaction = {
-				shortName: curRow[columnIdxMap['id']],
+				shortName: curRow[columnIdxMap['factionid']],
 				longName: curRow[columnIdxMap['factionname']],
 				category: 'ok',//curRow[columnIdxMap['#class']],
 				color: curRow[columnIdxMap['color']],
-				founding: curRow[columnIdxMap['foundingyear']] || '',
-				dissolution: curRow[columnIdxMap['dissolutionyear']] || ''
+				founding: curRow[columnIdxMap['startyear']] || '',
+				dissolution: curRow[columnIdxMap['endyear']] || ''
 			};
-            // TODO temp fixes - remove
-            while(curFaction.color.length < 7) {
-                curFaction.color += '0';
-            }
-            if(curFaction.shortName === 'TC') {
-                curFaction.color = '#B73C26';
-            }
+			// TODO temp fixes - remove
+			while((curFaction.color?.length || 0) < 7) {
+					curFaction.color += '0';
+			}
+			if(curFaction.shortName === 'TC') {
+					curFaction.color = '#B73C26';
+			}
 			this.factions[curFaction.shortName] = curFaction;
 		}
 	};

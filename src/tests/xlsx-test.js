@@ -2,7 +2,7 @@ var fs = require('fs');
 var xlsx = require('xlsx');
 
 // Parse a file
-var objFromFile = xlsx.readFile(__dirname + '/../../data/Systems By Era.xlsx', { cellStyles : true });
+var objFromFile = xlsx.readFile(__dirname + '/../../data/Sarna Unified Cartography Kit (Official).xlsx', { cellStyles : true });
 
 console.log(Object.keys(objFromFile));
 //console.log(Object.keys(objFromFile.Styles));
