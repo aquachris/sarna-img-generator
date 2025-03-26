@@ -13,7 +13,7 @@ var NebulaRandomizer = require('./NebulaRandomizer.js');
 var LabelManager = require('./LabelManager.js');
 var SvgWriter = require('./SvgWriter.js');
 
-var main = function () {
+var createRegionImage = function () {
     // initialize objects
     var logger = new Logger(Logger.MESSAGE);
     var logRenderer = new LogRenderer(logger,
@@ -339,4 +339,4 @@ var main = function () {
     logRenderer.render();
 };
 
-main();
+module.exports = { createRegionImage };

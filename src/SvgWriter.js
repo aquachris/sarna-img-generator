@@ -495,8 +495,6 @@ ${origin.x} ${origin.y} @private
 			};
 		}
 
-		console.log(factions);
-
 		// change independent systems' primary color to black (from white)
 		factions['I'].color = '#000000';
 
