@@ -11,7 +11,7 @@ Please contact me (gruese) if you get stuck on any of these steps:
 
   Run the installer, you can skip the option python + chocolatey install.
 
-- Download a zip archive with this script from here: https://github.com/aquachris/sarna-img-generator/releases/tag/v1.61
+- Download a zip archive with this script from here: https://github.com/aquachris/sarna-img-generator/releases/tag/v1.62
 
   Unzip the archive into any directory on your machine, e.g. "D:\scripts\sarna-img-generator".
 

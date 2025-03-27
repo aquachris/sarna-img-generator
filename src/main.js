@@ -45,7 +45,7 @@ yargs(hideBin(process.argv))
       console.log(`----------`);
       console.log('Done! Please check the output folder for your results.');
     } catch (e) {
-      console.error(e.message);
+      console.error(e);
       process.exit(1);
     }
   })

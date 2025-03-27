@@ -193,7 +193,7 @@ var createUniverseImage = function (year, logLevel = Logger.MESSAGE) {
         var dir = path.join(__dirname, '..', 'output', 'universe');
         const minimapSettings = {};
         const jumpRings = [];
-        const docTitle = `BattleTech: Known Universe, Year ${curEra.year.replace(/[a-z]+$/, '')} (${Utils.htmlEncode(curEra.name)})`;
+        const docTitle = `BattleTech: Known Universe, Year ${String(curEra.year).replace(/[a-z]+$/, '')} (${Utils.htmlEncode(curEra.name)})`;
         writer.writeSvg({
 			renderFactions : true,
 			renderBorderLabels : true,
